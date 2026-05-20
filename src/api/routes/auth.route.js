@@ -1,7 +1,7 @@
 const express = require('express');
 const { check } = require('express-validator');
 const validate = require('../../middleware/validate.middleware');
-const { register, login, logout, getMe } = require('../../controllers/auth.controller');
+const { register, login, logout, getMe, enable2FA, verifyEnable2FA, login2FA, disable2FA } = require('../../controllers/auth.controller');
 const { protect } = require('../../middleware/auth.middleware');
 
 const router = express.Router();
@@ -108,5 +108,92 @@ router.get('/logout', logout);
  *         description: Chưa đăng nhập
  */
 router.get('/me', protect, getMe);
+
+/**
+ * @swagger
+ * /auth/2fa/enable:
+ *   post:
+ *     summary: Bật cấu hình 2FA (Gửi mã OTP qua email)
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Đã gửi mã OTP qua email
+ */
+router.post('/2fa/enable', protect, enable2FA);
+
+/**
+ * @swagger
+ * /auth/2fa/verify-enable:
+ *   post:
+ *     summary: Xác nhận OTP để chính thức BẬT 2FA
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - otp
+ *             properties:
+ *               otp:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Kích hoạt 2FA thành công
+ */
+router.post('/2fa/verify-enable', protect, [
+  check('otp', 'Vui lòng cung cấp mã OTP').notEmpty(),
+  validate
+], verifyEnable2FA);
+
+/**
+ * @swagger
+ * /auth/2fa/login:
+ *   post:
+ *     summary: Nhập mã OTP để đăng nhập khi có 2FA
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - otp
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               otp:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Đăng nhập thành công, trả về token
+ */
+router.post('/2fa/login', [
+  check('email', 'Email không hợp lệ').isEmail(),
+  check('otp', 'Mã OTP là bắt buộc').notEmpty(),
+  validate
+], login2FA);
+
+/**
+ * @swagger
+ * /auth/2fa/disable:
+ *   post:
+ *     summary: Tắt tính năng bảo mật 2 lớp
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Tắt 2FA thành công
+ */
+router.post('/2fa/disable', protect, disable2FA);
 
 module.exports = router;
