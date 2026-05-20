@@ -1,4 +1,5 @@
 const User = require('../models/user.model');
+const bcrypt = require('bcrypt');
 
 class UserService {
   static async getAllUsers() {
@@ -14,12 +15,19 @@ class UserService {
   }
 
   static async createUser(userData) {
+    if (userData.password) {
+      const salt = await bcrypt.genSalt(10);
+      userData.password = await bcrypt.hash(userData.password, salt);
+    }
     return await User.create(userData);
   }
 
   static async updateUser(id, updateData) {
-    // Nếu có update password, cần đảm bảo pre-save hook chạy
+    // Hash password if updating password
     if (updateData.password) {
+      const salt = await bcrypt.genSalt(10);
+      updateData.password = await bcrypt.hash(updateData.password, salt);
+      
       const user = await User.findById(id);
       if (user) {
         user.password = updateData.password;

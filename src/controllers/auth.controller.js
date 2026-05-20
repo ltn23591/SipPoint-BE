@@ -4,12 +4,15 @@ const logger = require('../config/logger');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const User = require('../models/user.model'); // Needed for 2FA saving directly
 
-// Lấy token từ model, tạo cookie và gửi response
 const sendTokenResponse = (user, statusCode, res) => {
-  // Tạo token
-  const token = user.getSignedJwtToken();
+  // Tạo token tại controller thay vì ở model
+  const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'secret123', {
+    expiresIn: '30d',
+  });
 
   const options = {
     expires: new Date(
@@ -93,7 +96,7 @@ exports.login = async (req, res, next) => {
       throw new Error('Thông tin đăng nhập không hợp lệ');
     }
 
-    const isMatch = await user.matchPassword(password);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Sai thông tin đăng nhập' });
     }
