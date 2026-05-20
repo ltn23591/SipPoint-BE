@@ -60,6 +60,16 @@ const userSchema = new mongoose.Schema(
       enum: ['user', 'admin'],
       default: 'user',
     },
+    isTwoFactorEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    twoFactorOTP: {
+      type: String,
+    },
+    twoFactorOTPExpire: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

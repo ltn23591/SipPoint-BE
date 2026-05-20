@@ -13,6 +13,7 @@ Dự án này là một Boilerplate Backend mạnh mẽ dựa trên Express.js, 
 - **Tiện ích:** 
   - Xuất danh sách dữ liệu ra file Excel với `exceljs`.
   - Tạo mã QR Code tự động với `qrcode`.
+- **Bảo mật 2 lớp (2FA/OTP):** Tích hợp xác thực 2 bước (gửi mã OTP qua email) giúp tăng cường bảo mật cho quá trình đăng nhập.
 - **API Documentation:** Tích hợp sẵn giao diện Swagger UI tuyệt đẹp tại `/api-docs`.
 
 ## 📁 Cấu trúc thư mục
@@ -21,7 +22,7 @@ Dự án này là một Boilerplate Backend mạnh mẽ dựa trên Express.js, 
 /
 ├── locales/          # File từ điển đa ngôn ngữ (en.json, vi.json)
 ├── logs/             # Nơi lưu trữ file log của winston
-├── mails/            # Chứa các template email bằng HTML/EJS (welcome.ejs)
+├── mails/            # Chứa các template email bằng HTML/EJS (welcome.ejs, otp.ejs)
 ├── public/uploads/   # Thư mục lưu trữ hình ảnh upload cục bộ
 ├── src/
 │   ├── api/          # Các routes API và cấu hình Router
