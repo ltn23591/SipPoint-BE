@@ -1,0 +1,37 @@
+{
+  "name": "node-express-base",
+  "version": "1.0.0",
+  "description": "A basic Node.js Express boilerplate in TypeScript",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "ejs": "^5.0.2",
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2",
+    "express-validator": "^7.3.2",
+    "helmet": "^7.1.0",
+    "i18n": "^0.15.3",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.3.1",
+    "morgan": "^1.10.0",
+    "multer": "^2.1.1",
+    "nodemailer": "^8.0.7",
+    "nodemon": "^3.1.14",
+    "qrcode": "^1.5.4",
+    "sharp": "^0.34.5",
+    "speakeasy": "^2.0.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.19.0"
+  }
+}

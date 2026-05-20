@@ -1,0 +1,7 @@
+{
+  "welcome": "Welcome to our system",
+  "success": "Success",
+  "error": "An error occurred",
+  "user_created": "User created successfully",
+  "user_not_found": "User not found"
+}

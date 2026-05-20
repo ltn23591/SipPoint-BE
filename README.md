@@ -1,55 +1,75 @@
-# Node.js Express Boilerplate
+# Node.js Express Base API (MERN Backend)
 
-Dự án này là cấu trúc cơ sở (Base/Boilerplate) cho ứng dụng Node.js & Express.js viết bằng ES Modules (`import/export`).
+Dự án này là một Boilerplate Backend mạnh mẽ dựa trên Express.js, cung cấp sẵn các tính năng cấp doanh nghiệp (enterprise-level) cần thiết cho bất kỳ dự án nào.
 
-## Các công nghệ sử dụng
-- **Express**: Framework ứng dụng web.
-- **Mongoose**: Tương tác với MongoDB.
-- **dotenv**: Quản lý biến môi trường.
-- **cors**: Quản lý chia sẻ tài nguyên (Cross-Origin Resource Sharing).
-- **helmet**: Bảo mật ứng dụng bằng cách cấu hình HTTP headers thích hợp.
-- **morgan**: Ghi log HTTP requests.
-- **nodemon**: Tự động reload server khi viết code.
+## 🚀 Tính năng nổi bật
+- **Bảo mật & Xác thực (Auth):** Tích hợp JWT, lưu trữ an toàn bằng HttpOnly Cookies.
+- **Mã hóa:** Mã hóa mật khẩu an toàn với `bcrypt`.
+- **Validation:** Ràng buộc và xác thực dữ liệu đầu vào với `express-validator`.
+- **Logging:** Hệ thống ghi log chuyên nghiệp ra file với `winston` (thư mục `logs/`).
+- **Gửi Email:** Hỗ trợ gửi email HTML sử dụng `nodemailer` và template engine `ejs`.
+- **Upload File:** API upload hình ảnh cục bộ an toàn với `multer`.
+- **Đa ngôn ngữ (i18n):** Hỗ trợ trả về ngôn ngữ động dựa trên header `Accept-Language` (vi/en).
+- **Tiện ích:** 
+  - Xuất danh sách dữ liệu ra file Excel với `exceljs`.
+  - Tạo mã QR Code tự động với `qrcode`.
+- **API Documentation:** Tích hợp sẵn giao diện Swagger UI tuyệt đẹp tại `/api-docs`.
 
-## Cấu trúc thư mục
-```text
-CD2/
+## 📁 Cấu trúc thư mục
+
+```
+/
+├── locales/          # File từ điển đa ngôn ngữ (en.json, vi.json)
+├── logs/             # Nơi lưu trữ file log của winston
+├── mails/            # Chứa các template email bằng HTML/EJS (welcome.ejs)
+├── public/uploads/   # Thư mục lưu trữ hình ảnh upload cục bộ
 ├── src/
-│   ├── config/          # Cấu hình hệ thống (DB, environment, ...)
-│   ├── controllers/     # Xử lý nghiệp vụ logic
-│   ├── middleware/      # Middleware xử lý request & error handler
-│   ├── models/          # Khai báo schema/model (Database)
-│   ├── routes/          # Cấu hình routes API
-│   ├── app.js           # Khởi tạo & cấu hình express app
-│   └── server.js        # Entry point để chạy server
-└── .env                 # File chứa biến môi trường cấu hình
+│   ├── api/          # Các routes API và cấu hình Router
+│   ├── config/       # Cấu hình Swagger, Logger, i18n
+│   ├── controllers/  # Xử lý logic Request/Response
+│   ├── db/           # Kết nối MongoDB
+│   ├── middleware/   # Middleware (Auth, Upload, Validation, Error Handling)
+│   ├── models/       # Mongoose Schemas
+│   ├── services/     # Chứa logic nghiệp vụ tương tác với Database
+│   ├── utils/        # Các hàm tiện ích (Gửi email, Xuất Excel, Mã QR...)
+│   ├── app.js        # Cấu hình Express App, Middlewares
+│   └── server.js     # Điểm khởi chạy Server
+└── .env              # Biến môi trường
 ```
 
-## Cách cài đặt và chạy thử
+## 🛠 Cài đặt & Chạy dự án
 
-### 1. Cài đặt các thư viện cần thiết
+**1. Cài đặt các thư viện**
 ```bash
 npm install
 ```
 
-### 2. Thiết lập biến môi trường
-Sao chép nội dung từ file `.env.example` tạo thành file `.env` nếu chưa có:
-```bash
-cp .env.example .env
+**2. Cấu hình biến môi trường (`.env`)**
+Bạn cần thiết lập các biến sau trong file `.env`:
+```env
+PORT=5000
+MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/database
+NODE_ENV=development
+JWT_SECRET=your_super_secret_key
+SMTP_HOST=smtp.ethereal.email
+SMTP_PORT=587
+SMTP_USER=test@example.com
+SMTP_PASS=password
 ```
-Cấu hình các tham số `PORT` và `MONGO_URI` cho phù hợp với môi trường của bạn.
 
-### 3. Chạy dự án
-- Chạy ở chế độ phát triển (Auto reload):
+**3. Chạy Server**
 ```bash
+# Môi trường Development (sử dụng nodemon tự động reload)
 npm run dev
-```
 
-- Chạy ở chế độ production:
-```bash
+# Môi trường Production
 npm start
 ```
 
-## Các API endpoints mẫu
-- Lấy danh sách users (mock): `GET http://localhost:5000/api/users`
-- Tạo mới user (mock): `POST http://localhost:5000/api/users`
+## 📖 API Documentation (Swagger)
+Sau khi server chạy, truy cập đường dẫn sau trên trình duyệt để xem và tương tác trực tiếp với API:
+
+👉 **[http://localhost:5000/api-docs](http://localhost:5000/api-docs)**
+
+---
+*Phát triển bởi đội ngũ Node Express Base.*

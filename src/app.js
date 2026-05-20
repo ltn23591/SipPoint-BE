@@ -1,0 +1,56 @@
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const dotenv = require('dotenv');
+
+dotenv.config();
+
+const cookieParser = require('cookie-parser');
+const path = require('path');
+const apiRoutes = require('./api');
+const errorHandler = require('./middleware/errorHandler');
+const setupSwagger = require('./config/swagger');
+const i18n = require('./config/i18n');
+
+const app = express();
+
+// 1. Middlewares bảo mật & Logging
+app.use(helmet());
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
+
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+} else {
+  app.use(morgan('combined'));
+}
+
+// 2. Parsers
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(i18n.init); // Khởi tạo i18n
+
+// 2.5 Static Files
+app.use(express.static(path.join(__dirname, '../public')));
+
+// 3. Khởi tạo tài liệu API Swagger
+setupSwagger(app);
+
+// 4. API Routes chính
+app.use('/api/v1', apiRoutes);
+
+// 5. Route không tồn tại (404)
+app.use((req, res, next) => {
+  const error = new Error(`Không tìm thấy đường dẫn: ${req.originalUrl}`);
+  res.status(404);
+  next(error);
+});
+
+// 6. Xử lý lỗi toàn cục
+app.use(errorHandler);
+
+module.exports = app;
