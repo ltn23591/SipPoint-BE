@@ -67,10 +67,74 @@ npm run dev
 npm start
 ```
 
+## ⚡ Code Generator
+
+Tự động sinh **model + service + controller + route** và đăng ký vào `src/api/index.js` chỉ với 1 lệnh.
+
+**Cú pháp:**
+```bash
+# Dùng npm script
+npm run generate <tên-resource>
+
+# Hoặc trực tiếp
+node scripts/generate.js <tên-resource>
+```
+
+**Ví dụ — tạo resource `product`:**
+```bash
+npm run generate product
+```
+
+Kết quả sinh ra:
+```
+Created: src/models/product.model.js
+Created: src/services/product.service.js
+Created: src/controllers/product.controller.js
+Created: src/api/routes/product.route.js
+Updated: src/api/index.js
+```
+
+Các endpoint được tạo sẵn:
+```
+GET    /api/v1/products/search        Lấy danh sách
+POST   /api/v1/products/create        Tạo mới
+GET    /api/v1/products/:id/detail    Lấy chi tiết
+PUT    /api/v1/products/:id/update    Cập nhật
+DELETE /api/v1/products/:id/delete    Xóa
+```
+
+> Sau khi generate, chỉ cần chỉnh schema trong `src/models/product.model.js` cho đúng với dữ liệu thực tế. Logic CRUD chạy được ngay mà không cần sửa thêm.
+
+---
+
 ## 📖 API Documentation (Swagger)
 Sau khi server chạy, truy cập đường dẫn sau trên trình duyệt để xem và tương tác trực tiếp với API:
 
 👉 **[http://localhost:5000/api-docs](http://localhost:5000/api-docs)**
 
 ---
-*Phát triển bởi đội ngũ Node Express Base.*
+
+## 📝 Quy tắc Commit Message
+
+Định dạng:
+```
+SP-[ID] - [Nội dung]
+SP-[DATE] - [Nội dung]
+```
+
+**Theo ID task/ticket:**
+```bash
+git commit -m "SP-101 - Thêm API đăng nhập"
+git commit -m "SP-204 - Fix lỗi upload ảnh lên Cloudinary"
+git commit -m "SP-312 - Cập nhật schema Product"
+```
+
+**Theo ngày (YYYYMMDD):**
+```bash
+git commit -m "SP-20260521 - Khởi tạo dự án"
+git commit -m "SP-20260521 - Thêm code generator"
+git commit -m "SP-20260522 - Tích hợp Cloudinary"
+```
+
+---
+*Phát triển bởi SipPoint Team.*

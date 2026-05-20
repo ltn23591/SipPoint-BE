@@ -21,9 +21,9 @@ const jwt = require('jsonwebtoken');
  *           type: string
  *           format: email
  *         role:
- *           type: string
- *           enum: [user, admin]
- *           default: user
+ *           type: number
+ *           enum: [0, 1]
+ *           default: 0
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -56,9 +56,9 @@ const userSchema = new mongoose.Schema(
       select: false, // Không trả về password khi truy vấn mặc định
     },
     role: {
-      type: String,
-      enum: ['user', 'admin'],
-      default: 'user',
+      type: Number,
+      enum: [0, 1], // 0: user, 1: admin
+      default: 0,
     },
     isTwoFactorEnabled: {
       type: Boolean,
