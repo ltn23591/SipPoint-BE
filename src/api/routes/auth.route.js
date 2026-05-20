@@ -15,7 +15,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /auth/register:
+ * /api/v1/auth/register:
  *   post:
  *     summary: Đăng ký tài khoản mới
  *     tags: [Auth]
@@ -51,7 +51,7 @@ router.post('/register', [
 
 /**
  * @swagger
- * /auth/login:
+ * /api/v1/auth/login:
  *   post:
  *     summary: Đăng nhập
  *     tags: [Auth]
@@ -83,7 +83,7 @@ router.post('/login', [
 
 /**
  * @swagger
- * /auth/logout:
+ * /api/v1/auth/logout:
  *   get:
  *     summary: Đăng xuất (xóa cookie)
  *     tags: [Auth]
@@ -95,7 +95,7 @@ router.get('/logout', logout);
 
 /**
  * @swagger
- * /auth/me:
+ * /api/v1/auth/me:
  *   get:
  *     summary: Lấy thông tin tài khoản đang đăng nhập
  *     tags: [Auth]

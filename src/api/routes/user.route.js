@@ -25,7 +25,7 @@ router.use(authorize('admin'));
 
 /**
  * @swagger
- * /users:
+ * /api/v1/users/search:
  *   get:
  *     summary: Lấy danh sách tất cả người dùng
  *     tags: [Users]
@@ -34,6 +34,12 @@ router.use(authorize('admin'));
  *     responses:
  *       200:
  *         description: Danh sách người dùng
+ */
+router.get('/search', getUsers);
+
+/**
+ * @swagger
+ * /api/v1/users/create:
  *   post:
  *     summary: Tạo người dùng mới
  *     tags: [Users]
@@ -65,18 +71,16 @@ router.use(authorize('admin'));
  *       400:
  *         description: Lỗi dữ liệu
  */
-router.route('/')
-  .get(getUsers)
-  .post([
-    check('name', 'Tên là bắt buộc').notEmpty(),
-    check('email', 'Email không hợp lệ').isEmail(),
-    check('password', 'Mật khẩu phải từ 6 ký tự trở lên').isLength({ min: 6 }),
-    validate
-  ], createUser);
+router.post('/create', [
+  check('name', 'Tên là bắt buộc').notEmpty(),
+  check('email', 'Email không hợp lệ').isEmail(),
+  check('password', 'Mật khẩu phải từ 6 ký tự trở lên').isLength({ min: 6 }),
+  validate
+], createUser);
 
 /**
  * @swagger
- * /users/{id}:
+ * /api/v1/users/{id}/detail:
  *   get:
  *     summary: Lấy thông tin một người dùng
  *     tags: [Users]
@@ -94,6 +98,12 @@ router.route('/')
  *         description: Thông tin người dùng
  *       404:
  *         description: Không tìm thấy
+ */
+router.get('/:id/detail', getUser);
+
+/**
+ * @swagger
+ * /api/v1/users/{id}/update:
  *   put:
  *     summary: Cập nhật thông tin người dùng
  *     tags: [Users]
@@ -125,6 +135,12 @@ router.route('/')
  *         description: Cập nhật thành công
  *       404:
  *         description: Không tìm thấy
+ */
+router.put('/:id/update', updateUser);
+
+/**
+ * @swagger
+ * /api/v1/users/{id}/delete:
  *   delete:
  *     summary: Xóa người dùng
  *     tags: [Users]
@@ -143,9 +159,6 @@ router.route('/')
  *       404:
  *         description: Không tìm thấy
  */
-router.route('/:id')
-  .get(getUser)
-  .put(updateUser)
-  .delete(deleteUser);
+router.delete('/:id/delete', deleteUser);
 
 module.exports = router;

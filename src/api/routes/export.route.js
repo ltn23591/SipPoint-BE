@@ -14,7 +14,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /export/users:
+ * /api/v1/export/users:
  *   get:
  *     summary: Xuất danh sách người dùng ra Excel
  *     tags: [Exports]

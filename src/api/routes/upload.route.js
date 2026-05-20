@@ -13,7 +13,7 @@ const router = express.Router();
 
 /**
  * @swagger
- * /upload:
+ * /api/v1/upload:
  *   post:
  *     summary: Tải lên một hình ảnh
  *     tags: [Uploads]

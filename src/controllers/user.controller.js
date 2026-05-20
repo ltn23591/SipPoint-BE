@@ -32,6 +32,7 @@ exports.getUser = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: user,
+      message: 'Lấy thông tin người dùng thành công'
     });
   } catch (error) {
     next(error);
@@ -87,6 +88,7 @@ exports.updateUser = async (req, res, next) => {
     res.status(200).json({
       success: true,
       data: user,
+      message: 'Cập nhật thông tin người dùng thành công'
     });
   } catch (error) {
     next(error);
