@@ -12,11 +12,11 @@ Dự án này là một Boilerplate Backend mạnh mẽ dựa trên Express.js, 
 - **Đa ngôn ngữ (i18n):** Hỗ trợ trả về ngôn ngữ động dựa trên header `Accept-Language` (vi/en).
 - **Kiến trúc Chuẩn (Pattern):** Áp dụng triệt để mô hình Controller-Service. Controller chỉ nhận/trả Request/Response, Service xử lý toàn bộ nghiệp vụ (Business Logic), giúp code dễ bảo trì và mở rộng.
 - **Tiện ích:** 
-  - Tự động dọn dẹp mã thừa và fix lỗi với ESLint (Auto Fix on Save).
+  - Tự động dọn dẹp mã thừa và fix lỗi với ESLint (Auto Fix on Save) theo chuẩn Node.js.
   - Xuất danh sách dữ liệu ra file Excel với `exceljs`.
   - Tạo mã QR Code tự động với `qrcode`.
 - **Bảo mật 2 lớp (2FA/OTP):** Tích hợp xác thực 2 bước (gửi mã OTP qua email) giúp tăng cường bảo mật cho quá trình đăng nhập.
-- **API Documentation:** Tích hợp sẵn giao diện Swagger UI tuyệt đẹp tại `/api-docs`.
+- **API Documentation:** Tích hợp sẵn giao diện Swagger UI tuyệt đẹp tại `/api-docs`. Tài liệu (Swagger Specs) được quản lý tập trung bằng file YAML (trong thư mục `src/docs/`), giúp mã nguồn (Routes/Models) luôn sạch sẽ.
 
 ## 📁 Cấu trúc thư mục
 
@@ -31,6 +31,7 @@ Dự án này là một Boilerplate Backend mạnh mẽ dựa trên Express.js, 
 │   ├── config/       # Cấu hình Swagger, Logger, i18n
 │   ├── controllers/  # Tiếp nhận Request, gọi Service và trả Response
 │   ├── db/           # Kết nối MongoDB
+│   ├── docs/         # Chứa tài liệu API (Swagger YAML)
 │   ├── enums/        # Định nghĩa các hằng số chung (Role, Status,...)
 │   ├── middleware/   # Middleware (Auth, Upload, Validation, Error Handling)
 │   ├── models/       # Mongoose Schemas
@@ -98,6 +99,7 @@ Created: src/services/product.service.js
 Created: src/controllers/product.controller.js
 Created: src/api/routes/product.route.js
 Updated: src/api/index.js
+Updated: src/docs/swagger.yaml (+paths, +tags, +schemas)
 ```
 
 Các endpoint được tạo sẵn:
