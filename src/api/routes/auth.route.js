@@ -1,6 +1,5 @@
 const express = require('express');
-const { check } = require('express-validator');
-const validate = require('../../middleware/validate.middleware');
+
 const { register, login, logout, getMe, enable2FA, verifyEnable2FA, login2FA, disable2FA } = require('../../controllers/auth.controller');
 const { protect } = require('../../middleware/auth.middleware');
 
@@ -42,12 +41,7 @@ const router = express.Router();
  *       400:
  *         description: Lỗi dữ liệu
  */
-router.post('/register', [
-  check('name', 'Tên là bắt buộc').notEmpty(),
-  check('email', 'Email không hợp lệ').isEmail(),
-  check('password', 'Mật khẩu phải từ 6 ký tự trở lên').isLength({ min: 6 }),
-  validate
-], register);
+router.post('/register', register);
 
 /**
  * @swagger
@@ -75,11 +69,7 @@ router.post('/register', [
  *       401:
  *         description: Sai thông tin đăng nhập
  */
-router.post('/login', [
-  check('email', 'Email không hợp lệ').isEmail(),
-  check('password', 'Mật khẩu là bắt buộc').notEmpty(),
-  validate
-], login);
+router.post('/login', login);
 
 /**
  * @swagger
@@ -146,10 +136,7 @@ router.post('/2fa/enable', protect, enable2FA);
  *       200:
  *         description: Kích hoạt 2FA thành công
  */
-router.post('/2fa/verify-enable', protect, [
-  check('otp', 'Vui lòng cung cấp mã OTP').notEmpty(),
-  validate
-], verifyEnable2FA);
+router.post('/2fa/verify-enable', protect, verifyEnable2FA);
 
 /**
  * @swagger
@@ -176,11 +163,7 @@ router.post('/2fa/verify-enable', protect, [
  *       200:
  *         description: Đăng nhập thành công, trả về token
  */
-router.post('/2fa/login', [
-  check('email', 'Email không hợp lệ').isEmail(),
-  check('otp', 'Mã OTP là bắt buộc').notEmpty(),
-  validate
-], login2FA);
+router.post('/2fa/login', login2FA);
 
 /**
  * @swagger
