@@ -1,6 +1,4 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 
 /**
  * @swagger
@@ -60,6 +58,11 @@ const userSchema = new mongoose.Schema(
       enum: [0, 1], // 0: user, 1: admin
       default: 0,
     },
+    status: {
+      type: Number,
+      enum: [0, 1, 2], // 0: pending, 1: active, 2: banned
+      default: 0,
+    },
     isTwoFactorEnabled: {
       type: Boolean,
       default: false,
@@ -68,6 +71,16 @@ const userSchema = new mongoose.Schema(
       type: String,
     },
     twoFactorOTPExpire: {
+      type: Date,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verifyOTP: {
+      type: String,
+    },
+    verifyOTPExpire: {
       type: Date,
     },
   },

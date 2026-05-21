@@ -1,20 +1,10 @@
-const { fromString } = require('../enums/role.enum');
-
-// Simple authorize middleware
+// Middleware phân quyền
 exports.authorize = (...roles) => {
-    const allowedRoles = roles.map((r) =>
-        typeof r === 'string' ? fromString(r) : r,
-    );
-
     return (req, res, next) => {
-        const userRole = req.user ? Number(req.user.role) : null;
-        if (!req.user || !allowedRoles.includes(userRole)) {
+        // Kiểm tra xem user có tồn tại và role của user có nằm trong mảng roles cho phép không
+        if (!req.user || !roles.includes(req.user.role)) {
             res.status(403);
-            return next(
-                new Error(
-                    `Role ${req.user ? req.user.role : 'unknown'} không có quyền thực hiện hành động này`,
-                ),
-            );
+            return next(new Error('Bạn không có quyền thực hiện hành động này'));
         }
         next();
     };

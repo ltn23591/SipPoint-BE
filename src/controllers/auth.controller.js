@@ -1,78 +1,14 @@
-const UserService = require('../services/user.service');
-const sendEmail = require('../utils/email');
-const logger = require('../config/logger');
-const speakeasy = require('speakeasy');
-const QRCode = require('qrcode');
-const crypto = require('crypto');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt');
-const User = require('../models/user.model'); // Needed for 2FA saving directly
-
-const sendTokenResponse = (user, statusCode, res) => {
-  // Tạo token
-  const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'secret123', {
-    expiresIn: '30d',
-  });
-
-  const options = {
-    expires: new Date(
-      Date.now() + 30 * 24 * 60 * 60 * 1000 // 30 ngày
-    ),
-    httpOnly: true,
-  };
-
-  if (process.env.NODE_ENV === 'production') {
-    options.secure = true;
-  }
-
-  res
-    .status(statusCode)
-    .cookie('token', token, options)
-    .json({
-      success: true,
-      token,
-      data: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role
-      }
-    });
-};
+const AuthService = require('../services/auth.service');
+const { sendTokenResponse } = require('../utils/response');
 
 // @desc    Đăng ký người dùng
 // @route   POST /api/auth/register
 // @access  Public
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
-
-    const userExists = await UserService.getUserByEmail(email);
-    if (userExists) {
-      res.status(400);
-      throw new Error('Email đã được sử dụng');
-    }
-
-    const user = await UserService.createUser({
-      name,
-      email,
-      password,
-      role,
-    });
-
-    // Gửi email chào mừng bất đồng bộ (không await)
-    sendEmail({
-      email: user.email,
-      subject: 'Chào mừng bạn đến với hệ thống!',
-      template: 'welcome',
-      data: {
-        name: user.name,
-        email: user.email,
-        role: user.role
-      }
-    }).catch(err => logger.error('Gửi email thất bại', err));
-
-    sendTokenResponse(user, 201, res);
+    const result = await AuthService.register(req.body);
+    // Remove status to not leak it into response body if we don't want it, but the user expects `res.status(result.status).json(result)`
+    return res.status(result.status).json(result);
   } catch (error) {
     next(error);
   }
@@ -84,50 +20,50 @@ exports.register = async (req, res, next) => {
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-      res.status(400);
-      throw new Error('Vui lòng cung cấp email và mật khẩu');
+    const result = await AuthService.login(email, password);
+    
+    // Nếu service trả về user -> cấp token (Login thành công)
+    if (result.user) {
+      return sendTokenResponse(result.user, result.status, res, result.message);
     }
+    
+    // Nếu là lỗi hoặc yêu cầu 2FA
+    return res.status(result.status).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
 
-    const user = await UserService.getUserByEmail(email);
-    if (!user) {
-      res.status(401);
-      throw new Error('Thông tin đăng nhập không hợp lệ');
+// -------------------------------------------------------------
+// XÁC THỰC EMAIL (SAU KHI ĐĂNG KÝ)
+// -------------------------------------------------------------
+
+// @desc    Xác thực Email qua OTP
+// @route   POST /api/v1/auth/verify-email
+// @access  Public
+exports.verifyEmail = async (req, res, next) => {
+  try {
+    const { email, otp } = req.body;
+    const result = await AuthService.verifyEmail(email, otp);
+    
+    if (result.user) {
+      return sendTokenResponse(result.user, result.status, res, result.message);
     }
+    
+    return res.status(result.status).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Sai thông tin đăng nhập' });
-    }
-
-    // Nếu user đã bật 2FA, tạo OTP và gửi qua Email
-    if (user.isTwoFactorEnabled) {
-      const otp = crypto.randomInt(100000, 999999).toString();
-      user.twoFactorOTP = otp;
-      user.twoFactorOTPExpire = Date.now() + 5 * 60 * 1000; // 5 phút
-      await user.save({ validateBeforeSave: false });
-
-      // Gửi OTP qua email (không await để không block)
-      sendEmail({
-        email: user.email,
-        subject: 'Mã xác thực OTP Đăng Nhập',
-        template: 'otp',
-        data: {
-          name: user.name,
-          otp: otp
-        }
-      }).catch(err => logger.error('Lỗi gửi OTP qua email', err));
-
-      return res.status(200).json({
-        success: true,
-        requires2FA: true,
-        email: user.email,
-        message: 'Vui lòng nhập mã OTP đã được gửi vào email của bạn',
-      });
-    }
-
-    sendTokenResponse(user, 200, res);
+// @desc    Gửi lại mã OTP xác thực Email
+// @route   POST /api/v1/auth/resend-verify-email
+// @access  Public
+exports.resendVerifyEmail = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const result = await AuthService.resendVerifyEmail(email);
+    return res.status(result.status).json(result);
   } catch (error) {
     next(error);
   }
@@ -142,33 +78,8 @@ exports.login = async (req, res, next) => {
 // @access  Private
 exports.enable2FA = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
-    }
-    
-    if (user.isTwoFactorEnabled) {
-      return res.status(400).json({ success: false, message: 'Tài khoản đã được bật 2FA từ trước' });
-    }
-
-    // Tạo OTP
-    const otp = crypto.randomInt(100000, 999999).toString();
-    user.twoFactorOTP = otp;
-    user.twoFactorOTPExpire = Date.now() + 5 * 60 * 1000;
-    await user.save({ validateBeforeSave: false });
-
-    // Gửi email
-    sendEmail({
-      email: user.email,
-      subject: 'Mã OTP bật tính năng 2FA',
-      template: 'otp',
-      data: { name: user.name, otp: otp }
-    }).catch(err => logger.error('Lỗi gửi OTP enable 2FA', err));
-
-    res.status(200).json({
-      success: true,
-      message: 'Mã OTP đã được gửi vào email của bạn. Vui lòng kiểm tra hộp thư.',
-    });
+    const result = await AuthService.enable2FA(req.user.id);
+    return res.status(result.status).json(result);
   } catch (error) {
     next(error);
   }
@@ -180,29 +91,8 @@ exports.enable2FA = async (req, res, next) => {
 exports.verifyEnable2FA = async (req, res, next) => {
   try {
     const { otp } = req.body;
-    const user = await User.findById(req.user.id);
-
-    if (!user || !user.twoFactorOTP) {
-      return res.status(400).json({ success: false, message: 'Không tìm thấy phiên xác thực. Hãy yêu cầu lại OTP.' });
-    }
-
-    if (Date.now() > user.twoFactorOTPExpire) {
-      return res.status(400).json({ success: false, message: 'Mã OTP đã hết hạn' });
-    }
-
-    if (user.twoFactorOTP !== otp) {
-      return res.status(400).json({ success: false, message: 'Mã OTP không chính xác' });
-    }
-
-    user.isTwoFactorEnabled = true;
-    user.twoFactorOTP = undefined;
-    user.twoFactorOTPExpire = undefined;
-    await user.save({ validateBeforeSave: false });
-
-    res.status(200).json({
-      success: true,
-      message: 'Kích hoạt bảo mật 2 lớp thành công',
-    });
+    const result = await AuthService.verifyEnable2FA(req.user.id, otp);
+    return res.status(result.status).json(result);
   } catch (error) {
     next(error);
   }
@@ -214,31 +104,13 @@ exports.verifyEnable2FA = async (req, res, next) => {
 exports.login2FA = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
-
-    if (!email || !otp) {
-      return res.status(400).json({ success: false, message: 'Vui lòng cung cấp email và mã OTP' });
+    const result = await AuthService.login2FA(email, otp);
+    
+    if (result.user) {
+      return sendTokenResponse(result.user, result.status, res, result.message);
     }
-
-    const user = await User.findOne({ email }).select('+password');
-
-    if (!user || !user.isTwoFactorEnabled || !user.twoFactorOTP) {
-      return res.status(400).json({ success: false, message: 'Tài khoản không tồn tại hoặc chưa gửi OTP' });
-    }
-
-    if (Date.now() > user.twoFactorOTPExpire) {
-      return res.status(400).json({ success: false, message: 'Mã OTP đã hết hạn' });
-    }
-
-    if (user.twoFactorOTP !== otp) {
-      return res.status(400).json({ success: false, message: 'Mã OTP không chính xác' });
-    }
-
-    // OTP đúng, xóa OTP trong DB và cấp token đăng nhập
-    user.twoFactorOTP = undefined;
-    user.twoFactorOTPExpire = undefined;
-    await user.save({ validateBeforeSave: false });
-
-    sendTokenResponse(user, 200, res);
+    
+    return res.status(result.status).json(result);
   } catch (error) {
     next(error);
   }
@@ -249,16 +121,8 @@ exports.login2FA = async (req, res, next) => {
 // @access  Private
 exports.disable2FA = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id);
-    user.isTwoFactorEnabled = false;
-    user.twoFactorOTP = undefined;
-    user.twoFactorOTPExpire = undefined;
-    await user.save({ validateBeforeSave: false });
-
-    res.status(200).json({
-      success: true,
-      message: 'Đã tắt tính năng bảo mật 2 lớp',
-    });
+    const result = await AuthService.disable2FA(req.user.id);
+    return res.status(result.status).json(result);
   } catch (error) {
     next(error);
   }
@@ -289,12 +153,8 @@ exports.logout = async (req, res, next) => {
 // @access  Private
 exports.getMe = async (req, res, next) => {
   try {
-    const user = await UserService.getUserById(req.user.id);
-    
-    res.status(200).json({
-      success: true,
-      data: user,
-    });
+    const result = await AuthService.getMe(req.user.id);
+    return res.status(result.status).json(result);
   } catch (error) {
     next(error);
   }

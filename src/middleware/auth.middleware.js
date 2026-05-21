@@ -32,10 +32,9 @@ exports.protect = async (req, res, next) => {
         // Lấy thông tin user từ DB
         req.user = await User.findById(decoded.id).select('-password');
         next();
-    } catch (error) {
+    } catch {
         res.status(401);
-        next(new Error('Không có quyền truy cập, token không hợp lệ'));
+        next(new Error('Không có quyền truy cập, token không hợp lệ')); 
     }
 };
 
-// Note: `authorize` moved to `authorize.middleware.js`.
