@@ -31,8 +31,6 @@ const files = {
   }
 });
 
-// ─── Templates ────────────────────────────────────────────────────────────────
-
 const modelTemplate = `const mongoose = require('mongoose');
 
 const ${lower}Schema = new mongoose.Schema(
@@ -81,9 +79,6 @@ module.exports = ${upper}Service;
 
 const controllerTemplate = `const ${upper}Service = require('../services/${lower}.service');
 
-// @desc    Lấy danh sách ${lower}
-// @route   GET /api/v1/${plural}/search
-// @access  Public
 exports.getAll = async (req, res, next) => {
   try {
     const items = await ${upper}Service.getAll();
@@ -93,9 +88,6 @@ exports.getAll = async (req, res, next) => {
   }
 };
 
-// @desc    Lấy chi tiết một ${lower}
-// @route   GET /api/v1/${plural}/:id/detail
-// @access  Public
 exports.getById = async (req, res, next) => {
   try {
     const item = await ${upper}Service.getById(req.params.id);
@@ -109,9 +101,6 @@ exports.getById = async (req, res, next) => {
   }
 };
 
-// @desc    Tạo mới ${lower}
-// @route   POST /api/v1/${plural}/create
-// @access  Public
 exports.create = async (req, res, next) => {
   try {
     const item = await ${upper}Service.create(req.body);
@@ -121,9 +110,6 @@ exports.create = async (req, res, next) => {
   }
 };
 
-// @desc    Cập nhật ${lower}
-// @route   PUT /api/v1/${plural}/:id/update
-// @access  Public
 exports.update = async (req, res, next) => {
   try {
     const item = await ${upper}Service.update(req.params.id, req.body);
@@ -137,9 +123,6 @@ exports.update = async (req, res, next) => {
   }
 };
 
-// @desc    Xóa ${lower}
-// @route   DELETE /api/v1/${plural}/:id/delete
-// @access  Public
 exports.remove = async (req, res, next) => {
   try {
     const item = await ${upper}Service.delete(req.params.id);
@@ -159,159 +142,156 @@ const ${upper}Controller = require('../../controllers/${lower}.controller');
 
 const router = express.Router();
 
-/**
- * @swagger
- * tags:
- *   name: ${upper}
- *   description: API quản lý ${lower}
- */
-
-/**
- * @swagger
- * /api/v1/${plural}/search:
- *   get:
- *     summary: Lấy danh sách ${lower}
- *     tags: [${upper}]
- *     responses:
- *       200:
- *         description: Danh sách ${lower}
- */
 router.get('/search', ${upper}Controller.getAll);
-
-/**
- * @swagger
- * /api/v1/${plural}/create:
- *   post:
- *     summary: Tạo mới ${lower}
- *     tags: [${upper}]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *     responses:
- *       201:
- *         description: Tạo thành công
- */
 router.post('/create', ${upper}Controller.create);
-
-/**
- * @swagger
- * /api/v1/${plural}/{id}/detail:
- *   get:
- *     summary: Lấy chi tiết một ${lower}
- *     tags: [${upper}]
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: ID của ${lower}
- *     responses:
- *       200:
- *         description: Chi tiết ${lower}
- *       404:
- *         description: Không tìm thấy
- */
 router.get('/:id/detail', ${upper}Controller.getById);
-
-/**
- * @swagger
- * /api/v1/${plural}/{id}/update:
- *   put:
- *     summary: Cập nhật ${lower}
- *     tags: [${upper}]
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: ID của ${lower}
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *     responses:
- *       200:
- *         description: Cập nhật thành công
- *       404:
- *         description: Không tìm thấy
- */
 router.put('/:id/update', ${upper}Controller.update);
-
-/**
- * @swagger
- * /api/v1/${plural}/{id}/delete:
- *   delete:
- *     summary: Xóa ${lower}
- *     tags: [${upper}]
- *     parameters:
- *       - in: path
- *         name: id
- *         schema:
- *           type: string
- *         required: true
- *         description: ID của ${lower}
- *     responses:
- *       200:
- *         description: Xóa thành công
- *       404:
- *         description: Không tìm thấy
- */
 router.delete('/:id/delete', ${upper}Controller.remove);
 
 module.exports = router;
 `;
 
-// ─── Write files ──────────────────────────────────────────────────────────────
+const swaggerPathsYaml = `
+  /api/v1/${plural}/search:
+    get:
+      summary: Lấy danh sách ${lower}
+      tags: [${upper}]
+      responses:
+        200:
+          description: Danh sách ${lower}
+  
+  /api/v1/${plural}/create:
+    post:
+      summary: Tạo mới ${lower}
+      tags: [${upper}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        201:
+          description: Tạo thành công
+  
+  /api/v1/${plural}/{id}/detail:
+    get:
+      summary: Lấy chi tiết một ${lower}
+      tags: [${upper}]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của ${lower}
+      responses:
+        200:
+          description: Chi tiết ${lower}
+        404:
+          description: Không tìm thấy
+  
+  /api/v1/${plural}/{id}/update:
+    put:
+      summary: Cập nhật ${lower}
+      tags: [${upper}]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của ${lower}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Cập nhật thành công
+        404:
+          description: Không tìm thấy
+  
+  /api/v1/${plural}/{id}/delete:
+    delete:
+      summary: Xóa ${lower}
+      tags: [${upper}]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của ${lower}
+      responses:
+        200:
+          description: Xóa thành công
+        404:
+          description: Không tìm thấy
+`;
+
+const swaggerTagYaml = `  - name: ${upper}\n    description: API quản lý ${lower}\n`;
+
+const swaggerSchemaYaml = `    ${upper}:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+`;
 
 fs.writeFileSync(files.model, modelTemplate);
-console.log(`Created: src/models/${lower}.model.js`);
-
 fs.writeFileSync(files.service, serviceTemplate);
-console.log(`Created: src/services/${lower}.service.js`);
-
 fs.writeFileSync(files.controller, controllerTemplate);
-console.log(`Created: src/controllers/${lower}.controller.js`);
-
 fs.writeFileSync(files.route, routeTemplate);
-console.log(`Created: src/api/routes/${lower}.route.js`);
-
-// ─── Update src/api/index.js ──────────────────────────────────────────────────
 
 let indexContent = fs.readFileSync(files.index, 'utf-8');
-
 const requireLine = `const ${lower}Routes = require('./routes/${lower}.route');`;
 const useLine = `router.use('/${plural}', ${lower}Routes);`;
 
-if (indexContent.includes(requireLine)) {
-  console.warn(`src/api/index.js đã có require cho ${lower}, bỏ qua cập nhật.`);
-} else {
+if (!indexContent.includes(requireLine)) {
   indexContent = indexContent.replace(
-    /^(const router = express\.Router\(\);)/m,
+    /^(const router = express\\.Router\\(\\);)/m,
     `${requireLine}\n\n$1`
   );
 
   indexContent = indexContent.replace(
-    /^(module\.exports = router;)/m,
+    /^(module\\.exports = router;)/m,
     `${useLine}\n\n$1`
   );
 
   fs.writeFileSync(files.index, indexContent);
-  console.log(`Updated: src/api/index.js  (+require, +router.use('/${plural}'))`);
+}
+
+let swaggerDocsPath = path.join(ROOT, 'src/docs/swagger.yaml');
+if (fs.existsSync(swaggerDocsPath)) {
+  let swaggerContent = fs.readFileSync(swaggerDocsPath, 'utf8');
+
+  const pathsInsertPoint = swaggerContent.indexOf('\ntags:');
+  if (pathsInsertPoint !== -1) {
+    swaggerContent = swaggerContent.slice(0, pathsInsertPoint) + swaggerPathsYaml + swaggerContent.slice(pathsInsertPoint);
+  }
+
+  const tagsInsertPoint = swaggerContent.indexOf('\ncomponents:');
+  if (tagsInsertPoint !== -1) {
+    swaggerContent = swaggerContent.slice(0, tagsInsertPoint) + '\n' + swaggerTagYaml + swaggerContent.slice(tagsInsertPoint);
+  }
+
+  swaggerContent = swaggerContent + swaggerSchemaYaml;
+
+  fs.writeFileSync(swaggerDocsPath, swaggerContent, 'utf8');
 }
 
 console.log(`\nDone! Resource "${lower}" đã được tạo thành công.`);
-console.log(`  GET    /api/v1/${plural}/search`);
-console.log(`  POST   /api/v1/${plural}/create`);
-console.log(`  GET    /api/v1/${plural}/:id/detail`);
-console.log(`  PUT    /api/v1/${plural}/:id/update`);
-console.log(`  DELETE /api/v1/${plural}/:id/delete`);

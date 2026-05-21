@@ -5,16 +5,6 @@ const uploadRoutes = require('./routes/upload.route');
 const exportRoutes = require('./routes/export.route');
 const router = express.Router();
 
-/**
- * @swagger
- * /api/v1/health:
- *   get:
- *     summary: Kiểm tra trạng thái hoạt động của Server (Health Check)
- *     tags: [System]
- *     responses:
- *       200:
- *         description: Server hoạt động bình thường
- */
 router.get('/health', (req, res) => {
   res.status(200).json({
     status: 'ok',
