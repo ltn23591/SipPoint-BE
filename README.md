@@ -8,7 +8,7 @@ Dự án này là một Boilerplate Backend mạnh mẽ dựa trên Express.js, 
 - **Validation:** Ràng buộc và xác thực dữ liệu đầu vào với `express-validator`.
 - **Logging:** Hệ thống ghi log chuyên nghiệp ra file với `winston` (thư mục `logs/`).
 - **Gửi Email:** Hỗ trợ gửi email HTML sử dụng `nodemailer` và template engine `ejs`.
-- **Upload File:** API upload hình ảnh cục bộ an toàn với `multer`.
+- **Upload File:** Hỗ trợ API upload hình ảnh cục bộ và trực tiếp lên Cloudinary (sử dụng `multer` và `cloudinary`).
 - **Đa ngôn ngữ (i18n):** Hỗ trợ trả về ngôn ngữ động dựa trên header `Accept-Language` (vi/en).
 - **Tiện ích:** 
   - Xuất danh sách dữ liệu ra file Excel với `exceljs`.
@@ -56,6 +56,9 @@ SMTP_HOST=smtp.ethereal.email
 SMTP_PORT=587
 SMTP_USER=test@example.com
 SMTP_PASS=password
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
 ```
 
 **3. Chạy Server**
