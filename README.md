@@ -11,6 +11,7 @@ Dự án này là một Boilerplate Backend mạnh mẽ dựa trên Express.js, 
 - **Upload File:** Hỗ trợ API upload hình ảnh cục bộ và trực tiếp lên Cloudinary (sử dụng `multer` và `cloudinary`).
 - **Đa ngôn ngữ (i18n):** Hỗ trợ trả về ngôn ngữ động dựa trên header `Accept-Language` (vi/en).
 - **Kiến trúc Chuẩn (Pattern):** Áp dụng triệt để mô hình Controller-Service. Controller chỉ nhận/trả Request/Response, Service xử lý toàn bộ nghiệp vụ (Business Logic), giúp code dễ bảo trì và mở rộng.
+- **Quản lý linh hoạt:** Toàn bộ thông báo (Messages), Error Codes được tách riêng vào thư mục `constants/` giúp dễ dàng bảo trì và hỗ trợ i18n tốt hơn.
 - **Tiện ích:** 
   - Tự động dọn dẹp mã thừa và fix lỗi với ESLint (Auto Fix on Save) theo chuẩn Node.js.
   - Xuất danh sách dữ liệu ra file Excel với `exceljs`.
@@ -29,6 +30,7 @@ Dự án này là một Boilerplate Backend mạnh mẽ dựa trên Express.js, 
 ├── src/
 │   ├── api/          # Các routes API và cấu hình Router
 │   ├── config/       # Cấu hình Swagger, Logger, i18n
+│   ├── constants/    # Quản lý hằng số tập trung (Messages, Error Codes...)
 │   ├── controllers/  # Tiếp nhận Request, gọi Service và trả Response
 │   ├── db/           # Kết nối MongoDB
 │   ├── docs/         # Chứa tài liệu API (Swagger YAML)

@@ -1,0 +1,530 @@
+paths:
+  /api/v1/health:
+    get:
+      summary: Kiểm tra trạng thái hoạt động của Server (Health Check)
+      tags: [System]
+      responses:
+        200:
+          description: Server hoạt động bình thường
+   
+  /api/v1/auth/register:
+    post:
+      summary: Đăng ký tài khoản mới
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        201:
+          description: Đăng ký thành công và nhận cookie token
+        400:
+          description: Lỗi dữ liệu
+   
+  /api/v1/auth/verify-email:
+    post:
+      summary: Xác thực tài khoản bằng OTP qua Email
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - otp
+              properties:
+                email:
+                  type: string
+                otp:
+                  type: string
+      responses:
+        200:
+          description: Xác thực thành công và tự động đăng nhập (nhận token)
+        400:
+          description: Lỗi OTP hoặc tài khoản đã xác thực
+   
+  /api/v1/auth/resend-verify-email:
+    post:
+      summary: Gửi lại mã OTP xác thực Email
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+      responses:
+        200:
+          description: Gửi OTP thành công
+        400:
+          description: Email không hợp lệ hoặc tài khoản đã xác thực
+   
+  /api/v1/auth/login:
+    post:
+      summary: Đăng nhập
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        200:
+          description: Đăng nhập thành công và nhận cookie token
+        401:
+          description: Sai thông tin đăng nhập
+   
+  /api/v1/auth/logout:
+    get:
+      summary: Đăng xuất (xóa cookie)
+      tags: [Auth]
+      responses:
+        200:
+          description: Đăng xuất thành công
+   
+  /api/v1/auth/me:
+    get:
+      summary: Lấy thông tin tài khoản đang đăng nhập
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Thông tin user
+        401:
+          description: Chưa đăng nhập
+   
+  /api/v1/auth/2fa/enable:
+    post:
+      summary: Bật cấu hình 2FA (Gửi mã OTP qua email)
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Đã gửi mã OTP qua email
+   
+  /api/v1/auth/2fa/verify-enable:
+    post:
+      summary: Xác nhận OTP để chính thức BẬT 2FA
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - otp
+              properties:
+                otp:
+                  type: string
+      responses:
+        200:
+          description: Kích hoạt 2FA thành công
+   
+  /api/v1/auth/2fa/login:
+    post:
+      summary: Nhập mã OTP để đăng nhập khi có 2FA
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - otp
+              properties:
+                email:
+                  type: string
+                  format: email
+                otp:
+                  type: string
+      responses:
+        200:
+          description: Đăng nhập thành công, trả về token
+   
+  /api/v1/auth/2fa/disable:
+    post:
+      summary: Tắt tính năng bảo mật 2 lớp
+      tags: [Auth]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Tắt 2FA thành công
+   
+  /api/v1/export/users:
+    get:
+      summary: Xuất danh sách người dùng ra Excel
+      tags: [Exports]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: File excel
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+   
+  /api/v1/upload/local:
+    post:
+      summary: Tải lên một hình ảnh (Lưu local)
+      tags: [Uploads]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - image
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Tải lên thành công
+   
+  /api/v1/upload/cloudinary/url:
+    post:
+      summary: Upload ảnh từ URL lên Cloudinary
+      tags: [Uploads]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - url
+              properties:
+                url:
+                  type: string
+                  description: URL của ảnh cần upload
+                folder:
+                  type: string
+                  description: Thư mục lưu trữ trên Cloudinary (tùy chọn)
+      responses:
+        200:
+          description: Upload thành công
+        400:
+          description: Thiếu URL
+   
+  /api/v1/upload/cloudinary/file:
+    post:
+      summary: Upload ảnh từ file lên Cloudinary
+      tags: [Uploads]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: File ảnh cần upload
+                folder:
+                  type: string
+                  description: Thư mục lưu trữ trên Cloudinary (tùy chọn)
+      responses:
+        200:
+          description: Upload thành công
+        400:
+          description: Thiếu file
+   
+  /api/v1/users/search:
+    get:
+      summary: Lấy danh sách tất cả người dùng
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Danh sách người dùng
+   
+  /api/v1/users/create:
+    post:
+      summary: Tạo người dùng mới
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+                - password
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+                role:
+                  type: string
+                  enum: [user, admin]
+      responses:
+        201:
+          description: Tạo thành công
+        400:
+          description: Lỗi dữ liệu
+   
+  /api/v1/users/{id}/detail:
+    get:
+      summary: Lấy thông tin một người dùng
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của người dùng
+      responses:
+        200:
+          description: Thông tin người dùng
+        404:
+          description: Không tìm thấy
+   
+  /api/v1/users/{id}/update:
+    put:
+      summary: Cập nhật thông tin người dùng
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của người dùng
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                role:
+                  type: string
+                  enum: [user, admin]
+      responses:
+        200:
+          description: Cập nhật thành công
+        404:
+          description: Không tìm thấy
+   
+  /api/v1/users/{id}/delete:
+    delete:
+      summary: Xóa người dùng
+      tags: [Users]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của người dùng
+      responses:
+        200:
+          description: Xóa thành công
+        404:
+          description: Không tìm thấy
+   
+
+  /api/v1/categorys/search:
+    get:
+      summary: Lấy danh sách category
+      tags: [Category]
+      responses:
+        200:
+          description: Danh sách category
+  
+  /api/v1/categorys/create:
+    post:
+      summary: Tạo mới category
+      tags: [Category]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        201:
+          description: Tạo thành công
+  
+  /api/v1/categorys/{id}/detail:
+    get:
+      summary: Lấy chi tiết một category
+      tags: [Category]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của category
+      responses:
+        200:
+          description: Chi tiết category
+        404:
+          description: Không tìm thấy
+  
+  /api/v1/categorys/{id}/update:
+    put:
+      summary: Cập nhật category
+      tags: [Category]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Cập nhật thành công
+        404:
+          description: Không tìm thấy
+  
+  /api/v1/categorys/{id}/delete:
+    delete:
+      summary: Xóa category
+      tags: [Category]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của category
+      responses:
+        200:
+          description: Xóa thành công
+        404:
+          description: Không tìm thấy
+
+tags:
+  - name: Auth
+    description: API Quản lý Xác thực
+  - name: Exports
+    description: API Xuất dữ liệu
+  - name: Uploads
+    description: API Upload File (Hỗ trợ Local & Cloudinary)
+  - name: Users
+    description: API Quản lý Người Dùng (Cần quyền Admin)
+
+  - name: Category
+    description: API quản lý category
+
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: number
+          enum: [0, 1]
+          default: 0
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Category:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
