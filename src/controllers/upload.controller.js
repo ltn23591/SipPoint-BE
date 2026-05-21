@@ -5,20 +5,8 @@ const CloudinaryService = require('../services/cloudinary.service');
 // @access  Private
 exports.uploadFromUrl = async (req, res, next) => {
   try {
-    const { url, folder } = req.body;
-
-    if (!url) {
-      res.status(400);
-      throw new Error('Vui lòng cung cấp URL ảnh');
-    }
-
-    const result = await CloudinaryService.uploadFromUrl(url, folder);
-
-    res.status(200).json({
-      success: true,
-      data: result,
-      message: 'Upload ảnh thành công'
-    });
+    const result = await CloudinaryService.uploadFromUrl(req.body.url, req.body.folder);
+    return res.status(result.status).json(result);
   } catch (error) {
     next(error);
   }
@@ -29,19 +17,9 @@ exports.uploadFromUrl = async (req, res, next) => {
 // @access  Private
 exports.uploadFromFile = async (req, res, next) => {
   try {
-    if (!req.file) {
-      res.status(400);
-      throw new Error('File là bắt buộc');
-    }
-
-    const folder = req.body.folder;
-    const result = await CloudinaryService.uploadFromBuffer(req.file.buffer, folder);
-
-    res.status(200).json({
-      success: true,
-      data: result,
-      message: 'Upload ảnh thành công'
-    });
+    const buffer = req.file ? req.file.buffer : null;
+    const result = await CloudinaryService.uploadFromBuffer(buffer, req.body.folder);
+    return res.status(result.status).json(result);
   } catch (error) {
     next(error);
   }

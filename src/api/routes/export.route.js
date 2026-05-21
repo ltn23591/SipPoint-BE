@@ -3,7 +3,7 @@ const { exportUsersToExcel } = require('../../utils/excel');
 const UserService = require('../../services/user.service');
 const { protect } = require('../../middleware/auth.middleware');
 const { authorize } = require('../../middleware/authorize.middleware');
-const { ROLE } = require('../../enums/role.enum');
+const { ROLE } = require('../../enums');
 
 const router = express.Router();
 

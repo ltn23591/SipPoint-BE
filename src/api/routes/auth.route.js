@@ -1,6 +1,6 @@
 const express = require('express');
 
-const { register, login, logout, getMe, enable2FA, verifyEnable2FA, login2FA, disable2FA } = require('../../controllers/auth.controller');
+const { register, login, logout, getMe, enable2FA, verifyEnable2FA, login2FA, disable2FA, verifyEmail, resendVerifyEmail } = require('../../controllers/auth.controller');
 const { protect } = require('../../middleware/auth.middleware');
 
 const router = express.Router();
@@ -42,6 +42,59 @@ const router = express.Router();
  *         description: Lỗi dữ liệu
  */
 router.post('/register', register);
+
+/**
+ * @swagger
+ * /api/v1/auth/verify-email:
+ *   post:
+ *     summary: Xác thực tài khoản bằng OTP qua Email
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - otp
+ *             properties:
+ *               email:
+ *                 type: string
+ *               otp:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Xác thực thành công và tự động đăng nhập (nhận token)
+ *       400:
+ *         description: Lỗi OTP hoặc tài khoản đã xác thực
+ */
+router.post('/verify-email', verifyEmail);
+
+/**
+ * @swagger
+ * /api/v1/auth/resend-verify-email:
+ *   post:
+ *     summary: Gửi lại mã OTP xác thực Email
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Gửi OTP thành công
+ *       400:
+ *         description: Email không hợp lệ hoặc tài khoản đã xác thực
+ */
+router.post('/resend-verify-email', resendVerifyEmail);
 
 /**
  * @swagger
@@ -101,7 +154,7 @@ router.get('/me', protect, getMe);
 
 /**
  * @swagger
- * /auth/2fa/enable:
+ * /api/v1/auth/2fa/enable:
  *   post:
  *     summary: Bật cấu hình 2FA (Gửi mã OTP qua email)
  *     tags: [Auth]
@@ -115,7 +168,7 @@ router.post('/2fa/enable', protect, enable2FA);
 
 /**
  * @swagger
- * /auth/2fa/verify-enable:
+ * /api/v1/auth/2fa/verify-enable:
  *   post:
  *     summary: Xác nhận OTP để chính thức BẬT 2FA
  *     tags: [Auth]
@@ -140,7 +193,7 @@ router.post('/2fa/verify-enable', protect, verifyEnable2FA);
 
 /**
  * @swagger
- * /auth/2fa/login:
+ * /api/v1/auth/2fa/login:
  *   post:
  *     summary: Nhập mã OTP để đăng nhập khi có 2FA
  *     tags: [Auth]
@@ -167,7 +220,7 @@ router.post('/2fa/login', login2FA);
 
 /**
  * @swagger
- * /auth/2fa/disable:
+ * /api/v1/auth/2fa/disable:
  *   post:
  *     summary: Tắt tính năng bảo mật 2 lớp
  *     tags: [Auth]

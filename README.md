@@ -3,14 +3,16 @@
 Dự án này là một Boilerplate Backend mạnh mẽ dựa trên Express.js, cung cấp sẵn các tính năng cấp doanh nghiệp (enterprise-level) cần thiết cho bất kỳ dự án nào.
 
 ## 🚀 Tính năng nổi bật
-- **Bảo mật & Xác thực (Auth):** Tích hợp JWT, lưu trữ an toàn bằng HttpOnly Cookies.
+- **Bảo mật & Xác thực (Auth):** Tích hợp JWT, lưu trữ an toàn bằng HttpOnly Cookies. Hỗ trợ luồng xác thực tài khoản đăng ký mới qua Email OTP.
 - **Mã hóa:** Mã hóa mật khẩu an toàn với `bcrypt`.
 - **Validation:** Ràng buộc và xác thực dữ liệu đầu vào với `express-validator`.
 - **Logging:** Hệ thống ghi log chuyên nghiệp ra file với `winston` (thư mục `logs/`).
 - **Gửi Email:** Hỗ trợ gửi email HTML sử dụng `nodemailer` và template engine `ejs`.
 - **Upload File:** Hỗ trợ API upload hình ảnh cục bộ và trực tiếp lên Cloudinary (sử dụng `multer` và `cloudinary`).
 - **Đa ngôn ngữ (i18n):** Hỗ trợ trả về ngôn ngữ động dựa trên header `Accept-Language` (vi/en).
+- **Kiến trúc Chuẩn (Pattern):** Áp dụng triệt để mô hình Controller-Service. Controller chỉ nhận/trả Request/Response, Service xử lý toàn bộ nghiệp vụ (Business Logic), giúp code dễ bảo trì và mở rộng.
 - **Tiện ích:** 
+  - Tự động dọn dẹp mã thừa và fix lỗi với ESLint (Auto Fix on Save).
   - Xuất danh sách dữ liệu ra file Excel với `exceljs`.
   - Tạo mã QR Code tự động với `qrcode`.
 - **Bảo mật 2 lớp (2FA/OTP):** Tích hợp xác thực 2 bước (gửi mã OTP qua email) giúp tăng cường bảo mật cho quá trình đăng nhập.
@@ -27,12 +29,13 @@ Dự án này là một Boilerplate Backend mạnh mẽ dựa trên Express.js, 
 ├── src/
 │   ├── api/          # Các routes API và cấu hình Router
 │   ├── config/       # Cấu hình Swagger, Logger, i18n
-│   ├── controllers/  # Xử lý logic Request/Response
+│   ├── controllers/  # Tiếp nhận Request, gọi Service và trả Response
 │   ├── db/           # Kết nối MongoDB
+│   ├── enums/        # Định nghĩa các hằng số chung (Role, Status,...)
 │   ├── middleware/   # Middleware (Auth, Upload, Validation, Error Handling)
 │   ├── models/       # Mongoose Schemas
-│   ├── services/     # Chứa logic nghiệp vụ tương tác với Database
-│   ├── utils/        # Các hàm tiện ích (Gửi email, Xuất Excel, Mã QR...)
+│   ├── services/     # Chứa logic nghiệp vụ tương tác với Database (Business Logic)
+│   ├── utils/        # Các hàm tiện ích (Gửi email, Xuất Excel, Mã QR, Response helpers...)
 │   ├── app.js        # Cấu hình Express App, Middlewares
 │   └── server.js     # Điểm khởi chạy Server
 └── .env              # Biến môi trường
@@ -117,26 +120,50 @@ Sau khi server chạy, truy cập đường dẫn sau trên trình duyệt để
 
 ---
 
+## 🌿 Quy tắc Đặt tên Nhánh (Branch Naming)
+
+Định dạng chung:
+```
+<tên-thành-viên>/<loại-công-việc>/<ID-task-hoặc-tên-tính-năng>
+```
+
+**Các loại công việc (Type) thường dùng:**
+- `feat`: Phát triển tính năng mới.
+- `fix`: Sửa lỗi (bug).
+- `refactor`: Tái cấu trúc, dọn dẹp code (không đổi logic).
+
+**Ví dụ:**
+```bash
+# Đặt tên theo tên tính năng:
+git checkout -b quochung/feat/add-field
+git checkout -b quochung/fix/update-field
+git checkout -b quochung/refactor/update-field
+
+# Đặt tên theo ID của task/ticket:
+git checkout -b quochung/feat/SP-123
+git checkout -b quochung/fix/SP-123
+```
+
+---
+
 ## 📝 Quy tắc Commit Message
 
 Định dạng:
 ```
-SP-[ID] - [Nội dung]
-SP-[DATE] - [Nội dung]
+<type>: [Nội dung]
 ```
 
-**Theo ID task/ticket:**
-```bash
-git commit -m "SP-101 - Thêm API đăng nhập"
-git commit -m "SP-204 - Fix lỗi upload ảnh lên Cloudinary"
-git commit -m "SP-312 - Cập nhật schema Product"
-```
+**Các loại commit (Type):**
+- `feat`: Tính năng mới
+- `fix`: Sửa lỗi
+- `refactor`: Tái cấu trúc code
 
-**Theo ngày (YYYYMMDD):**
+**Ví dụ:**
 ```bash
-git commit -m "SP-20260521 - Khởi tạo dự án"
-git commit -m "SP-20260521 - Thêm code generator"
-git commit -m "SP-20260522 - Tích hợp Cloudinary"
+git commit -m "feat: Thêm API đăng nhập"
+git commit -m "fix: Cập nhật field bị lỗi"
+git commit -m "refactor: Tối ưu logic phân quyền"
+git commit -m "feat: Khởi tạo dự án và cấu hình base"
 ```
 
 ---
