@@ -3,8 +3,6 @@ const userRoutes = require('./routes/user.route');
 const authRoutes = require('./routes/auth.route');
 const uploadRoutes = require('./routes/upload.route');
 const exportRoutes = require('./routes/export.route');
-const cloudinaryRoutes = require('./routes/cloudinary.route');
-
 const router = express.Router();
 
 /**
@@ -30,6 +28,5 @@ router.use('/auth', authRoutes);
 router.use('/users', userRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/export', exportRoutes);
-router.use('/cloudinary', cloudinaryRoutes);
 
 module.exports = router;

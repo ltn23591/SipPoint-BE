@@ -9,7 +9,7 @@ const bcrypt = require('bcrypt');
 const User = require('../models/user.model'); // Needed for 2FA saving directly
 
 const sendTokenResponse = (user, statusCode, res) => {
-  // Tạo token tại controller thay vì ở model
+  // Tạo token
   const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'secret123', {
     expiresIn: '30d',
   });

@@ -1,20 +1,21 @@
 const express = require('express');
-const { check } = require('express-validator');
-const validate = require('../../middleware/validate.middleware');
+// validation moved out of route
 const {
-  getUsers,
-  getUser,
-  createUser,
-  updateUser,
-  deleteUser
+    getUsers,
+    getUser,
+    createUser,
+    updateUser,
+    deleteUser,
 } = require('../../controllers/user.controller');
-const { protect, authorize } = require('../../middleware/auth.middleware');
+const { protect } = require('../../middleware/auth.middleware');
+const { authorize } = require('../../middleware/authorize.middleware');
+const { ROLE } = require('../../enums/role.enum');
 
 const router = express.Router();
 
 // Bắt buộc đăng nhập và là admin cho tất cả các routes của users
 router.use(protect);
-router.use(authorize('admin'));
+router.use(authorize(ROLE.ADMIN));
 
 /**
  * @swagger
@@ -71,12 +72,7 @@ router.get('/search', getUsers);
  *       400:
  *         description: Lỗi dữ liệu
  */
-router.post('/create', [
-  check('name', 'Tên là bắt buộc').notEmpty(),
-  check('email', 'Email không hợp lệ').isEmail(),
-  check('password', 'Mật khẩu phải từ 6 ký tự trở lên').isLength({ min: 6 }),
-  validate
-], createUser);
+router.post('/create', createUser);
 
 /**
  * @swagger

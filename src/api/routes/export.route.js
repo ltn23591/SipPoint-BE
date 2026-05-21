@@ -1,7 +1,9 @@
 const express = require('express');
 const { exportUsersToExcel } = require('../../utils/excel');
 const UserService = require('../../services/user.service');
-const { protect, authorize } = require('../../middleware/auth.middleware');
+const { protect } = require('../../middleware/auth.middleware');
+const { authorize } = require('../../middleware/authorize.middleware');
+const { ROLE } = require('../../enums/role.enum');
 
 const router = express.Router();
 
@@ -29,13 +31,13 @@ const router = express.Router();
  *               type: string
  *               format: binary
  */
-router.get('/users', protect, authorize('admin'), async (req, res, next) => {
-  try {
-    const users = await UserService.getAllUsers();
-    await exportUsersToExcel(users, res);
-  } catch (error) {
-    next(error);
-  }
+router.get('/users', protect, authorize(ROLE.ADMIN), async (req, res, next) => {
+    try {
+        const users = await UserService.getAllUsers();
+        await exportUsersToExcel(users, res);
+    } catch (error) {
+        next(error);
+    }
 });
 
 module.exports = router;
