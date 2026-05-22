@@ -3,50 +3,39 @@ const logger = require('../config/logger');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const User = require('../models/user.model');
-const { USER_STATUS, ROLE } = require('../enums');
-const MESSAGES = require('../constants/messages');
+const { USER_STATUS } = require('../enums');
 
 class AuthService {
   static async register(data) {
-    let { name, email, password, role } = data;
+    const { name, email, password, role } = data;
+
+    const userExists = await User.findOne({ email }).select('+password');
+    if (userExists) {
+      return { status: 400, success: false, message: 'Email đã được sử dụng' };
+    }
 
     if (!name || !name.toString().trim()) {
-      return { status: 400, success: false, message: MESSAGES.VALIDATION.NAME_REQUIRED };
+      return { status: 400, success: false, message: 'Tên là bắt buộc' };
     }
 
     const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
     if (!email || !emailRegex.test(email)) {
-      return { status: 400, success: false, message: MESSAGES.VALIDATION.EMAIL_INVALID };
+      return { status: 400, success: false, message: 'Email không hợp lệ' };
     }
 
     if (!password || password.length < 6) {
-      return { status: 400, success: false, message: MESSAGES.VALIDATION.PASSWORD_MIN_LENGTH };
-    }
-
-    if (role !== undefined && role !== null) {
-      if (!Object.values(ROLE).includes(Number(role))) {
-        return { status: 400, success: false, message: MESSAGES.VALIDATION.ROLE_INVALID };
-      }
-      role = Number(role);
-    }
-
-    const userExists = await User.findOne({ email }).select('+password');
-    if (userExists) {
-      return { status: 400, success: false, message: MESSAGES.AUTH.EMAIL_EXISTS };
+      return { status: 400, success: false, message: 'Mật khẩu phải từ 6 ký tự trở lên' };
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    const user = await User.create({ name, email, password: hashedPassword, role });
+
     const otp = crypto.randomInt(100000, 999999).toString();
-    const user = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      role,
-      verifyOTP: otp,
-      verifyOTPExpire: Date.now() + 5 * 60 * 1000
-    });
+    user.verifyOTP = otp;
+    user.verifyOTPExpire = Date.now() + 5 * 60 * 1000;
+    await user.save({ validateBeforeSave: false });
 
     // Gửi email chứa OTP
     sendEmail({
@@ -59,31 +48,31 @@ class AuthService {
     return { 
       status: 201, 
       success: true, 
-      message: MESSAGES.AUTH.REGISTER_SUCCESS 
+      message: 'Đăng ký thành công. Vui lòng kiểm tra email để lấy mã xác thực kích hoạt tài khoản.' 
     };
   }
 
   static async login(email, password) {
     if (!email || !password) {
-      return { status: 400, success: false, message: MESSAGES.VALIDATION.EMAIL_PASSWORD_REQUIRED };
+      return { status: 400, success: false, message: 'Vui lòng cung cấp email và mật khẩu' };
     }
 
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
-      return { status: 401, success: false, message: MESSAGES.AUTH.INVALID_CREDENTIALS };
+      return { status: 401, success: false, message: 'Thông tin đăng nhập không hợp lệ' };
     }
 
     if (!user.isVerified || user.status === USER_STATUS.PENDING) {
-      return { status: 403, success: false, message: MESSAGES.AUTH.NOT_VERIFIED };
+      return { status: 403, success: false, message: 'Vui lòng xác thực email trước khi đăng nhập' };
     }
 
     if (user.status === USER_STATUS.BANNED) {
-      return { status: 403, success: false, message: MESSAGES.AUTH.ACCOUNT_BANNED };
+      return { status: 403, success: false, message: 'Tài khoản của bạn đã bị khóa' };
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return { status: 401, success: false, message: MESSAGES.AUTH.WRONG_CREDENTIALS };
+      return { status: 401, success: false, message: 'Sai thông tin đăng nhập' };
     }
 
     if (user.isTwoFactorEnabled) {
@@ -104,33 +93,33 @@ class AuthService {
         success: true,
         requires2FA: true,
         email: user.email,
-        message: MESSAGES.AUTH.OTP_SENT,
+        message: 'Vui lòng nhập mã OTP đã được gửi vào email của bạn',
       };
     }
 
-    return { status: 200, success: true, message: MESSAGES.AUTH.LOGIN_SUCCESS, user };
+    return { status: 200, success: true, message: 'Đăng nhập thành công', user };
   }
 
   static async verifyEmail(email, otp) {
     if (!email || !otp) {
-      return { status: 400, success: false, message: MESSAGES.VALIDATION.EMAIL_OTP_REQUIRED };
+      return { status: 400, success: false, message: 'Vui lòng cung cấp email và mã xác thực' };
     }
 
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
-      return { status: 404, success: false, message: MESSAGES.AUTH.ACCOUNT_NOT_FOUND };
+      return { status: 404, success: false, message: 'Tài khoản không tồn tại' };
     }
 
     if (user.isVerified) {
-      return { status: 400, success: false, message: MESSAGES.AUTH.ALREADY_VERIFIED };
+      return { status: 400, success: false, message: 'Tài khoản này đã được xác thực trước đó' };
     }
 
     if (!user.verifyOTP || Date.now() > user.verifyOTPExpire) {
-      return { status: 400, success: false, message: MESSAGES.AUTH.OTP_EXPIRED_OR_NOT_FOUND };
+      return { status: 400, success: false, message: 'Mã xác thực đã hết hạn hoặc không tồn tại' };
     }
 
     if (user.verifyOTP !== otp) {
-      return { status: 400, success: false, message: MESSAGES.AUTH.OTP_INCORRECT };
+      return { status: 400, success: false, message: 'Mã xác thực không chính xác' };
     }
 
     // Xác thực thành công
@@ -140,21 +129,21 @@ class AuthService {
     user.verifyOTPExpire = undefined;
     await user.save({ validateBeforeSave: false });
 
-    return { status: 200, success: true, message: MESSAGES.AUTH.VERIFY_SUCCESS, user };
+    return { status: 200, success: true, message: 'Xác thực tài khoản thành công. Bạn đã được đăng nhập.', user };
   }
 
   static async resendVerifyEmail(email) {
     if (!email) {
-      return { status: 400, success: false, message: MESSAGES.VALIDATION.EMAIL_REQUIRED };
+      return { status: 400, success: false, message: 'Vui lòng cung cấp email' };
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-      return { status: 404, success: false, message: MESSAGES.AUTH.ACCOUNT_NOT_FOUND };
+      return { status: 404, success: false, message: 'Tài khoản không tồn tại' };
     }
 
     if (user.isVerified) {
-      return { status: 400, success: false, message: MESSAGES.AUTH.ALREADY_VERIFIED };
+      return { status: 400, success: false, message: 'Tài khoản này đã được xác thực trước đó' };
     }
 
     const otp = crypto.randomInt(100000, 999999).toString();
@@ -169,17 +158,17 @@ class AuthService {
       data: { name: user.name, otp: otp }
     }).catch(err => logger.error('Gửi email xác thực thất bại', err));
 
-    return { status: 200, success: true, message: MESSAGES.AUTH.RESEND_OTP_SUCCESS };
+    return { status: 200, success: true, message: 'Mã xác thực mới đã được gửi vào email của bạn' };
   }
 
   static async enable2FA(userId) {
     const user = await User.findById(userId);
     if (!user) {
-      return { status: 404, success: false, message: MESSAGES.USER.NOT_FOUND };
+      return { status: 404, success: false, message: 'Không tìm thấy người dùng' };
     }
     
     if (user.isTwoFactorEnabled) {
-      return { status: 400, success: false, message: MESSAGES.AUTH.TWO_FACTOR_ALREADY_ENABLED };
+      return { status: 400, success: false, message: 'Tài khoản đã được bật 2FA từ trước' };
     }
 
     const otp = crypto.randomInt(100000, 999999).toString();
@@ -194,22 +183,22 @@ class AuthService {
       data: { name: user.name, otp: otp }
     }).catch(err => logger.error('Lỗi gửi OTP enable 2FA', err));
 
-    return { status: 200, success: true, message: MESSAGES.AUTH.TWO_FACTOR_OTP_SENT };
+    return { status: 200, success: true, message: 'Mã OTP đã được gửi vào email của bạn. Vui lòng kiểm tra hộp thư.' };
   }
 
   static async verifyEnable2FA(userId, otp) {
     const user = await User.findById(userId);
 
     if (!user || !user.twoFactorOTP) {
-      return { status: 400, success: false, message: MESSAGES.AUTH.TWO_FACTOR_SESSION_NOT_FOUND };
+      return { status: 400, success: false, message: 'Không tìm thấy phiên xác thực. Hãy yêu cầu lại OTP.' };
     }
 
     if (Date.now() > user.twoFactorOTPExpire) {
-      return { status: 400, success: false, message: MESSAGES.AUTH.TWO_FACTOR_OTP_EXPIRED };
+      return { status: 400, success: false, message: 'Mã OTP đã hết hạn' };
     }
 
     if (user.twoFactorOTP !== otp) {
-      return { status: 400, success: false, message: MESSAGES.AUTH.TWO_FACTOR_OTP_INCORRECT };
+      return { status: 400, success: false, message: 'Mã OTP không chính xác' };
     }
 
     user.isTwoFactorEnabled = true;
@@ -217,33 +206,33 @@ class AuthService {
     user.twoFactorOTPExpire = undefined;
     await user.save({ validateBeforeSave: false });
 
-    return { status: 200, success: true, message: MESSAGES.AUTH.TWO_FACTOR_ENABLE_SUCCESS };
+    return { status: 200, success: true, message: 'Kích hoạt bảo mật 2 lớp thành công' };
   }
 
   static async login2FA(email, otp) {
     if (!email || !otp) {
-      return { status: 400, success: false, message: MESSAGES.VALIDATION.EMAIL_2FA_OTP_REQUIRED };
+      return { status: 400, success: false, message: 'Vui lòng cung cấp email và mã OTP' };
     }
 
     const user = await User.findOne({ email }).select('+password');
 
     if (!user || !user.isTwoFactorEnabled || !user.twoFactorOTP) {
-      return { status: 400, success: false, message: MESSAGES.AUTH.TWO_FACTOR_LOGIN_ACCOUNT_NOT_FOUND };
+      return { status: 400, success: false, message: 'Tài khoản không tồn tại hoặc chưa gửi OTP' };
     }
 
     if (Date.now() > user.twoFactorOTPExpire) {
-      return { status: 400, success: false, message: MESSAGES.AUTH.TWO_FACTOR_OTP_EXPIRED };
+      return { status: 400, success: false, message: 'Mã OTP đã hết hạn' };
     }
 
     if (user.twoFactorOTP !== otp) {
-      return { status: 400, success: false, message: MESSAGES.AUTH.TWO_FACTOR_OTP_INCORRECT };
+      return { status: 400, success: false, message: 'Mã OTP không chính xác' };
     }
 
     user.twoFactorOTP = undefined;
     user.twoFactorOTPExpire = undefined;
     await user.save({ validateBeforeSave: false });
 
-    return { status: 200, success: true, message: MESSAGES.AUTH.LOGIN_SUCCESS, user };
+    return { status: 200, success: true, message: 'Đăng nhập thành công', user };
   }
 
   static async disable2FA(userId) {
@@ -253,15 +242,15 @@ class AuthService {
     user.twoFactorOTPExpire = undefined;
     await user.save({ validateBeforeSave: false });
 
-    return { status: 200, success: true, message: MESSAGES.AUTH.TWO_FACTOR_DISABLE_SUCCESS };
+    return { status: 200, success: true, message: 'Đã tắt tính năng bảo mật 2 lớp' };
   }
 
   static async getMe(userId) {
     const user = await User.findById(userId).select('-password');
     if (!user) {
-      return { status: 404, success: false, message: MESSAGES.USER.NOT_FOUND_WITH_ID(userId) };
+      return { status: 404, success: false, message: `Không tìm thấy người dùng với ID: ${userId}` };
     }
-    return { status: 200, success: true, message: MESSAGES.USER.GET_SUCCESS, data: user };
+    return { status: 200, success: true, message: 'Lấy thông tin thành công', data: user };
   }
 }
 
