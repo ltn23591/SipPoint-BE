@@ -1,6 +1,7 @@
 const User = require('../models/user.model');
 const bcrypt = require('bcrypt');
 const { ROLE } = require('../enums');
+const validator = require('validator');
 
 class UserService {
   static async getAllUsers() {
@@ -27,8 +28,7 @@ class UserService {
       return { status: 400, success: false, message: 'Tên là bắt buộc' };
     }
 
-    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-    if (!email || !emailRegex.test(email)) {
+    if (!email || !validator.isEmail(email)) {
       return { status: 400, success: false, message: 'Email không hợp lệ' };
     }
 

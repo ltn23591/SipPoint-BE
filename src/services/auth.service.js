@@ -1,3 +1,4 @@
+const validator = require('validator');
 const sendEmail = require('../utils/email');
 const logger = require('../config/logger');
 const crypto = require('crypto');
@@ -18,8 +19,7 @@ class AuthService {
       return { status: 400, success: false, message: 'Tên là bắt buộc' };
     }
 
-    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-    if (!email || !emailRegex.test(email)) {
+    if (!email || !validator.isEmail(email)) {
       return { status: 400, success: false, message: 'Email không hợp lệ' };
     }
 
