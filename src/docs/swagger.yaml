@@ -6,7 +6,7 @@ paths:
       responses:
         200:
           description: Server hoạt động bình thường
-   
+
   /api/v1/auth/register:
     post:
       summary: Đăng ký tài khoản mới
@@ -33,7 +33,7 @@ paths:
           description: Đăng ký thành công và nhận cookie token
         400:
           description: Lỗi dữ liệu
-   
+
   /api/v1/auth/verify-email:
     post:
       summary: Xác thực tài khoản bằng OTP qua Email
@@ -57,7 +57,7 @@ paths:
           description: Xác thực thành công và tự động đăng nhập (nhận token)
         400:
           description: Lỗi OTP hoặc tài khoản đã xác thực
-   
+
   /api/v1/auth/resend-verify-email:
     post:
       summary: Gửi lại mã OTP xác thực Email
@@ -78,7 +78,7 @@ paths:
           description: Gửi OTP thành công
         400:
           description: Email không hợp lệ hoặc tài khoản đã xác thực
-   
+
   /api/v1/auth/login:
     post:
       summary: Đăng nhập
@@ -102,7 +102,7 @@ paths:
           description: Đăng nhập thành công và nhận cookie token
         401:
           description: Sai thông tin đăng nhập
-   
+
   /api/v1/auth/logout:
     get:
       summary: Đăng xuất (xóa cookie)
@@ -110,7 +110,7 @@ paths:
       responses:
         200:
           description: Đăng xuất thành công
-   
+
   /api/v1/auth/me:
     get:
       summary: Lấy thông tin tài khoản đang đăng nhập
@@ -122,7 +122,7 @@ paths:
           description: Thông tin user
         401:
           description: Chưa đăng nhập
-   
+
   /api/v1/auth/2fa/enable:
     post:
       summary: Bật cấu hình 2FA (Gửi mã OTP qua email)
@@ -132,7 +132,7 @@ paths:
       responses:
         200:
           description: Đã gửi mã OTP qua email
-   
+
   /api/v1/auth/2fa/verify-enable:
     post:
       summary: Xác nhận OTP để chính thức BẬT 2FA
@@ -153,7 +153,7 @@ paths:
       responses:
         200:
           description: Kích hoạt 2FA thành công
-   
+
   /api/v1/auth/2fa/login:
     post:
       summary: Nhập mã OTP để đăng nhập khi có 2FA
@@ -176,7 +176,7 @@ paths:
       responses:
         200:
           description: Đăng nhập thành công, trả về token
-   
+
   /api/v1/auth/2fa/disable:
     post:
       summary: Tắt tính năng bảo mật 2 lớp
@@ -186,7 +186,7 @@ paths:
       responses:
         200:
           description: Tắt 2FA thành công
-   
+
   /api/v1/export/users:
     get:
       summary: Xuất danh sách người dùng ra Excel
@@ -201,7 +201,7 @@ paths:
               schema:
                 type: string
                 format: binary
-   
+
   /api/v1/upload/local:
     post:
       summary: Tải lên một hình ảnh (Lưu local)
@@ -223,7 +223,7 @@ paths:
       responses:
         200:
           description: Tải lên thành công
-   
+
   /api/v1/upload/cloudinary/url:
     post:
       summary: Upload ảnh từ URL lên Cloudinary
@@ -250,7 +250,7 @@ paths:
           description: Upload thành công
         400:
           description: Thiếu URL
-   
+
   /api/v1/upload/cloudinary/file:
     post:
       summary: Upload ảnh từ file lên Cloudinary
@@ -278,7 +278,7 @@ paths:
           description: Upload thành công
         400:
           description: Thiếu file
-   
+
   /api/v1/users/search:
     get:
       summary: Lấy danh sách tất cả người dùng
@@ -288,7 +288,7 @@ paths:
       responses:
         200:
           description: Danh sách người dùng
-   
+
   /api/v1/users/create:
     post:
       summary: Tạo người dùng mới
@@ -320,7 +320,7 @@ paths:
           description: Tạo thành công
         400:
           description: Lỗi dữ liệu
-   
+
   /api/v1/users/{id}/detail:
     get:
       summary: Lấy thông tin một người dùng
@@ -339,7 +339,7 @@ paths:
           description: Thông tin người dùng
         404:
           description: Không tìm thấy
-   
+
   /api/v1/users/{id}/update:
     put:
       summary: Cập nhật thông tin người dùng
@@ -372,7 +372,7 @@ paths:
           description: Cập nhật thành công
         404:
           description: Không tìm thấy
-   
+
   /api/v1/users/{id}/delete:
     delete:
       summary: Xóa người dùng
@@ -391,17 +391,14 @@ paths:
           description: Xóa thành công
         404:
           description: Không tìm thấy
-   
 
-  /api/v1/categorys/search:
+  /api/v1/categories:
     get:
       summary: Lấy danh sách category
       tags: [Category]
       responses:
         200:
           description: Danh sách category
-  
-  /api/v1/categorys/create:
     post:
       summary: Tạo mới category
       tags: [Category]
@@ -417,8 +414,8 @@ paths:
       responses:
         201:
           description: Tạo thành công
-  
-  /api/v1/categorys/{id}/detail:
+
+  /api/v1/categories/{id}:
     get:
       summary: Lấy chi tiết một category
       tags: [Category]
@@ -434,8 +431,6 @@ paths:
           description: Chi tiết category
         404:
           description: Không tìm thấy
-  
-  /api/v1/categorys/{id}/update:
     put:
       summary: Cập nhật category
       tags: [Category]
@@ -457,8 +452,6 @@ paths:
           description: Cập nhật thành công
         404:
           description: Không tìm thấy
-  
-  /api/v1/categorys/{id}/delete:
     delete:
       summary: Xóa category
       tags: [Category]
@@ -469,6 +462,102 @@ paths:
             type: string
           required: true
           description: ID của category
+      responses:
+        200:
+          description: Xóa thành công
+        404:
+          description: Không tìm thấy
+
+  /api/v1/products:
+    get:
+      summary: Lấy danh sách product
+      tags: [Product]
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Số trang
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+          description: Số item mỗi trang
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: Tìm kiếm theo tên
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: Lọc theo ID danh mục
+      responses:
+        200:
+          description: Danh sách product
+    post:
+      summary: Tạo mới product
+      tags: [Product]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        201:
+          description: Tạo thành công
+
+  /api/v1/products/{id}:
+    get:
+      summary: Lấy chi tiết một product
+      tags: [Product]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của product
+      responses:
+        200:
+          description: Chi tiết product
+        404:
+          description: Không tìm thấy
+    put:
+      summary: Cập nhật product
+      tags: [Product]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của product
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        200:
+          description: Cập nhật thành công
+        404:
+          description: Không tìm thấy
+    delete:
+      summary: Xóa product
+      tags: [Product]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của product
       responses:
         200:
           description: Xóa thành công
@@ -487,6 +576,9 @@ tags:
 
   - name: Category
     description: API quản lý category
+
+  - name: Product
+    description: API quản lý product
 
 components:
   schemas:
@@ -522,6 +614,80 @@ components:
           type: string
         name:
           type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ProductInput:
+      type: object
+      required:
+        - name
+        - description
+        - price
+        - image
+        - category
+      properties:
+        name:
+          type: string
+          description: Tên sản phẩm
+        description:
+          type: string
+          description: Mô tả chi tiết
+        price:
+          type: number
+          description: Giá bán
+        image:
+          type: string
+          description: Ảnh chính (Public ID của Cloudinary hoặc URL)
+        images:
+          type: array
+          items:
+            type: string
+          description: Danh sách ảnh phụ
+        category:
+          type: string
+          description: ID của Danh mục
+        stock:
+          type: number
+          default: 0
+        isActive:
+          type: number
+          enum: [0, 1]
+          default: 1
+    Product:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        image:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+        category:
+          type: object
+          properties:
+            _id:
+              type: string
+            name:
+              type: string
+        stock:
+          type: number
+        rating:
+          type: number
+        numReviews:
+          type: number
+        isActive:
+          type: number
         createdAt:
           type: string
           format: date-time
