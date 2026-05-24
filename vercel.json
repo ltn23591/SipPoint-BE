@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api" }
+  ],
+  "crons": [
+    {
+      "path": "/api/v1/cron/cleanup",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}
