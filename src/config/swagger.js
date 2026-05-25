@@ -11,8 +11,12 @@ const options = {
     },
     servers: [
       {
+        url: 'https://sip-point-be.vercel.app',
+        description: 'Production server (Vercel)',
+      },
+      {
         url: 'http://localhost:5000',
-        description: 'Development server',
+        description: 'Development server (Local)',
       },
     ],
     components: {
@@ -32,7 +36,14 @@ const options = {
 const swaggerSpec = swaggerJSDoc(options);
 
 const setupSwagger = (app) => {
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  const uiOptions = {
+    customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui.min.css',
+    customJs: [
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-bundle.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/4.15.5/swagger-ui-standalone-preset.js'
+    ]
+  };
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, uiOptions));
   
   app.get('/api-docs.json', (req, res) => {
     res.setHeader('Content-Type', 'application/json');

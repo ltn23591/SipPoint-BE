@@ -17,10 +17,7 @@ const app = express();
 
 // 1. Middlewares bảo mật & Logging
 app.use(helmet());
-app.use(cors({
-  origin: true,
-  credentials: true
-}));
+app.use(cors());
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));

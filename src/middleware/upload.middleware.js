@@ -2,8 +2,14 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+const os = require('os');
+
 // Đảm bảo thư mục upload tồn tại
-const uploadDir = path.join(__dirname, '../../public/uploads');
+// Trên Vercel, sử dụng thư mục tạm /tmp/uploads vì hệ thống là read-only
+const uploadDir = process.env.VERCEL
+  ? path.join(os.tmpdir(), 'uploads')
+  : path.join(__dirname, '../../public/uploads');
+
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
