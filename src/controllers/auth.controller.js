@@ -64,6 +64,71 @@ exports.resendVerifyEmail = async (req, res, next) => {
     const { email } = req.body;
     const result = await AuthService.resendVerifyEmail(email);
     return res.status(result.status).json(result);
+    // Kiểm tra tài khoản có bị khóa không
+    if (user.lockUntil && user.lockUntil > Date.now()) {
+      const minutesLeft = Math.ceil((user.lockUntil - Date.now()) / (60 * 1000));
+      return res.status(403).json({
+        success: false,
+        message: `Tài khoản đã bị khóa tạm thời. Vui lòng thử lại sau ${minutesLeft} phút.`
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      user.loginAttempts = (user.loginAttempts || 0) + 1;
+      
+      if (user.loginAttempts >= 5) {
+        user.lockUntil = Date.now() + 15 * 60 * 1000; // Khóa 15 phút
+        user.loginAttempts = 0;
+        await user.save({ validateBeforeSave: false });
+        return res.status(403).json({
+          success: false,
+          message: 'Tài khoản của bạn đã bị khóa 15 phút do đăng nhập sai quá 5 lần.'
+        });
+      } else {
+        await user.save({ validateBeforeSave: false });
+        const remaining = 5 - user.loginAttempts;
+        return res.status(401).json({
+          success: false,
+          message: `Sai thông tin đăng nhập. Bạn còn ${remaining} lần thử.`
+        });
+      }
+    }
+
+    // Reset login attempts khi đăng nhập thành công
+    if (user.loginAttempts > 0 || user.lockUntil) {
+      user.loginAttempts = 0;
+      user.lockUntil = undefined;
+      await user.save({ validateBeforeSave: false });
+    }
+
+    // Nếu user đã bật 2FA, tạo OTP và gửi qua Email
+    if (user.isTwoFactorEnabled) {
+      const otp = crypto.randomInt(100000, 999999).toString();
+      user.twoFactorOTP = otp;
+      user.twoFactorOTPExpire = Date.now() + 5 * 60 * 1000; // 5 phút
+      await user.save({ validateBeforeSave: false });
+
+      // Gửi OTP qua email (không await để không block)
+      sendEmail({
+        email: user.email,
+        subject: 'Mã xác thực OTP Đăng Nhập',
+        template: 'otp',
+        data: {
+          name: user.name,
+          otp: otp
+        }
+      }).catch(err => logger.error('Lỗi gửi OTP qua email', err));
+
+      return res.status(200).json({
+        success: true,
+        requires2FA: true,
+        email: user.email,
+        message: 'Vui lòng nhập mã OTP đã được gửi vào email của bạn',
+      });
+    }
+
+    sendTokenResponse(user, 200, res);
   } catch (error) {
     next(error);
   }
@@ -155,6 +220,152 @@ exports.getMe = async (req, res, next) => {
   try {
     const result = await AuthService.getMe(req.user.id);
     return res.status(result.status).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Yêu cầu khôi phục mật khẩu (Gửi OTP)
+// @route   POST /api/v1/auth/forgot-password
+// @access  Public
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Vui lòng cung cấp email' });
+    }
+
+    const user = await UserService.getUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng với email này' });
+    }
+
+    const otp = crypto.randomInt(100000, 999999).toString();
+    
+    // Tạo activation token (JWT stateless) chứa email và OTP
+    const activationSecret = process.env.ACTIVATION_SECRET || 'activation_secret_123';
+    const activationToken = jwt.sign(
+      { email: user.email, otp },
+      activationSecret,
+      { expiresIn: '5m' }
+    );
+
+    // Gửi email khôi phục mật khẩu
+    await sendEmail({
+      email: user.email,
+      subject: 'Mã xác thực khôi phục mật khẩu',
+      template: 'reset-password',
+      data: {
+        name: user.name,
+        otp: otp
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      activationToken,
+      message: 'Mã OTP khôi phục mật khẩu đã được gửi đến email của bạn.'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Xác thực mã OTP và sinh Reset Token
+// @route   POST /api/v1/auth/verify-otp
+// @access  Public
+exports.verifyOtpCode = async (req, res, next) => {
+  try {
+    const { activation_token, activation_code } = req.body;
+
+    if (!activation_token || !activation_code) {
+      return res.status(400).json({ success: false, message: 'Vui lòng cung cấp đầy đủ activation_token và activation_code' });
+    }
+
+    const activationSecret = process.env.ACTIVATION_SECRET || 'activation_secret_123';
+    let decoded;
+    try {
+      decoded = jwt.verify(activation_token, activationSecret);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError') {
+        return res.status(400).json({ success: false, message: 'Mã OTP đã hết hạn' });
+      }
+      return res.status(400).json({ success: false, message: 'Mã xác thực không hợp lệ' });
+    }
+
+    if (decoded.otp !== activation_code) {
+      return res.status(400).json({ success: false, message: 'Mã OTP không chính xác' });
+    }
+
+    const user = await UserService.getUserByEmail(decoded.email);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
+    }
+
+    // Sinh reset token ngẫu nhiên
+    const resetToken = crypto.randomBytes(20).toString('hex');
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordTokenExpire = Date.now() + 10 * 60 * 1000; // Hết hạn trong 10 phút
+    await user.save({ validateBeforeSave: false });
+
+    res.status(200).json({
+      success: true,
+      email: user.email,
+      resetToken,
+      message: 'OTP đã được xác minh thành công'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Đặt lại mật khẩu với Reset Token
+// @route   POST /api/v1/auth/reset-password
+// @access  Public
+exports.resetPassword = async (req, res, next) => {
+  try {
+    const { resetToken, newPassword } = req.body;
+
+    if (!resetToken || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Vui lòng cung cấp đầy đủ resetToken và mật khẩu mới' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'Mật khẩu phải chứa ít nhất 6 ký tự' });
+    }
+
+    const user = await User.findOne({
+      resetPasswordToken: resetToken,
+      resetPasswordTokenExpire: { $gt: Date.now() }
+    }).select('+password');
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Reset token không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.' });
+    }
+
+    // Kiểm tra xem mật khẩu mới có trùng mật khẩu cũ không
+    const isSame = await bcrypt.compare(newPassword, user.password);
+    if (isSame) {
+      return res.status(400).json({ success: false, message: 'Mật khẩu mới không được trùng với mật khẩu cũ' });
+    }
+
+    // Hash mật khẩu mới
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    // Xóa Token và mở khóa tài khoản
+    user.resetPasswordToken = undefined;
+    user.resetPasswordTokenExpire = undefined;
+    user.loginAttempts = 0;
+    user.lockUntil = undefined;
+    
+    await user.save({ validateBeforeSave: false });
+
+    res.status(200).json({
+      success: true,
+      message: 'Mật khẩu đã được đặt lại thành công'
+    });
   } catch (error) {
     next(error);
   }
