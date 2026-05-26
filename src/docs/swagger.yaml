@@ -564,6 +564,73 @@ paths:
         404:
           description: Không tìm thấy
 
+  /api/v1/ai/chat:
+    post:
+      summary: Chat với AI Bot dựa trên danh sách sản phẩm
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - message
+                - sessionId
+              properties:
+                message:
+                  type: string
+                  description: Câu hỏi hoặc tin nhắn từ người dùng
+                  example: 'Bạn có sản phẩm nào giá rẻ không?'
+                sessionId:
+                  type: string
+                  description: ID phiên chat để duy trì lịch sử trò chuyện
+                  example: 'user-123-session-456'
+      responses:
+        200:
+          description: Phản hồi từ AI thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      reply:
+                        type: string
+                        description: Câu trả lời từ AI
+                        example: 'Có bạn ơi, cửa hàng chúng tôi có nhiều sản phẩm giá rẻ...'
+        400:
+          description: Lỗi - Thiếu message hoặc sessionId
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: 'Vui lòng cung cấp câu hỏi (message) để AI trả lời.'
+        500:
+          description: Lỗi server - Có thể do API Key không hợp lệ
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: 'Lỗi từ Google Gemini: API key not valid...'
+
 tags:
   - name: Auth
     description: API Quản lý Xác thực
@@ -579,6 +646,9 @@ tags:
 
   - name: Product
     description: API quản lý product
+
+  - name: AI
+    description: API Chat với AI Bot - Hỗ trợ tư vấn sản phẩm dựa trên Google Gemini
 
 components:
   schemas:

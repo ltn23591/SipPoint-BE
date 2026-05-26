@@ -5,6 +5,7 @@ const uploadRoutes = require('./routes/upload.route');
 const exportRoutes = require('./routes/export.route');
 const productRoutes = require('./routes/product.route');
 const categoryRoutes = require('./routes/category.route');
+const aiRoutes = require('./routes/ai.route');
 const router = express.Router();
 
 router.get('/health', (req, res) => {
@@ -22,4 +23,6 @@ router.use('/upload', uploadRoutes);
 router.use('/export', exportRoutes);
 router.use('/products', productRoutes);
 router.use('/categories', categoryRoutes);
+router.use('/ai', aiRoutes);
+
 module.exports = router;
