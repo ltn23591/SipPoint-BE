@@ -38,12 +38,6 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    twoFactorOTP: {
-      type: String,
-    },
-    twoFactorOTPExpire: {
-      type: Date,
-    },
     loginAttempts: {
       type: Number,
       required: true,

@@ -12,7 +12,14 @@ const USER_STATUS = {
     BANNED: 2,  // Bị cấm
 };
 
+const OTP_TYPE = {
+    REGISTER: 0,
+    TWO_FACTOR: 1,
+    RESET_PASSWORD: 2,
+};
+
 module.exports = {
     ROLE,
     USER_STATUS,
+    OTP_TYPE,
 };

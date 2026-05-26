@@ -1,6 +1,20 @@
 const express = require('express');
 
-const { register, login, logout, getMe, enable2FA, verifyEnable2FA, login2FA, disable2FA, forgotPassword, resetPassword, verifyOtpCode } = require('../../controllers/auth.controller');
+const {
+  register,
+  login,
+  logout,
+  getMe,
+  enable2FA,
+  verifyEnable2FA,
+  login2FA,
+  disable2FA,
+  forgotPassword,
+  resetPassword,
+  verifyOtpCode,
+  verifyEmail,
+  resendVerifyEmail,
+} = require('../../controllers/auth.controller');
 const { protect } = require('../../middleware/auth.middleware');
 
 const router = express.Router();

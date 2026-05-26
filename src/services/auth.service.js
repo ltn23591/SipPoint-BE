@@ -4,7 +4,8 @@ const logger = require('../config/logger');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const User = require('../models/user.model');
-const { USER_STATUS } = require('../enums');
+const OTP = require('../models/otp.model');
+const { USER_STATUS, OTP_TYPE } = require('../enums');
 
 class AuthService {
   static async register(data) {
@@ -33,9 +34,11 @@ class AuthService {
     const user = await User.create({ name, email, password: hashedPassword, role });
 
     const otp = crypto.randomInt(100000, 999999).toString();
-    user.verifyOTP = otp;
-    user.verifyOTPExpire = Date.now() + 5 * 60 * 1000;
-    await user.save({ validateBeforeSave: false });
+    await OTP.create({
+      userId: user._id,
+      code: otp,
+      type: OTP_TYPE.REGISTER
+    });
 
     // Gửi email chứa OTP
     sendEmail({
@@ -77,9 +80,11 @@ class AuthService {
 
     if (user.isTwoFactorEnabled) {
       const otp = crypto.randomInt(100000, 999999).toString();
-      user.twoFactorOTP = otp;
-      user.twoFactorOTPExpire = Date.now() + 5 * 60 * 1000;
-      await user.save({ validateBeforeSave: false });
+      await OTP.create({
+        userId: user._id,
+        code: otp,
+        type: OTP_TYPE.TWO_FACTOR
+      });
 
       sendEmail({
         email: user.email,
@@ -114,19 +119,21 @@ class AuthService {
       return { status: 400, success: false, message: 'Tài khoản này đã được xác thực trước đó' };
     }
 
-    if (!user.verifyOTP || Date.now() > user.verifyOTPExpire) {
-      return { status: 400, success: false, message: 'Mã xác thực đã hết hạn hoặc không tồn tại' };
+    const otpRecord = await OTP.findOne({
+      userId: user._id,
+      code: otp,
+      type: OTP_TYPE.REGISTER
+    });
+
+    if (!otpRecord) {
+      return { status: 400, success: false, message: 'Mã xác thực không chính xác hoặc đã hết hạn' };
     }
 
-    if (user.verifyOTP !== otp) {
-      return { status: 400, success: false, message: 'Mã xác thực không chính xác' };
-    }
+    await otpRecord.deleteOne();
 
     // Xác thực thành công
     user.isVerified = true;
     user.status = USER_STATUS.ACTIVE;
-    user.verifyOTP = undefined;
-    user.verifyOTPExpire = undefined;
     await user.save({ validateBeforeSave: false });
 
     return { status: 200, success: true, message: 'Xác thực tài khoản thành công. Bạn đã được đăng nhập.', user };
@@ -147,9 +154,12 @@ class AuthService {
     }
 
     const otp = crypto.randomInt(100000, 999999).toString();
-    user.verifyOTP = otp;
-    user.verifyOTPExpire = Date.now() + 5 * 60 * 1000;
-    await user.save({ validateBeforeSave: false });
+    await OTP.deleteMany({ userId: user._id, type: OTP_TYPE.REGISTER });
+    await OTP.create({
+      userId: user._id,
+      code: otp,
+      type: OTP_TYPE.REGISTER
+    });
 
     sendEmail({
       email: user.email,
@@ -172,9 +182,12 @@ class AuthService {
     }
 
     const otp = crypto.randomInt(100000, 999999).toString();
-    user.twoFactorOTP = otp;
-    user.twoFactorOTPExpire = Date.now() + 5 * 60 * 1000;
-    await user.save({ validateBeforeSave: false });
+    await OTP.deleteMany({ userId: user._id, type: OTP_TYPE.TWO_FACTOR });
+    await OTP.create({
+      userId: user._id,
+      code: otp,
+      type: OTP_TYPE.TWO_FACTOR
+    });
 
     sendEmail({
       email: user.email,
@@ -189,21 +202,19 @@ class AuthService {
   static async verifyEnable2FA(userId, otp) {
     const user = await User.findById(userId);
 
-    if (!user || !user.twoFactorOTP) {
-      return { status: 400, success: false, message: 'Không tìm thấy phiên xác thực. Hãy yêu cầu lại OTP.' };
+    const otpRecord = await OTP.findOne({
+      userId: user._id,
+      code: otp,
+      type: OTP_TYPE.TWO_FACTOR
+    });
+
+    if (!otpRecord) {
+      return { status: 400, success: false, message: 'Mã OTP không chính xác hoặc đã hết hạn' };
     }
 
-    if (Date.now() > user.twoFactorOTPExpire) {
-      return { status: 400, success: false, message: 'Mã OTP đã hết hạn' };
-    }
-
-    if (user.twoFactorOTP !== otp) {
-      return { status: 400, success: false, message: 'Mã OTP không chính xác' };
-    }
+    await otpRecord.deleteOne();
 
     user.isTwoFactorEnabled = true;
-    user.twoFactorOTP = undefined;
-    user.twoFactorOTPExpire = undefined;
     await user.save({ validateBeforeSave: false });
 
     return { status: 200, success: true, message: 'Kích hoạt bảo mật 2 lớp thành công' };
@@ -216,21 +227,21 @@ class AuthService {
 
     const user = await User.findOne({ email }).select('+password');
 
-    if (!user || !user.isTwoFactorEnabled || !user.twoFactorOTP) {
-      return { status: 400, success: false, message: 'Tài khoản không tồn tại hoặc chưa gửi OTP' };
+    if (!user || !user.isTwoFactorEnabled) {
+      return { status: 400, success: false, message: 'Tài khoản không tồn tại hoặc chưa bật 2FA' };
     }
 
-    if (Date.now() > user.twoFactorOTPExpire) {
-      return { status: 400, success: false, message: 'Mã OTP đã hết hạn' };
+    const otpRecord = await OTP.findOne({
+      userId: user._id,
+      code: otp,
+      type: OTP_TYPE.TWO_FACTOR
+    });
+
+    if (!otpRecord) {
+      return { status: 400, success: false, message: 'Mã OTP không chính xác hoặc đã hết hạn' };
     }
 
-    if (user.twoFactorOTP !== otp) {
-      return { status: 400, success: false, message: 'Mã OTP không chính xác' };
-    }
-
-    user.twoFactorOTP = undefined;
-    user.twoFactorOTPExpire = undefined;
-    await user.save({ validateBeforeSave: false });
+    await otpRecord.deleteOne();
 
     return { status: 200, success: true, message: 'Đăng nhập thành công', user };
   }
@@ -238,9 +249,9 @@ class AuthService {
   static async disable2FA(userId) {
     const user = await User.findById(userId);
     user.isTwoFactorEnabled = false;
-    user.twoFactorOTP = undefined;
-    user.twoFactorOTPExpire = undefined;
     await user.save({ validateBeforeSave: false });
+
+    await OTP.deleteMany({ userId: user._id, type: OTP_TYPE.TWO_FACTOR });
 
     return { status: 200, success: true, message: 'Đã tắt tính năng bảo mật 2 lớp' };
   }
