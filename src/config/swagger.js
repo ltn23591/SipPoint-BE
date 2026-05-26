@@ -11,12 +11,8 @@ const options = {
     },
     servers: [
       {
-        url: 'https://sip-point-be.vercel.app',
-        description: 'Production server (Vercel)',
-      },
-      {
-        url: 'http://localhost:5000',
-        description: 'Development server (Local)',
+        url: '/',
+        description: 'Default Server (Dynamic)',
       },
     ],
     components: {
