@@ -38,6 +38,13 @@ app.use(express.static(path.join(__dirname, '../public')));
 setupSwagger(app);
 
 // 4. API Routes chính
+app.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'API working',
+  });
+});
+
 app.use('/api/v1', apiRoutes);
 
 // 5. Route không tồn tại (404)
