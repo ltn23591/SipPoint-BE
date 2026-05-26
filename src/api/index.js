@@ -22,6 +22,8 @@ const activityLogRoutes = require('./routes/activityLog.route');
 const documentRoutes = require('./routes/document.route');
 const reportRoutes = require('./routes/report.route');
 const shiftRoutes = require('./routes/shift.route');
+const aiRoutes = require('./routes/ai.route');
+
 const router = express.Router();
 
 router.get('/health', (req, res) => {
@@ -65,5 +67,6 @@ router.use('/document', documentRoutes);
 router.use('/report', reportRoutes);
 router.use('/shifts', shiftRoutes);
 router.use('/shift', shiftRoutes); // Compatibility alias
+router.use('/ai', aiRoutes);
 
 module.exports = router;
