@@ -38,20 +38,24 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    twoFactorOTP: {
-      type: String,
+    loginAttempts: {
+      type: Number,
+      required: true,
+      default: 0,
     },
-    twoFactorOTPExpire: {
+    lockUntil: {
       type: Date,
     },
-    isVerified: {
-      type: Boolean,
-      default: false,
-    },
-    verifyOTP: {
+    resetPasswordOTP: {
       type: String,
     },
-    verifyOTPExpire: {
+    resetPasswordOTPExpire: {
+      type: Date,
+    },
+    resetPasswordToken: {
+      type: String,
+    },
+    resetPasswordTokenExpire: {
       type: Date,
     },
   },
