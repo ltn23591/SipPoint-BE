@@ -16,10 +16,15 @@ const OTP_TYPE = {
     REGISTER: 0,
     TWO_FACTOR: 1,
     RESET_PASSWORD: 2,
+}
+const IS_ACTIVE = {
+    FALSE: 0,
+    TRUE: 1,
 };
 
 module.exports = {
     ROLE,
     USER_STATUS,
     OTP_TYPE,
+    IS_ACTIVE
 };
