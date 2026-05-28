@@ -4,22 +4,22 @@ const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: true,
+      required: [true, 'Vui lòng cung cấp tên người dùng'],
       trim: true,
     },
     email: {
       type: String,
-      required: true,
+      required: [true, 'Vui lòng cung cấp địa chỉ email'],
       unique: true,
       trim: true,
       lowercase: true,
-      match: /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/,
+      match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Vui lòng cung cấp email hợp lệ'],
     },
     password: {
       type: String,
-      required: true,
-      minlength: 6,
-      select: false, 
+      required: [true, 'Vui lòng cung cấp mật khẩu'],
+      minlength: [6, 'Mật khẩu phải chứa ít nhất 6 ký tự'],
+      select: false, // Không trả về password khi truy vấn mặc định
     },
     role: {
       type: Number,
@@ -58,7 +58,7 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const User = mongoose.model('User', userSchema);
