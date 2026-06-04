@@ -5,6 +5,9 @@ const uploadRoutes = require('./routes/upload.route');
 const exportRoutes = require('./routes/export.route');
 const productRoutes = require('./routes/product.route');
 const categoryRoutes = require('./routes/category.route');
+const customerRoutes = require('./routes/customer.route');
+const customerRankRoutes = require('./routes/customerRank.route');
+const voucherRoutes = require('./routes/voucher.route');
 const router = express.Router();
 
 router.get('/health', (req, res) => {
@@ -22,4 +25,8 @@ router.use('/upload', uploadRoutes);
 router.use('/export', exportRoutes);
 router.use('/products', productRoutes);
 router.use('/categories', categoryRoutes);
+router.use('/customers', customerRoutes);
+router.use('/customer-ranks', customerRankRoutes);
+router.use('/vouchers', voucherRoutes);
+
 module.exports = router;

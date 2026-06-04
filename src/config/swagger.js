@@ -46,7 +46,6 @@ const setupSwagger = (app) => {
     res.send(swaggerSpec);
   });
 
-  console.log(`[Swagger] API Documentation is available at http://localhost:5000/api-docs`);
 };
 
 module.exports = setupSwagger;

@@ -564,6 +564,117 @@ paths:
         404:
           description: Không tìm thấy
 
+  /api/v1/customers:
+    get:
+      summary: Lấy danh sách khách hàng (có phân trang và lọc)
+      tags: [Customer]
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: search
+          schema:
+            type: string
+        - in: query
+          name: tier
+          schema:
+            type: string
+      responses:
+        200:
+          description: Danh sách khách hàng
+    post:
+      summary: Tạo khách hàng mới
+      tags: [Customer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerInput'
+      responses:
+        201:
+          description: Tạo thành công
+
+  /api/v1/customers/{id}:
+    get:
+      summary: Lấy chi tiết khách hàng
+      tags: [Customer]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: Chi tiết khách hàng
+        404:
+          description: Không tìm thấy
+    put:
+      summary: Cập nhật thông tin khách hàng
+      tags: [Customer]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerInput'
+      responses:
+        200:
+          description: Cập nhật thành công
+        404:
+          description: Không tìm thấy
+
+  /api/v1/customers/{id}/points:
+    post:
+      summary: Cộng / Trừ điểm khách hàng
+      tags: [Customer]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - pointsChange
+                - transactionType
+              properties:
+                pointsChange:
+                  type: number
+                  description: Điểm thay đổi (+ hoặc -)
+                title:
+                  type: string
+                  description: Tiêu đề giao dịch
+                description:
+                  type: string
+                  description: Mô tả chi tiết
+                transactionType:
+                  type: string
+                  enum: [ORDER, REWARD, BIRTHDAY_GIFT, ADJUSTMENT]
+      responses:
+        200:
+          description: Thay đổi điểm thành công
+
 tags:
   - name: Auth
     description: API Quản lý Xác thực
@@ -579,6 +690,9 @@ tags:
 
   - name: Product
     description: API quản lý product
+
+  - name: Customer
+    description: API Quản lý Khách hàng
 
 components:
   schemas:
@@ -694,3 +808,104 @@ components:
         updatedAt:
           type: string
           format: date-time
+
+    CustomerInput:
+      type: object
+      required:
+        - fullName
+        - phone
+      properties:
+        fullName:
+          type: string
+          description: Tên đầy đủ
+        email:
+          type: string
+          description: Email khách hàng
+        phone:
+          type: string
+          description: Số điện thoại
+        dateOfBirth:
+          type: string
+          format: date
+          description: Ngày sinh
+
+    ProductVariant:
+      type: object
+      required:
+        - product
+        - variantType
+        - name
+        - priceAdjustment
+      properties:
+        _id:
+          type: string
+        product:
+          type: string
+          description: ID của sản phẩm gốc
+        variantType:
+          type: number
+          enum: [0, 1]
+          description: "Loại biến thể (0: SIZE, 1: TOPPING)"
+        name:
+          type: string
+          description: Tên biến thể (ví dụ Size L, Trân châu đen)
+        priceAdjustment:
+          type: number
+          description: Giá tiền tăng/giảm thêm khi chọn biến thể này
+        isActive:
+          type: number
+          enum: [0, 1]
+          default: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    VoucherInput:
+      type: object
+      required:
+        - code
+        - title
+        - discountType
+        - discountValue
+        - endDate
+        - usageLimit
+      properties:
+        code:
+          type: string
+          description: Mã code viết hoa (VD VIPCOFFEE)
+        title:
+          type: string
+          description: Tiêu đề Voucher (VD Giảm 30K)
+        description:
+          type: string
+          description: Mô tả khuyến mãi
+        discountType:
+          type: number
+          enum: [0, 1]
+          description: "Loại giảm giá (0: PERCENTAGE, 1: FIXED)"
+          default: 0
+        discountValue:
+          type: number
+          description: Giá trị phần trăm (0-100) hoặc số tiền cố định được giảm
+        minOrderValue:
+          type: number
+          description: Trị giá đơn hàng tối thiểu
+        maxDiscountLimit:
+          type: number
+          description: Số tiền giảm tối đa (nếu dùng PERCENTAGE)
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        usageLimit:
+          type: number
+          description: Tổng số lượng mã phát hành
+        isActive:
+          type: number
+          enum: [0, 1]
+          default: 1

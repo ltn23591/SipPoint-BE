@@ -9,6 +9,7 @@ Dự án này là một Boilerplate Backend mạnh mẽ dựa trên Express.js, 
 - **Logging:** Hệ thống ghi log chuyên nghiệp ra file với `winston` (thư mục `logs/`).
 - **Gửi Email:** Hỗ trợ gửi email HTML sử dụng `nodemailer` và template engine `ejs`.
 - **Upload File:** Hỗ trợ API upload hình ảnh cục bộ và trực tiếp lên Cloudinary (sử dụng `multer` và `cloudinary`).
+- **Quản lý Khách hàng & Loyalty:** Xử lý hồ sơ, thẻ thành viên, xếp hạng hạng thẻ (Đồng, Bạc, Vàng, Kim Cương), tích lũy điểm thưởng và quản lý voucher.
 - **Đa ngôn ngữ (i18n):** Hỗ trợ trả về ngôn ngữ động dựa trên header `Accept-Language` (vi/en).
 - **Kiến trúc Chuẩn (Pattern):** Áp dụng triệt để mô hình Controller-Service. Controller chỉ nhận/trả Request/Response, Service xử lý toàn bộ nghiệp vụ (Business Logic), giúp code dễ bảo trì và mở rộng.
 - **Quản lý linh hoạt:** Toàn bộ thông báo (Messages), Error Codes được tách riêng vào thư mục `constants/` giúp dễ dàng bảo trì và hỗ trợ i18n tốt hơn.

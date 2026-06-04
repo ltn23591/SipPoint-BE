@@ -72,6 +72,11 @@ const product = new mongoose.Schema(
       ref: 'User',
       required: false,
     },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
   },
   {
     timestamps: true, // Tự động thêm createdAt và updatedAt
@@ -83,5 +88,6 @@ product.index({ name: 'text', description: 'text' });
 product.index({ category: 1 });
 product.index({ price: 1 });
 product.index({ isActive: 1 });
+product.index({ isDeleted: 1 });
 
 module.exports = mongoose.model('Product', product);

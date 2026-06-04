@@ -1,0 +1,81 @@
+const mongoose = require('mongoose');
+
+const voucherSchema = new mongoose.Schema(
+  {
+    code: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+      uppercase: true,
+    },
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    description: {
+      type: String,
+      trim: true,
+    },
+    // Loại giảm giá: 0 (PERCENTAGE - phần trăm) hoặc 1 (FIXED - tiền mặt cố định)
+    discountType: {
+      type: Number,
+      required: true,
+      enum: [0, 1], // 0: PERCENTAGE, 1: FIXED
+      default: 0,
+    },
+    discountValue: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    // Giá trị đơn hàng tối thiểu để được áp dụng
+    minOrderValue: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    // Mức giảm tối đa (thường áp dụng cho loại giảm giá PERCENTAGE)
+    maxDiscountLimit: {
+      type: Number,
+      min: 0,
+    },
+    startDate: {
+      type: Date,
+      default: Date.now,
+    },
+    endDate: {
+      type: Date,
+      required: true,
+    },
+    // Số lượng phát hành tối đa
+    usageLimit: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+    // Số lượng đã được sử dụng
+    usedCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    isActive: {
+      type: Number,
+      enum: [0, 1], // 0: Khoá/Không kích hoạt, 1: Đang kích hoạt
+      default: 1,
+    },
+  },
+  {
+    timestamps: true,
+    collection: 'vouchers',
+  }
+);
+
+// Tạo index để tìm kiếm mã nhanh hơn
+voucherSchema.index({ code: 1 });
+
+const Voucher = mongoose.model('Voucher', voucherSchema);
+
+module.exports = Voucher;
