@@ -4,6 +4,9 @@
 const ROLE = {
     USER: 0, // Người dùng
     ADMIN: 1, // Quản trị viên
+    CASHIER: 2, // Thu ngân
+    BARISTA: 3, // Pha chế
+    WAITER: 4, // Phục vụ
 };
 
 const USER_STATUS = {
@@ -22,9 +25,21 @@ const IS_ACTIVE = {
     TRUE: 1,
 };
 
+const DISCOUNT_TYPE = {
+    PERCENTAGE: 0, // Giảm theo %
+    FIXED: 1,      // Giảm theo số tiền cố định
+};
+
+const VARIANT_TYPE = {
+    SIZE: 0,
+    TOPPING: 1,
+};
+
 module.exports = {
     ROLE,
     USER_STATUS,
     OTP_TYPE,
-    IS_ACTIVE
+    IS_ACTIVE,
+    DISCOUNT_TYPE,
+    VARIANT_TYPE
 };

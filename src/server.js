@@ -8,10 +8,12 @@ const startServer = async () => {
   await connectDB();
 
   app.listen(PORT, () => {
-    console.log(`=========================================`);
-    console.log(`[Server] running in ${process.env.NODE_ENV || 'development'} mode`);
-    console.log(`[Server] Access URL: http://localhost:${PORT}`);
-    console.log(`=========================================`);
+    console.log(`\x1b[36m========================================================\x1b[0m`);
+    console.log(`\x1b[32m🚀 [Server] Status: ONLINE\x1b[0m`);
+    console.log(`\x1b[35m⚡ [Server] Mode  : ${process.env.NODE_ENV || 'development'}\x1b[0m`);
+    console.log(`\x1b[34m🔗 [Server] URL   : http://localhost:${PORT}\x1b[0m`);
+    console.log(`\x1b[33m📝 [Swagger] Docs : http://localhost:${PORT}/api-docs\x1b[0m`);
+    console.log(`\x1b[36m========================================================\x1b[0m`);
   });
 };
 

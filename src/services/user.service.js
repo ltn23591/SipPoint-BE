@@ -5,12 +5,12 @@ const validator = require('validator');
 
 class UserService {
   static async getAllUsers() {
-    const users = await User.find({}).select('-password');
+    const users = await User.find({ isDeleted: false }).select('-password');
     return { status: 200, success: true, count: users.length, data: users };
   }
 
   static async getUserById(id) {
-    const user = await User.findById(id).select('-password');
+    const user = await User.findOne({ _id: id, isDeleted: false }).select('-password');
     if (!user) {
       return { status: 404, success: false, message: `Không tìm thấy người dùng với ID: ${id}` };
     }
@@ -18,7 +18,7 @@ class UserService {
   }
 
   static async getUserByEmail(email) {
-    return await User.findOne({ email }).select('+password');
+    return await User.findOne({ email, isDeleted: false }).select('+password');
   }
 
   static async createUser(userData) {
@@ -78,7 +78,7 @@ class UserService {
       const salt = await bcrypt.genSalt(10);
       updateData.password = await bcrypt.hash(updateData.password, salt);
 
-      const user = await User.findById(id);
+      const user = await User.findOne({ _id: id, isDeleted: false });
       if (user) {
         user.password = updateData.password;
         if (updateData.name) user.name = updateData.name;
@@ -89,10 +89,14 @@ class UserService {
       return { status: 404, success: false, message: `Không tìm thấy người dùng với ID: ${id}` };
     }
 
-    const user = await User.findByIdAndUpdate(id, updateData, {
-      new: true,
-      runValidators: true,
-    }).select('-password');
+    const user = await User.findOneAndUpdate(
+      { _id: id, isDeleted: false },
+      updateData,
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).select('-password');
 
     if (!user) {
       return { status: 404, success: false, message: `Không tìm thấy người dùng với ID: ${id}` };
@@ -102,7 +106,11 @@ class UserService {
   }
 
   static async deleteUser(id) {
-    const user = await User.findByIdAndDelete(id);
+    const user = await User.findOneAndUpdate(
+      { _id: id, isDeleted: false },
+      { isDeleted: true },
+      { new: true }
+    );
     if (!user) {
       return { status: 404, success: false, message: `Không tìm thấy người dùng với ID: ${id}` };
     }

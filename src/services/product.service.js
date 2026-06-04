@@ -5,7 +5,7 @@ class ProductService {
    * Lấy danh sách sản phẩm (có phân trang, tìm kiếm, lọc theo danh mục)
    */
   static async getAll(query = {}) {
-    const filter = {};
+    const filter = { isDeleted: false };
     if (query.keyword) {
       filter.name = { $regex: query.keyword, $options: 'i' };
     }
@@ -46,7 +46,7 @@ class ProductService {
   }
 
   static async getById(id) {
-    return await Product.findById(id).populate('category', 'name');
+    return await Product.findOne({ _id: id, isDeleted: false }).populate('category', 'name');
   }
 
   static async create(body, files) {
@@ -86,16 +86,24 @@ class ProductService {
       }
     }
 
-    const item = await Product.findByIdAndUpdate(id, productData, {
-      new: true,
-      runValidators: true,
-    });
+    const item = await Product.findOneAndUpdate(
+      { _id: id, isDeleted: false },
+      productData,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
 
     return item;
   }
 
   static async delete(id) {
-    return await Product.findByIdAndDelete(id);
+    return await Product.findOneAndUpdate(
+      { _id: id, isDeleted: false },
+      { isDeleted: true },
+      { new: true }
+    );
   }
 }
 

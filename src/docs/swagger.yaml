@@ -828,3 +828,84 @@ components:
           type: string
           format: date
           description: Ngày sinh
+
+    ProductVariant:
+      type: object
+      required:
+        - product
+        - variantType
+        - name
+        - priceAdjustment
+      properties:
+        _id:
+          type: string
+        product:
+          type: string
+          description: ID của sản phẩm gốc
+        variantType:
+          type: number
+          enum: [0, 1]
+          description: "Loại biến thể (0: SIZE, 1: TOPPING)"
+        name:
+          type: string
+          description: Tên biến thể (ví dụ Size L, Trân châu đen)
+        priceAdjustment:
+          type: number
+          description: Giá tiền tăng/giảm thêm khi chọn biến thể này
+        isActive:
+          type: number
+          enum: [0, 1]
+          default: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    VoucherInput:
+      type: object
+      required:
+        - code
+        - title
+        - discountType
+        - discountValue
+        - endDate
+        - usageLimit
+      properties:
+        code:
+          type: string
+          description: Mã code viết hoa (VD VIPCOFFEE)
+        title:
+          type: string
+          description: Tiêu đề Voucher (VD Giảm 30K)
+        description:
+          type: string
+          description: Mô tả khuyến mãi
+        discountType:
+          type: number
+          enum: [0, 1]
+          description: "Loại giảm giá (0: PERCENTAGE, 1: FIXED)"
+          default: 0
+        discountValue:
+          type: number
+          description: Giá trị phần trăm (0-100) hoặc số tiền cố định được giảm
+        minOrderValue:
+          type: number
+          description: Trị giá đơn hàng tối thiểu
+        maxDiscountLimit:
+          type: number
+          description: Số tiền giảm tối đa (nếu dùng PERCENTAGE)
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        usageLimit:
+          type: number
+          description: Tổng số lượng mã phát hành
+        isActive:
+          type: number
+          enum: [0, 1]
+          default: 1

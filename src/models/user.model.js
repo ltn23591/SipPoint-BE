@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: Number,
-      enum: [0, 1], // 0: user, 1: admin
+      enum: [0, 1, 2, 3, 4], // 0: user, 1: admin, 2: cashier, 3: barista, 4: waiter
       default: 0,
     },
     status: {
@@ -55,11 +55,18 @@ const userSchema = new mongoose.Schema(
     resetPasswordTokenExpire: {
       type: Date,
     },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+      required: true,
+    },
   },
   {
     timestamps: true,
   },
 );
+
+userSchema.index({ isDeleted: 1 });
 
 const User = mongoose.model('User', userSchema);
 
