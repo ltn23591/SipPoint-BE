@@ -1,4 +1,5 @@
 const Product = require('../models/product.model');
+const ProductVariant = require('../models/productVariant.model');
 const cloudinary = require('../config/cloudinary');
 
 // funcion for list product
@@ -20,9 +21,16 @@ exports.getAll = async (req, res) => {
 exports.getById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate('category', 'name');
+    if (!product) {
+      return res.json({ success: false, message: 'Product not found' });
+    }
+    const variants = await ProductVariant.find({ product: product._id });
     res.json({
       success: true,
-      data: product,
+      data: {
+        ...product.toObject(),
+        variants,
+      },
     });
   } catch (error) {
     console.log(error);
@@ -33,7 +41,7 @@ exports.getById = async (req, res) => {
 // funcion for add product
 exports.create = async (req, res) => {
   try {
-    const { name, description, price, category, stock, isActive } = req.body;
+    const { name, description, price, category, stock, isActive, variants } = req.body;
 
     // Lấy toàn bộ mảng các file đã được multer upload (bất kể tên key là gì)
     const allImages = req.files || [];
@@ -64,10 +72,34 @@ exports.create = async (req, res) => {
     const product = new Product(productData);
     await product.save();
 
+    let createdVariants = [];
+    if (variants) {
+      let parsedVariants = [];
+      try {
+        parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+      } catch (e) {
+        console.log('Failed to parse variants:', e);
+      }
+
+      if (Array.isArray(parsedVariants) && parsedVariants.length > 0) {
+        const variantsData = parsedVariants.map(variant => ({
+          product: product._id,
+          variantType: Number(variant.variantType),
+          name: variant.name,
+          priceAdjustment: Number(variant.priceAdjustment) || 0,
+          isActive: variant.isActive !== undefined ? Number(variant.isActive) : 1,
+        }));
+        createdVariants = await ProductVariant.insertMany(variantsData);
+      }
+    }
+
     res.json({
       success: true,
       message: 'Product Added',
-      data: product,
+      data: {
+        ...product.toObject(),
+        variants: createdVariants,
+      },
     });
   } catch (error) {
     console.log(error);
@@ -78,7 +110,7 @@ exports.create = async (req, res) => {
 // funcion for update product
 exports.update = async (req, res) => {
   try {
-    const { name, description, price, category, stock, isActive } = req.body;
+    const { name, description, price, category, stock, isActive, variants } = req.body;
 
     const productData = {
       name,
@@ -112,10 +144,46 @@ exports.update = async (req, res) => {
       new: true,
     });
 
+    if (!updatedProduct) {
+      return res.json({ success: false, message: 'Product not found' });
+    }
+
+    let updatedVariants = [];
+    if (variants !== undefined) {
+      let parsedVariants = [];
+      try {
+        parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+      } catch (e) {
+        console.log('Failed to parse variants:', e);
+      }
+
+      if (Array.isArray(parsedVariants)) {
+        // Xóa hết các biến thể cũ
+        await ProductVariant.deleteMany({ product: req.params.id });
+        // Thêm các biến thể mới nếu có
+        if (parsedVariants.length > 0) {
+          const variantsData = parsedVariants.map(variant => ({
+            product: req.params.id,
+            variantType: Number(variant.variantType),
+            name: variant.name,
+            priceAdjustment: Number(variant.priceAdjustment) || 0,
+            isActive: variant.isActive !== undefined ? Number(variant.isActive) : 1,
+          }));
+          updatedVariants = await ProductVariant.insertMany(variantsData);
+        }
+      }
+    } else {
+      // Nếu không gửi lên variants mới, lấy các biến thể hiện tại
+      updatedVariants = await ProductVariant.find({ product: req.params.id });
+    }
+
     res.json({
       success: true,
       message: 'Product Updated',
-      data: updatedProduct,
+      data: {
+        ...updatedProduct.toObject(),
+        variants: updatedVariants,
+      },
     });
   } catch (error) {
     console.log(error);
@@ -127,6 +195,8 @@ exports.update = async (req, res) => {
 exports.remove = async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);
+    // Xóa tất cả các biến thể đi kèm sản phẩm
+    await ProductVariant.deleteMany({ product: req.params.id });
     res.json({
       success: true,
       message: 'Product Removed',

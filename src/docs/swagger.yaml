@@ -770,6 +770,9 @@ components:
           type: number
           enum: [0, 1]
           default: 1
+        variants:
+          type: string
+          description: "Danh sách biến thể dạng JSON string (Ví dụ: '[{\"variantType\": 0, \"name\": \"Size L\", \"priceAdjustment\": 5000}]')"
     Product:
       type: object
       properties:
@@ -802,6 +805,10 @@ components:
           type: number
         isActive:
           type: number
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductVariant'
         createdAt:
           type: string
           format: date-time
