@@ -1065,10 +1065,6 @@ paths:
           schema:
             type: string
           required: true
-  /api/v1/ai/chat:
-    post:
-      summary: Chat với AI Bot dựa trên danh sách sản phẩm
-      tags: [AI]
       requestBody:
         required: true
         content:
@@ -1106,6 +1102,18 @@ paths:
         3. Điền giá trị cho tham số trong URL path (id).
         4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
         5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
+
+  /api/v1/ai/chat:
+    post:
+      summary: Chat với AI Bot dựa trên danh sách sản phẩm
+      tags: [AI]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
                 - message
                 - sessionId
               properties:
