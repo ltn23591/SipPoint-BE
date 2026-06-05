@@ -4,6 +4,7 @@ const Product = require('../models/product.model');
 const ChatSession = require('../models/chatSession.model');
 const Voucher = require('../models/voucher.model');
 const Customer = require('../models/customer.model');
+const CustomerVoucher = require('../models/customerVoucher.model');
 
 // Sử dụng biến môi trường
 const apiKey = process.env.GEMINI_API_KEY;
@@ -29,6 +30,18 @@ class AIService {
           ? Customer.findById(sessionId).lean() 
           : Customer.findOne({ $or: [{ customerId: sessionId }, { phone: sessionId }, { email: sessionId }] }).lean(),
       ]);
+
+      // 1.5. Lấy danh sách ví voucher riêng của khách hàng nếu tìm thấy khách hàng
+      let customerVouchers = [];
+      if (customer) {
+        customerVouchers = await CustomerVoucher.find({
+          customerId: customer._id,
+          isUsed: false,
+          expiryDate: { $gt: new Date() },
+        })
+          .populate('voucherId')
+          .lean();
+      }
 
       // 2. Tạo catalog sản phẩm dạng text
       let productCatalog = 'Hiện tại cửa hàng đang cập nhật sản phẩm. Vui lòng quay lại sau.';
@@ -67,9 +80,20 @@ class AIService {
           .join('\n');
       }
 
-      // 4. Tạo thông tin khách hàng nếu tìm thấy
+      // 4. Tạo thông tin khách hàng và ví voucher cá nhân nếu tìm thấy
       let customerInfoText = '';
       if (customer) {
+        let personalVouchersText = 'Hiện tại khách hàng không có voucher cá nhân nào chưa dùng trong ví.';
+        if (customerVouchers && customerVouchers.length) {
+          personalVouchersText = customerVouchers
+            .map((cv) => {
+              const code = cv.voucherId ? cv.voucherId.code : 'VOUCHER';
+              const expStr = new Date(cv.expiryDate).toLocaleDateString('vi-VN');
+              return `- Mã cá nhân: **${code}** | ${cv.title} | Hạn dùng: ${expStr}`;
+            })
+            .join('\n');
+        }
+
         customerInfoText = `
 THÔNG TIN KHÁCH HÀNG ĐANG TRÒ CHUYỆN:
 - Tên đầy đủ: ${customer.fullName}
@@ -78,9 +102,13 @@ THÔNG TIN KHÁCH HÀNG ĐANG TRÒ CHUYỆN:
 - Điểm tích lũy hiện có (SipPoints): ${customer.currentPoints} điểm
 - Tổng chi tiêu tích lũy: ${customer.totalSpent.toLocaleString('vi-VN')} VNĐ
 
+VÍ VOUCHER SỞ HỮU CỦA KHÁCH HÀNG:
+${personalVouchersText}
+
 HƯỚNG DẪN RIÊNG CHO KHÁCH HÀNG NÀY:
 - Hãy chào khách hàng bằng tên riêng (${customer.fullName}) một cách lịch sự, thân mật (Ví dụ: "Dạ, SipPoint xin chào anh/chị ${customer.fullName} ạ!").
 - Khi khách hàng hỏi về điểm số, hạng thành viên, hoặc tổng chi tiêu, hãy trả lời chính xác số liệu trên của họ.
+- Nếu khách hỏi về các voucher cá nhân họ đang sở hữu (ví voucher riêng), hãy đọc chính xác danh sách VÍ VOUCHER SỞ HỮU ở trên. Nhắc nhở họ sử dụng trước hạn dùng.
 `;
       }
 
@@ -96,7 +124,7 @@ HÃY TUÂN THỦ CÁC NGUYÊN TẮC SAU:
 4. GỢI Ý ĐI KÈM (UP-SELL/CROSS-SELL):
    - Nếu khách chọn đồ uống, hãy chủ động gợi ý thêm các tùy chọn về size hoặc topping phù hợp (ví dụ: trân châu, thạch...) nếu sản phẩm đó hỗ trợ.
    - Thân thiện gợi ý khách hàng tích điểm thành viên (SipPoint) để nhận các ưu đãi hoặc đổi voucher hấp dẫn.
-5. VOUCHER & KHUYẾN MÃI: Khi khách hỏi về khuyến mãi, giảm giá, hoặc ưu đãi, hãy giới thiệu các mã voucher đang hoạt động từ danh sách dưới đây. Giải thích rõ điều kiện sử dụng (như đơn tối thiểu, mức giảm tối đa) và hướng dẫn khách copy mã để áp dụng khi thanh toán.
+5. VOUCHER & KHUYẾN MÃI: Khi khách hỏi về khuyến mãi, giảm giá, hoặc ưu đãi chung, hãy giới thiệu các mã voucher đang hoạt động từ danh sách dưới đây. Giải thích rõ điều kiện sử dụng (như đơn tối thiểu, mức giảm tối đa) và hướng dẫn khách copy mã để áp dụng khi thanh toán. Nếu khách hỏi về voucher cá nhân trong ví, hãy kiểm tra danh sách ví voucher riêng ở trên và báo cho khách.
 6. TRÌNH BÀY: Định dạng câu trả lời gọn gàng bằng Markdown (dùng chữ in đậm cho tên đồ uống, mã voucher, sử dụng dấu gạch đầu dòng rõ ràng để khách hàng dễ đọc).
 
 VÍ DỤ HỘI THOẠI MẪU (BẮT CHƯỚC PHONG CÁCH NÀY):
@@ -105,6 +133,9 @@ VÍ DỤ HỘI THOẠI MẪU (BẮT CHƯỚC PHONG CÁCH NÀY):
 
 - Khách: "Tôi đang tích lũy được bao nhiêu điểm rồi em?"
 - AI: "Dạ thưa anh/chị, hiện tại tài khoản của anh/chị trên hệ thống đang có **150 điểm** tích lũy (SipPoints) và đạt hạng thành viên **BẠC** ạ. Anh/Chị chỉ cần tích thêm 50 điểm nữa là sẽ được nâng lên hạng **VÀNG** để nhận thêm nhiều voucher giảm 20% của quán đó ạ!"
+
+- Khách: "Tôi có voucher riêng nào chưa dùng không em?"
+- AI: "Dạ thưa anh/chị, em kiểm tra ví cá nhân của mình đang có 1 mã giảm giá **SIPGOLD20** - Giảm 20% tổng hóa đơn, hạn sử dụng đến ngày 20/06/2026 đó ạ. Anh/Chị nhớ sử dụng mã này khi thanh toán để được nhận ưu đãi đặc quyền nha!"
 
 - Khách: "Quán mình có chương trình khuyến mãi hay voucher nào áp dụng được không?"
 - AI: "Dạ hiện tại SipPoint đang có ưu đãi cực hot dành cho bạn ạ! Quán đang có mã giảm giá sau đang hoạt động:
