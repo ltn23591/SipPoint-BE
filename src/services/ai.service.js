@@ -1,6 +1,7 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const Product = require('../models/product.model');
 const ChatSession = require('../models/chatSession.model');
+const Voucher = require('../models/voucher.model');
 
 // Sử dụng biến môi trường
 const apiKey = process.env.GEMINI_API_KEY;
@@ -16,10 +17,13 @@ const genAI = new GoogleGenerativeAI(apiKey);
 class AIService {
   static async chatWithProducts(userMessage, sessionId) {
     try {
-      // 1. Lấy dữ liệu sản phẩm
-      const products = await Product.find({ isActive: 1 }).populate('category', 'name').lean();
+      // 1. Lấy dữ liệu sản phẩm và khuyến mãi từ DB song song
+      const [products, vouchers] = await Promise.all([
+        Product.find({ isActive: 1 }).populate('category', 'name').lean(),
+        Voucher.find({ isActive: 1, endDate: { $gt: new Date() } }).lean(),
+      ]);
 
-      // 2. Tạo catalog sản phẩm dạng text để đưa vào system instruction
+      // 2. Tạo catalog sản phẩm dạng text
       let productCatalog = 'Hiện tại cửa hàng đang cập nhật sản phẩm. Vui lòng quay lại sau.';
       if (products && products.length) {
         productCatalog = products
@@ -34,23 +38,51 @@ class AIService {
           .join('\n');
       }
 
-      // 2. Định nghĩa System Instruction
+      // 3. Tạo danh sách Voucher khuyến mãi dạng text
+      let voucherCatalog = 'Hiện tại cửa hàng không có mã giảm giá nào đang diễn ra.';
+      if (vouchers && vouchers.length) {
+        voucherCatalog = vouchers
+          .map((v) => {
+            const discountStr =
+              v.discountType === 0
+                ? `${v.discountValue}%`
+                : `${v.discountValue.toLocaleString('vi-VN')} VNĐ`;
+            const minOrder =
+              v.minOrderValue > 0
+                ? `Đơn tối thiểu: ${v.minOrderValue.toLocaleString('vi-VN')} VNĐ`
+                : 'Mọi đơn hàng';
+            const maxDiscount =
+              v.discountType === 0 && v.maxDiscountLimit
+                ? ` (Giảm tối đa: ${v.maxDiscountLimit.toLocaleString('vi-VN')} VNĐ)`
+                : '';
+            return `- Mã: **${v.code}** | ${v.title} (${v.description || ''}) | Giảm: ${discountStr}${maxDiscount} | ${minOrder}`;
+          })
+          .join('\n');
+      }
+
+      // 4. Định nghĩa System Instruction
       const systemInstruction = `
 Bạn là một nhân viên tư vấn bán hàng (AI Assistant) vô cùng nhiệt tình, chuyên nghiệp, ấm áp và thân thiện tại cửa hàng đồ uống "SipPoint".
-Nhiệm vụ của bạn là lắng nghe, hỗ trợ khách hàng và tư vấn các món nước uống phù hợp nhất dựa trên DANH SÁCH SẢN PHẨM HIỆN CÓ dưới đây.
+Nhiệm vụ của bạn là lắng nghe, hỗ trợ khách hàng và tư vấn các món nước uống cũng như các chương trình khuyến mãi phù hợp nhất dựa trên danh sách dữ liệu thực tế từ hệ thống.
 
 HÃY TUÂN THỦ CÁC NGUYÊN TẮC SAU:
 1. XƯNG HÔ: Lịch sự, gần gũi, sử dụng các từ ngữ thân thiện như "Dạ", "ạ", xưng "SipPoint" hoặc "Em" và gọi khách hàng là "Anh/Chị" hoặc "Bạn".
-2. TƯ VẤN SẢN PHẨM: Chỉ giới thiệu và tư vấn các sản phẩm có mặt trong danh sách dưới đây. Tuyệt đối KHÔNG tự bịa ra sản phẩm mới không có trong danh sách. Nếu khách hỏi món nước không có trong danh sách, hãy khéo léo xin lỗi và gợi ý một món nước tương tự hoặc nổi bật của quán.
+2. TƯ VẤN SẢN PHẨM: Chỉ giới thiệu và tư vấn các sản phẩm có mặt trong DANH SÁCH SẢN PHẨM dưới đây. Tuyệt đối KHÔNG tự bịa ra sản phẩm mới. Nếu khách hỏi món nước không có trong danh sách, hãy khéo léo xin lỗi và gợi ý một món nước tương tự hoặc nổi bật của quán.
 3. CHI TIẾT SẢN PHẨM: Khi khách hỏi về món nước nào đó, hãy giới thiệu tên món, giá cả (luôn dùng VNĐ kèm dấu phân cách hàng ngàn, ví dụ: 30.000 VNĐ) và tình trạng còn hàng hay hết hàng.
 4. GỢI Ý ĐI KÈM (UP-SELL/CROSS-SELL):
    - Nếu khách chọn đồ uống, hãy chủ động gợi ý thêm các tùy chọn về size hoặc topping phù hợp (ví dụ: trân châu, thạch...) nếu sản phẩm đó hỗ trợ.
    - Thân thiện gợi ý khách hàng tích điểm thành viên (SipPoint) để nhận các ưu đãi hoặc đổi voucher hấp dẫn.
-5. TRÌNH BÀY: Định dạng câu trả lời gọn gàng bằng Markdown (dùng chữ in đậm cho tên đồ uống, sử dụng dấu gạch đầu dòng rõ ràng để khách hàng dễ đọc).
+5. VOUCHER & KHUYẾN MÃI: Khi khách hỏi về khuyến mãi, giảm giá, hoặc ưu đãi, hãy giới thiệu các mã voucher đang hoạt động từ danh sách dưới đây. Giải thích rõ điều kiện sử dụng (như đơn tối thiểu, mức giảm tối đa) và hướng dẫn khách copy mã để áp dụng khi thanh toán.
+6. TRÌNH BÀY: Định dạng câu trả lời gọn gàng bằng Markdown (dùng chữ in đậm cho tên đồ uống, mã voucher, sử dụng dấu gạch đầu dòng rõ ràng để khách hàng dễ đọc).
 
 VÍ DỤ HỘI THOẠI MẪU (BẮT CHƯỚC PHONG CÁCH NÀY):
 - Khách: "Quán có món nước nào ngon không em?"
 - AI: "Dạ, SipPoint xin chào bạn! Hiện tại quán đang có món **Trà sữa Trân Châu Hoàng Gia** thơm ngon đậm vị trà, béo ngậy vị sữa với giá là 35.000 VNĐ ạ. Ngoài ra, bạn có thể gọi thêm topping trân châu đen (8.000 VNĐ) hoặc nâng lên Size L (+5.000 VNĐ) để uống cho đã hơn nha. Bạn có muốn đặt thử món này không ạ?"
+
+- Khách: "Quán mình có chương trình khuyến mãi hay voucher nào áp dụng được không?"
+- AI: "Dạ hiện tại SipPoint đang có ưu đãi cực hot dành cho bạn ạ! Quán đang có mã giảm giá sau đang hoạt động:
+  - Mã: **SIPNEW** | Giảm 10% cho đơn hàng (Giảm tối đa: 20.000 VNĐ) | Áp dụng cho đơn tối thiểu từ 50.000 VNĐ trở lên.
+  Bạn chỉ cần copy mã **SIPNEW** này nhập vào ô Khuyến mãi lúc đặt hàng để được giảm giá nhé ạ. Bạn có cần em tư vấn thêm đồ uống ngon nào để áp mã này không ạ?"
 
 - Khách: "Tôi muốn đặt một ly nâu đá"
 - AI: "Dạ, SipPoint xin chào bạn! Rất tiếc hiện tại quán chưa cập nhật món cà phê nâu đá vào thực đơn hôm nay ạ. Tuy nhiên, quán đang có món **Cà Phê Muối Biển** và **Bạc Xỉu Đá** cực kỳ đậm đà và được nhiều khách hàng yêu thích với giá chỉ từ 29.000 VNĐ thôi ạ. Bạn có muốn uống thử một trong hai món này thay thế không ạ?"
@@ -60,6 +92,9 @@ VÍ DỤ HỘI THOẠI MẪU (BẮT CHƯỚC PHONG CÁCH NÀY):
 
 DANH SÁCH SẢN PHẨM HIỆN CÓ CỦA SIPPOINT:
 ${productCatalog}
+
+DANH SÁCH VOUCHER KHUYẾN MÃI ĐANG HOẠT ĐỘNG:
+${voucherCatalog}
       `;
 
       // Khởi tạo model
