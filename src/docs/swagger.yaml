@@ -675,6 +675,239 @@ paths:
         200:
           description: Thay đổi điểm thành công
 
+  /api/v1/zones:
+    get:
+      summary: Lấy danh sách khu vực
+      tags: [Zone]
+      responses:
+        200:
+          description: Danh sách khu vực
+    post:
+      summary: Tạo mới khu vực
+      tags: [Zone]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: Tên khu vực (ví dụ Tầng 1)
+                description:
+                  type: string
+                  description: Mô tả khu vực
+                isActive:
+                  type: number
+                  enum: [0, 1]
+                  default: 1
+      responses:
+        201:
+          description: Tạo khu vực thành công
+
+  /api/v1/zones/{id}:
+    get:
+      summary: Lấy chi tiết một khu vực
+      tags: [Zone]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID khu vực
+      responses:
+        200:
+          description: Chi tiết khu vực
+        404:
+          description: Không tìm thấy
+    put:
+      summary: Cập nhật khu vực
+      tags: [Zone]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID khu vực
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                isActive:
+                  type: number
+                  enum: [0, 1]
+      responses:
+        200:
+          description: Cập nhật thành công
+        404:
+          description: Không tìm thấy
+    delete:
+      summary: Xóa khu vực
+      tags: [Zone]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID khu vực
+      responses:
+        200:
+          description: Xóa thành công
+        404:
+          description: Không tìm thấy
+
+  /api/v1/tables:
+    get:
+      summary: Lấy danh sách bàn
+      tags: [Table]
+      parameters:
+        - in: query
+          name: zoneId
+          schema:
+            type: string
+          description: Lọc bàn theo ID khu vực
+      responses:
+        200:
+          description: Danh sách bàn
+    post:
+      summary: Tạo mới bàn
+      tags: [Table]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - zoneId
+              properties:
+                name:
+                  type: string
+                  description: Tên bàn (ví dụ Bàn 1)
+                zoneId:
+                  type: string
+                  description: ID của khu vực trực thuộc
+                status:
+                  type: number
+                  enum: [0, 1, 2]
+                  default: 0
+                isActive:
+                  type: number
+                  enum: [0, 1]
+                  default: 1
+      responses:
+        201:
+          description: Tạo bàn thành công
+
+  /api/v1/tables/{id}:
+    get:
+      summary: Lấy chi tiết bàn
+      tags: [Table]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID bàn
+      responses:
+        200:
+          description: Chi tiết bàn
+        404:
+          description: Không tìm thấy
+    put:
+      summary: Cập nhật bàn (Đổi tên, khu vực hoặc cập nhật trạng thái Bàn trống/Có khách/Đặt trước)
+      tags: [Table]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID bàn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                zoneId:
+                  type: string
+                status:
+                  type: number
+                  enum: [0, 1, 2]
+                isActive:
+                  type: number
+                  enum: [0, 1]
+      responses:
+        200:
+          description: Cập nhật thành công
+        404:
+          description: Không tìm thấy
+    delete:
+      summary: Xóa bàn
+      tags: [Table]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID bàn
+      responses:
+        200:
+          description: Xóa thành công
+        404:
+          description: Không tìm thấy
+
+  /api/v1/tables/{id}/qrcode:
+    post:
+      summary: Tạo lại/cập nhật mã QR Code của bàn
+      tags: [Table]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID bàn
+      responses:
+        200:
+          description: Tạo thành công
+        404:
+          description: Không tìm thấy
+
 tags:
   - name: Auth
     description: API Quản lý Xác thực
@@ -693,6 +926,10 @@ tags:
 
   - name: Customer
     description: API Quản lý Khách hàng
+  - name: Zone
+    description: API Quản lý Khu vực (Bàn ăn)
+  - name: Table
+    description: API Quản lý Bàn và sinh mã QR Code
 
 components:
   schemas:

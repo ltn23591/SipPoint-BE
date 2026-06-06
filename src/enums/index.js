@@ -35,11 +35,18 @@ const VARIANT_TYPE = {
     TOPPING: 1,
 };
 
+const TABLE_STATUS = {
+    AVAILABLE: 0, // Bàn trống
+    OCCUPIED: 1,  // Đang có khách
+    RESERVED: 2,  // Đã đặt trước
+};
+
 module.exports = {
     ROLE,
     USER_STATUS,
     OTP_TYPE,
     IS_ACTIVE,
     DISCOUNT_TYPE,
-    VARIANT_TYPE
+    VARIANT_TYPE,
+    TABLE_STATUS
 };
