@@ -7,9 +7,9 @@ paths:
         200:
           description: Server hoạt động bình thường
 
-  /api/v1/auth/register:
+  /api/v1/auth/customer/register:
     post:
-      summary: Đăng ký tài khoản mới
+      summary: Đăng ký tài khoản Khách hàng mới
       tags: [Auth]
       requestBody:
         required: true
@@ -18,11 +18,13 @@ paths:
             schema:
               type: object
               required:
-                - name
-                - email
+                - fullName
+                - phone
                 - password
               properties:
-                name:
+                fullName:
+                  type: string
+                phone:
                   type: string
                 email:
                   type: string
@@ -34,9 +36,34 @@ paths:
         400:
           description: Lỗi dữ liệu
 
-  /api/v1/auth/verify-email:
+  /api/v1/auth/customer/login:
     post:
-      summary: Xác thực tài khoản bằng OTP qua Email
+      summary: Đăng nhập Khách hàng (bằng Số điện thoại hoặc Email)
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - loginIdentifier
+                - password
+              properties:
+                loginIdentifier:
+                  type: string
+                  description: Số điện thoại hoặc Email của khách hàng
+                password:
+                  type: string
+      responses:
+        200:
+          description: Đăng nhập thành công và nhận cookie token
+        401:
+          description: Sai thông tin đăng nhập
+
+  /api/v1/auth/customer/verify-email:
+    post:
+      summary: Xác thực tài khoản Khách hàng bằng OTP qua Email
       tags: [Auth]
       requestBody:
         required: true
@@ -58,9 +85,54 @@ paths:
         400:
           description: Lỗi OTP hoặc tài khoản đã xác thực
 
+  /api/v1/auth/verify-email:
+    post:
+      summary: Xác thực tài khoản Khách hàng bằng OTP qua Email (Alias đường dẫn gốc)
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - otp
+              properties:
+                email:
+                  type: string
+                otp:
+                  type: string
+      responses:
+        200:
+          description: Xác thực thành công và tự động đăng nhập (nhận token)
+        400:
+          description: Lỗi OTP hoặc tài khoản đã xác thực
+
+  /api/v1/auth/customer/resend-verify-email:
+    post:
+      summary: Gửi lại mã OTP xác thực Email cho Khách hàng
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+      responses:
+        200:
+          description: Gửi OTP thành công
+        400:
+          description: Email không hợp lệ hoặc tài khoản đã xác thực
+
   /api/v1/auth/resend-verify-email:
     post:
-      summary: Gửi lại mã OTP xác thực Email
+      summary: Gửi lại mã OTP xác thực Email cho Khách hàng (Alias đường dẫn gốc)
       tags: [Auth]
       requestBody:
         required: true
@@ -81,7 +153,7 @@ paths:
 
   /api/v1/auth/login:
     post:
-      summary: Đăng nhập
+      summary: Đăng nhập Nhân viên (Admin, Cashier, Barista, Waiter)
       tags: [Auth]
       requestBody:
         required: true
@@ -187,9 +259,9 @@ paths:
         200:
           description: Tắt 2FA thành công
 
-  /api/v1/export/users:
+  /api/v1/export/employees:
     get:
-      summary: Xuất danh sách người dùng ra Excel
+      summary: Xuất danh sách nhân viên ra Excel
       tags: [Exports]
       security:
         - bearerAuth: []
@@ -279,20 +351,18 @@ paths:
         400:
           description: Thiếu file
 
-  /api/v1/users/search:
+  /api/v1/employees:
     get:
-      summary: Lấy danh sách tất cả người dùng
-      tags: [Users]
+      summary: Lấy danh sách tất cả nhân viên
+      tags: [Employees]
       security:
         - bearerAuth: []
       responses:
         200:
-          description: Danh sách người dùng
-
-  /api/v1/users/create:
+          description: Danh sách nhân viên
     post:
-      summary: Tạo người dùng mới
-      tags: [Users]
+      summary: Tạo nhân viên mới (Admin thêm tài khoản)
+      tags: [Employees]
       security:
         - bearerAuth: []
       requestBody:
@@ -305,6 +375,7 @@ paths:
                 - name
                 - email
                 - password
+                - role
               properties:
                 name:
                   type: string
@@ -313,18 +384,19 @@ paths:
                 password:
                   type: string
                 role:
-                  type: string
-                  enum: [user, admin]
+                  type: integer
+                  description: 'Quyền: 1 (Admin), 2 (Cashier), 3 (Barista), 4 (Waiter)'
+                  enum: [1, 2, 3, 4]
       responses:
         201:
           description: Tạo thành công
         400:
           description: Lỗi dữ liệu
 
-  /api/v1/users/{id}/detail:
+  /api/v1/employees/{id}:
     get:
-      summary: Lấy thông tin một người dùng
-      tags: [Users]
+      summary: Lấy thông tin chi tiết một nhân viên
+      tags: [Employees]
       security:
         - bearerAuth: []
       parameters:
@@ -333,17 +405,15 @@ paths:
           schema:
             type: string
           required: true
-          description: ID của người dùng
+          description: ID của nhân viên
       responses:
         200:
-          description: Thông tin người dùng
+          description: Thông tin nhân viên
         404:
           description: Không tìm thấy
-
-  /api/v1/users/{id}/update:
     put:
-      summary: Cập nhật thông tin người dùng
-      tags: [Users]
+      summary: Cập nhật thông tin nhân viên (phân quyền / đổi thông tin)
+      tags: [Employees]
       security:
         - bearerAuth: []
       parameters:
@@ -352,7 +422,7 @@ paths:
           schema:
             type: string
           required: true
-          description: ID của người dùng
+          description: ID của nhân viên
       requestBody:
         required: true
         content:
@@ -365,18 +435,17 @@ paths:
                 email:
                   type: string
                 role:
-                  type: string
-                  enum: [user, admin]
+                  type: integer
+                  description: 'Quyền: 1 (Admin), 2 (Cashier), 3 (Barista), 4 (Waiter)'
+                  enum: [1, 2, 3, 4]
       responses:
         200:
           description: Cập nhật thành công
         404:
           description: Không tìm thấy
-
-  /api/v1/users/{id}/delete:
     delete:
-      summary: Xóa người dùng
-      tags: [Users]
+      summary: Xóa nhân viên
+      tags: [Employees]
       security:
         - bearerAuth: []
       parameters:
@@ -385,7 +454,7 @@ paths:
           schema:
             type: string
           required: true
-          description: ID của người dùng
+          description: ID của nhân viên
       responses:
         200:
           description: Xóa thành công

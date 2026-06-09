@@ -1,53 +1,52 @@
 const AuthService = require('../services/auth.service');
+const EmployeeService = require('../services/employee.service');
 const { sendTokenResponse } = require('../utils/response');
+const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+const Employee = require('../models/employee.model');
+const bcrypt = require('bcrypt');
+const sendEmail = require('../utils/email');
 
-// @desc    Đăng ký người dùng
-// @route   POST /api/auth/register
+// @desc    Đăng ký tài khoản Khách hàng (Customer)
+// @route   POST /api/v1/auth/customer/register
 // @access  Public
-exports.register = async (req, res, next) => {
+exports.customerRegister = async (req, res, next) => {
   try {
-    const result = await AuthService.register(req.body);
-    // Remove status to not leak it into response body if we don't want it, but the user expects `res.status(result.status).json(result)`
+    const result = await AuthService.customerRegister(req.body);
     return res.status(result.status).json(result);
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Đăng nhập
-// @route   POST /api/auth/login
+// @desc    Đăng nhập Khách hàng (Customer)
+// @route   POST /api/v1/auth/customer/login
+// @access  Public
+exports.customerLogin = async (req, res, next) => {
+  try {
+    const { loginIdentifier, password } = req.body;
+    const result = await AuthService.customerLogin(loginIdentifier, password);
+    
+    if (result.user) {
+      return sendTokenResponse(result.user, result.status, res, result.message, result.userType);
+    }
+    
+    return res.status(result.status).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Đăng nhập Nhân viên (Employee)
+// @route   POST /api/v1/auth/login
 // @access  Public
 exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-    const result = await AuthService.login(email, password);
-    
-    // Nếu service trả về user -> cấp token (Login thành công)
-    if (result.user) {
-      return sendTokenResponse(result.user, result.status, res, result.message);
-    }
-    
-    // Nếu là lỗi hoặc yêu cầu 2FA
-    return res.status(result.status).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
-// -------------------------------------------------------------
-// XÁC THỰC EMAIL (SAU KHI ĐĂNG KÝ)
-// -------------------------------------------------------------
-
-// @desc    Xác thực Email qua OTP
-// @route   POST /api/v1/auth/verify-email
-// @access  Public
-exports.verifyEmail = async (req, res, next) => {
-  try {
-    const { email, otp } = req.body;
-    const result = await AuthService.verifyEmail(email, otp);
+    const result = await AuthService.employeeLogin(email, password);
     
     if (result.user) {
-      return sendTokenResponse(result.user, result.status, res, result.message);
+      return sendTokenResponse(result.user, result.status, res, result.message, result.userType);
     }
     
     return res.status(result.status).json(result);
@@ -56,26 +55,13 @@ exports.verifyEmail = async (req, res, next) => {
   }
 };
 
-// @desc    Gửi lại mã OTP xác thực Email
-// @route   POST /api/v1/auth/resend-verify-email
-// @access  Public
-exports.resendVerifyEmail = async (req, res, next) => {
-  try {
-    const { email } = req.body;
-    const result = await AuthService.resendVerifyEmail(email);
-    return res.status(result.status).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
-
 // -------------------------------------------------------------
-// TÍNH NĂNG 2FA (BẢO MẬT 2 LỚP)
+// TÍNH NĂNG 2FA (BẢO MẬT 2 LỚP) CHO NHÂN VIÊN
 // -------------------------------------------------------------
 
 // @desc    Gửi mã OTP để BẬT 2FA
 // @route   POST /api/v1/auth/2fa/enable
-// @access  Private
+// @access  Private (Employee)
 exports.enable2FA = async (req, res, next) => {
   try {
     const result = await AuthService.enable2FA(req.user.id);
@@ -87,7 +73,7 @@ exports.enable2FA = async (req, res, next) => {
 
 // @desc    Xác thực OTP để BẬT 2FA
 // @route   POST /api/v1/auth/2fa/verify-enable
-// @access  Private
+// @access  Private (Employee)
 exports.verifyEnable2FA = async (req, res, next) => {
   try {
     const { otp } = req.body;
@@ -107,7 +93,7 @@ exports.login2FA = async (req, res, next) => {
     const result = await AuthService.login2FA(email, otp);
     
     if (result.user) {
-      return sendTokenResponse(result.user, result.status, res, result.message);
+      return sendTokenResponse(result.user, result.status, res, result.message, result.userType);
     }
     
     return res.status(result.status).json(result);
@@ -118,7 +104,7 @@ exports.login2FA = async (req, res, next) => {
 
 // @desc    Tắt tính năng 2FA
 // @route   POST /api/v1/auth/2fa/disable
-// @access  Private
+// @access  Private (Employee)
 exports.disable2FA = async (req, res, next) => {
   try {
     const result = await AuthService.disable2FA(req.user.id);
@@ -129,7 +115,7 @@ exports.disable2FA = async (req, res, next) => {
 };
 
 // @desc    Đăng xuất / Xóa cookie
-// @route   GET /api/auth/logout
+// @route   GET /api/v1/auth/logout
 // @access  Public
 exports.logout = async (req, res, next) => {
   try {
@@ -148,8 +134,8 @@ exports.logout = async (req, res, next) => {
   }
 };
 
-// @desc    Lấy thông tin người dùng hiện tại
-// @route   GET /api/auth/me
+// @desc    Lấy thông tin tài khoản hiện tại (Cả Khách hàng và Nhân viên)
+// @route   GET /api/v1/auth/me
 // @access  Private
 exports.getMe = async (req, res, next) => {
   try {
@@ -160,7 +146,7 @@ exports.getMe = async (req, res, next) => {
   }
 };
 
-// @desc    Yêu cầu khôi phục mật khẩu (Gửi OTP)
+// @desc    Yêu cầu khôi phục mật khẩu nhân viên (Gửi OTP)
 // @route   POST /api/v1/auth/forgot-password
 // @access  Public
 exports.forgotPassword = async (req, res, next) => {
@@ -171,9 +157,9 @@ exports.forgotPassword = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Vui lòng cung cấp email' });
     }
 
-    const user = await UserService.getUserByEmail(email);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng với email này' });
+    const employee = await EmployeeService.getEmployeeByEmail(email);
+    if (!employee) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản với email này' });
     }
 
     const otp = crypto.randomInt(100000, 999999).toString();
@@ -181,18 +167,18 @@ exports.forgotPassword = async (req, res, next) => {
     // Tạo activation token (JWT stateless) chứa email và OTP
     const activationSecret = process.env.ACTIVATION_SECRET || 'activation_secret_123';
     const activationToken = jwt.sign(
-      { email: user.email, otp },
+      { email: employee.email, otp },
       activationSecret,
       { expiresIn: '5m' }
     );
 
     // Gửi email khôi phục mật khẩu
     await sendEmail({
-      email: user.email,
+      email: employee.email,
       subject: 'Mã xác thực khôi phục mật khẩu',
       template: 'reset-password',
       data: {
-        name: user.name,
+        name: employee.name,
         otp: otp
       }
     });
@@ -207,7 +193,7 @@ exports.forgotPassword = async (req, res, next) => {
   }
 };
 
-// @desc    Xác thực mã OTP và sinh Reset Token
+// @desc    Xác thực mã OTP và sinh Reset Token cho nhân viên
 // @route   POST /api/v1/auth/verify-otp
 // @access  Public
 exports.verifyOtpCode = async (req, res, next) => {
@@ -233,20 +219,20 @@ exports.verifyOtpCode = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Mã OTP không chính xác' });
     }
 
-    const user = await UserService.getUserByEmail(decoded.email);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'Không tìm thấy người dùng' });
+    const employee = await EmployeeService.getEmployeeByEmail(decoded.email);
+    if (!employee) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản nhân viên' });
     }
 
     // Sinh reset token ngẫu nhiên
     const resetToken = crypto.randomBytes(20).toString('hex');
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordTokenExpire = Date.now() + 10 * 60 * 1000; // Hết hạn trong 10 phút
-    await user.save({ validateBeforeSave: false });
+    employee.resetPasswordToken = resetToken;
+    employee.resetPasswordTokenExpire = Date.now() + 10 * 60 * 1000; // Hết hạn trong 10 phút
+    await employee.save({ validateBeforeSave: false });
 
     res.status(200).json({
       success: true,
-      email: user.email,
+      email: employee.email,
       resetToken,
       message: 'OTP đã được xác minh thành công'
     });
@@ -255,7 +241,7 @@ exports.verifyOtpCode = async (req, res, next) => {
   }
 };
 
-// @desc    Đặt lại mật khẩu với Reset Token
+// @desc    Đặt lại mật khẩu nhân viên với Reset Token
 // @route   POST /api/v1/auth/reset-password
 // @access  Public
 exports.resetPassword = async (req, res, next) => {
@@ -270,37 +256,68 @@ exports.resetPassword = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Mật khẩu phải chứa ít nhất 6 ký tự' });
     }
 
-    const user = await User.findOne({
+    const employee = await Employee.findOne({
       resetPasswordToken: resetToken,
       resetPasswordTokenExpire: { $gt: Date.now() }
     }).select('+password');
 
-    if (!user) {
+    if (!employee) {
       return res.status(400).json({ success: false, message: 'Reset token không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.' });
     }
 
     // Kiểm tra xem mật khẩu mới có trùng mật khẩu cũ không
-    const isSame = await bcrypt.compare(newPassword, user.password);
+    const isSame = await bcrypt.compare(newPassword, employee.password);
     if (isSame) {
       return res.status(400).json({ success: false, message: 'Mật khẩu mới không được trùng với mật khẩu cũ' });
     }
 
     // Hash mật khẩu mới
     const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
+    employee.password = await bcrypt.hash(newPassword, salt);
 
     // Xóa Token và mở khóa tài khoản
-    user.resetPasswordToken = undefined;
-    user.resetPasswordTokenExpire = undefined;
-    user.loginAttempts = 0;
-    user.lockUntil = undefined;
+    employee.resetPasswordToken = undefined;
+    employee.resetPasswordTokenExpire = undefined;
+    employee.loginAttempts = 0;
+    employee.lockUntil = undefined;
     
-    await user.save({ validateBeforeSave: false });
+    await employee.save({ validateBeforeSave: false });
 
     res.status(200).json({
       success: true,
       message: 'Mật khẩu đã được đặt lại thành công'
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Xác thực Email khách hàng qua OTP
+// @route   POST /api/v1/auth/customer/verify-email
+// @access  Public
+exports.customerVerifyEmail = async (req, res, next) => {
+  try {
+    const { email, otp } = req.body;
+    const result = await AuthService.customerVerifyEmail(email, otp);
+    
+    if (result.user) {
+      return sendTokenResponse(result.user, result.status, res, result.message, result.userType);
+    }
+    
+    return res.status(result.status).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Gửi lại mã OTP xác thực cho khách hàng
+// @route   POST /api/v1/auth/customer/resend-verify-email
+// @access  Public
+exports.customerResendVerifyEmail = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const result = await AuthService.customerResendVerifyEmail(email);
+    return res.status(result.status).json(result);
   } catch (error) {
     next(error);
   }

@@ -42,9 +42,17 @@ const customerSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    password: {
+      type: String,
+      select: false,
+    },
     isActive: {
       type: Boolean,
       default: true,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
     },
   },
   {
@@ -55,3 +63,4 @@ const customerSchema = new mongoose.Schema(
 
 
 module.exports = mongoose.model('Customer', customerSchema);
+

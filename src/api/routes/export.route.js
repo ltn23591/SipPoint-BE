@@ -1,16 +1,16 @@
 const express = require('express');
-const { exportUsersToExcel } = require('../../utils/excel');
-const UserService = require('../../services/user.service');
+const { exportEmployeesToExcel } = require('../../utils/excel');
+const EmployeeService = require('../../services/employee.service');
 const { protect } = require('../../middleware/auth.middleware');
 const { authorize } = require('../../middleware/authorize.middleware');
 const { ROLE } = require('../../enums');
 
 const router = express.Router();
 
-router.get('/users', protect, authorize(ROLE.ADMIN), async (req, res, next) => {
+router.get('/employees', protect, authorize(ROLE.ADMIN), async (req, res, next) => {
     try {
-        const users = await UserService.getAllUsers();
-        await exportUsersToExcel(users, res);
+        const result = await EmployeeService.getAllEmployees();
+        await exportEmployeesToExcel(result.data, res);
     } catch (error) {
         next(error);
     }

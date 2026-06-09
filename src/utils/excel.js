@@ -1,24 +1,26 @@
 const exceljs = require('exceljs');
 
-const exportUsersToExcel = async (users, res) => {
+const exportEmployeesToExcel = async (employees, res) => {
   const workbook = new exceljs.Workbook();
-  const worksheet = workbook.addWorksheet('Users');
+  const worksheet = workbook.addWorksheet('Employees');
 
   worksheet.columns = [
     { header: 'ID', key: '_id', width: 25 },
     { header: 'Họ và tên', key: 'name', width: 30 },
     { header: 'Email', key: 'email', width: 30 },
     { header: 'Quyền (Role)', key: 'role', width: 15 },
+    { header: 'Trạng thái', key: 'status', width: 15 },
     { header: 'Ngày tạo', key: 'createdAt', width: 25 },
   ];
 
-  users.forEach((user) => {
+  employees.forEach((employee) => {
     worksheet.addRow({
-      _id: user._id.toString(),
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      createdAt: user.createdAt,
+      _id: employee._id.toString(),
+      name: employee.name,
+      email: employee.email,
+      role: employee.role,
+      status: employee.status,
+      createdAt: employee.createdAt,
     });
   });
 
@@ -28,7 +30,7 @@ const exportUsersToExcel = async (users, res) => {
   );
   res.setHeader(
     'Content-Disposition',
-    'attachment; filename=' + 'users.xlsx'
+    'attachment; filename=' + 'employees.xlsx'
   );
 
   await workbook.xlsx.write(res);
@@ -36,5 +38,5 @@ const exportUsersToExcel = async (users, res) => {
 };
 
 module.exports = {
-  exportUsersToExcel,
+  exportEmployeesToExcel,
 };

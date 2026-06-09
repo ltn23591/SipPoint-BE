@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/user.model');
+const Employee = require('../models/employee.model');
+const Customer = require('../models/customer.model');
 
-// Middleware xác thực user
+// Middleware xác thực user (cả nhân viên và khách hàng)
 exports.protect = async (req, res, next) => {
     let token;
 
@@ -29,12 +30,23 @@ exports.protect = async (req, res, next) => {
             process.env.JWT_SECRET || 'secret123',
         );
 
-        // Lấy thông tin user từ DB
-        req.user = await User.findById(decoded.id).select('-password');
+        // Lấy thông tin tài khoản từ DB dựa trên type được lưu trong token
+        let user;
+        if (decoded.type === 'customer') {
+            user = await Customer.findById(decoded.id).select('-password');
+        } else {
+            user = await Employee.findById(decoded.id).select('-password');
+        }
+
+        if (!user) {
+            res.status(401);
+            return next(new Error('Tài khoản không tồn tại trong hệ thống'));
+        }
+
+        req.user = user;
         next();
     } catch {
         res.status(401);
         next(new Error('Không có quyền truy cập, token không hợp lệ')); 
     }
 };
-

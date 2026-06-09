@@ -60,7 +60,7 @@ const product = new mongoose.Schema(
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'Employee',
       required: false,
     },
     updatedAt: {
@@ -69,7 +69,7 @@ const product = new mongoose.Schema(
     },
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'Employee',
       required: false,
     },
     isDeleted: {

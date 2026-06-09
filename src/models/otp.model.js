@@ -4,8 +4,14 @@ const otpSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      refPath: 'userModel',
       required: true,
+    },
+    userModel: {
+      type: String,
+      required: true,
+      enum: ['Employee', 'Customer'],
+      default: 'Employee',
     },
     code: {
       type: String,

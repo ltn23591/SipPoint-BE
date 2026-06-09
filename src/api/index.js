@@ -1,5 +1,5 @@
 const express = require('express');
-const userRoutes = require('./routes/user.route');
+const employeeRoutes = require('./routes/employee.route');
 const authRoutes = require('./routes/auth.route');
 const uploadRoutes = require('./routes/upload.route');
 const exportRoutes = require('./routes/export.route');
@@ -22,7 +22,7 @@ router.get('/health', (req, res) => {
 
 // Gắn các API Router
 router.use('/auth', authRoutes);
-router.use('/users', userRoutes);
+router.use('/employees', employeeRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/export', exportRoutes);
 router.use('/products', productRoutes);
