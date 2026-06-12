@@ -73,9 +73,6 @@ const voucherSchema = new mongoose.Schema(
   }
 );
 
-// Tạo index để tìm kiếm mã nhanh hơn
-voucherSchema.index({ code: 1 });
-
 const Voucher = mongoose.model('Voucher', voucherSchema);
 
 module.exports = Voucher;

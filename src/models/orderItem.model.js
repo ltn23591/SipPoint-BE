@@ -1,0 +1,59 @@
+const mongoose = require('mongoose');
+
+const orderItemSchema = new mongoose.Schema(
+  {
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Product',
+      required: true,
+    },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    quantity: {
+      type: Number,
+      required: true,
+      min: 1,
+    },
+    variants: [
+      {
+        variantId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'ProductVariant',
+        },
+        name: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        priceAdjustment: {
+          type: Number,
+          required: true,
+          default: 0,
+        },
+      },
+    ],
+    note: {
+      type: String,
+      trim: true,
+    },
+    subtotal: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+  },
+  { _id: true }
+);
+
+module.exports = {
+  orderItemSchema,
+  OrderItem: mongoose.model('OrderItem', orderItemSchema),
+};

@@ -10,6 +10,7 @@ const customerRankRoutes = require('./routes/customerRank.route');
 const voucherRoutes = require('./routes/voucher.route');
 const zoneRoutes = require('./routes/zone.route');
 const tableRoutes = require('./routes/table.route');
+const orderRoutes = require('./routes/order.route');
 const router = express.Router();
 
 router.get('/health', (req, res) => {
@@ -32,5 +33,6 @@ router.use('/customer-ranks', customerRankRoutes);
 router.use('/vouchers', voucherRoutes);
 router.use('/zones', zoneRoutes);
 router.use('/tables', tableRoutes);
+router.use('/orders', orderRoutes);
 
 module.exports = router;

@@ -42,6 +42,13 @@ const TABLE_STATUS = {
     CLEANING: "cleaning",  // Đang dọn dẹp
 };
 
+const ORDER_STATUS = {
+    PENDING: 0,      // Chờ xác nhận
+    PREPARING: 1,    // Đang pha chế
+    COMPLETED: 2,    // Hoàn thành
+    CANCELLED: 3,    // Đã hủy
+};
+
 module.exports = {
     ROLE,
     USER_STATUS,
@@ -49,5 +56,6 @@ module.exports = {
     IS_ACTIVE,
     DISCOUNT_TYPE,
     VARIANT_TYPE,
-    TABLE_STATUS
+    TABLE_STATUS,
+    ORDER_STATUS
 };
