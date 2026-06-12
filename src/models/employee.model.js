@@ -1,35 +1,33 @@
 const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema(
+const employeeSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Vui lòng cung cấp tên người dùng'],
+      required: true,
       trim: true,
     },
     email: {
       type: String,
-      required: [true, 'Vui lòng cung cấp địa chỉ email'],
+      required: true,
       unique: true,
       trim: true,
       lowercase: true,
-      match: [/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/, 'Vui lòng cung cấp email hợp lệ'],
     },
     password: {
       type: String,
-      required: [true, 'Vui lòng cung cấp mật khẩu'],
-      minlength: [6, 'Mật khẩu phải chứa ít nhất 6 ký tự'],
-      select: false, // Không trả về password khi truy vấn mặc định
+      required: true,
+      select: false,
     },
     role: {
       type: Number,
-      enum: [0, 1, 2, 3, 4], // 0: user, 1: admin, 2: cashier, 3: barista, 4: waiter
-      default: 0,
+      enum: [1, 2, 3, 4], // 1: admin, 2: cashier, 3: barista, 4: waiter (no 0: user/customer)
+      required: true,
     },
     status: {
       type: Number,
       enum: [0, 1, 2], // 0: pending, 1: active, 2: banned
-      default: 0,
+      default: 1, // Default active for staff
     },
     isTwoFactorEnabled: {
       type: Boolean,
@@ -66,8 +64,8 @@ const userSchema = new mongoose.Schema(
   },
 );
 
-userSchema.index({ isDeleted: 1 });
+employeeSchema.index({ isDeleted: 1 });
 
-const User = mongoose.model('User', userSchema);
+const Employee = mongoose.model('Employee', employeeSchema);
 
-module.exports = User;
+module.exports = Employee;

@@ -7,9 +7,9 @@ paths:
         200:
           description: Server hoạt động bình thường
 
-  /api/v1/auth/register:
+  /api/v1/auth/customer/register:
     post:
-      summary: Đăng ký tài khoản mới
+      summary: Đăng ký tài khoản Khách hàng mới
       tags: [Auth]
       requestBody:
         required: true
@@ -18,11 +18,13 @@ paths:
             schema:
               type: object
               required:
-                - name
-                - email
+                - fullName
+                - phone
                 - password
               properties:
-                name:
+                fullName:
+                  type: string
+                phone:
                   type: string
                 email:
                   type: string
@@ -34,9 +36,34 @@ paths:
         400:
           description: Lỗi dữ liệu
 
-  /api/v1/auth/verify-email:
+  /api/v1/auth/customer/login:
     post:
-      summary: Xác thực tài khoản bằng OTP qua Email
+      summary: Đăng nhập Khách hàng (bằng Số điện thoại hoặc Email)
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - loginIdentifier
+                - password
+              properties:
+                loginIdentifier:
+                  type: string
+                  description: Số điện thoại hoặc Email của khách hàng
+                password:
+                  type: string
+      responses:
+        200:
+          description: Đăng nhập thành công và nhận cookie token
+        401:
+          description: Sai thông tin đăng nhập
+
+  /api/v1/auth/customer/verify-email:
+    post:
+      summary: Xác thực tài khoản Khách hàng bằng OTP qua Email
       tags: [Auth]
       requestBody:
         required: true
@@ -58,9 +85,54 @@ paths:
         400:
           description: Lỗi OTP hoặc tài khoản đã xác thực
 
+  /api/v1/auth/verify-email:
+    post:
+      summary: Xác thực tài khoản Khách hàng bằng OTP qua Email (Alias đường dẫn gốc)
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - otp
+              properties:
+                email:
+                  type: string
+                otp:
+                  type: string
+      responses:
+        200:
+          description: Xác thực thành công và tự động đăng nhập (nhận token)
+        400:
+          description: Lỗi OTP hoặc tài khoản đã xác thực
+
+  /api/v1/auth/customer/resend-verify-email:
+    post:
+      summary: Gửi lại mã OTP xác thực Email cho Khách hàng
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+      responses:
+        200:
+          description: Gửi OTP thành công
+        400:
+          description: Email không hợp lệ hoặc tài khoản đã xác thực
+
   /api/v1/auth/resend-verify-email:
     post:
-      summary: Gửi lại mã OTP xác thực Email
+      summary: Gửi lại mã OTP xác thực Email cho Khách hàng (Alias đường dẫn gốc)
       tags: [Auth]
       requestBody:
         required: true
@@ -81,7 +153,7 @@ paths:
 
   /api/v1/auth/login:
     post:
-      summary: Đăng nhập
+      summary: Đăng nhập Nhân viên (Admin, Cashier, Barista, Waiter)
       tags: [Auth]
       requestBody:
         required: true
@@ -187,9 +259,9 @@ paths:
         200:
           description: Tắt 2FA thành công
 
-  /api/v1/export/users:
+  /api/v1/export/employees:
     get:
-      summary: Xuất danh sách người dùng ra Excel
+      summary: Xuất danh sách nhân viên ra Excel
       tags: [Exports]
       security:
         - bearerAuth: []
@@ -279,20 +351,18 @@ paths:
         400:
           description: Thiếu file
 
-  /api/v1/users/search:
+  /api/v1/employees:
     get:
-      summary: Lấy danh sách tất cả người dùng
-      tags: [Users]
+      summary: Lấy danh sách tất cả nhân viên
+      tags: [Employees]
       security:
         - bearerAuth: []
       responses:
         200:
-          description: Danh sách người dùng
-
-  /api/v1/users/create:
+          description: Danh sách nhân viên
     post:
-      summary: Tạo người dùng mới
-      tags: [Users]
+      summary: Tạo nhân viên mới (Admin thêm tài khoản)
+      tags: [Employees]
       security:
         - bearerAuth: []
       requestBody:
@@ -305,6 +375,7 @@ paths:
                 - name
                 - email
                 - password
+                - role
               properties:
                 name:
                   type: string
@@ -313,18 +384,19 @@ paths:
                 password:
                   type: string
                 role:
-                  type: string
-                  enum: [user, admin]
+                  type: integer
+                  description: 'Quyền: 1 (Admin), 2 (Cashier), 3 (Barista), 4 (Waiter)'
+                  enum: [1, 2, 3, 4]
       responses:
         201:
           description: Tạo thành công
         400:
           description: Lỗi dữ liệu
 
-  /api/v1/users/{id}/detail:
+  /api/v1/employees/{id}:
     get:
-      summary: Lấy thông tin một người dùng
-      tags: [Users]
+      summary: Lấy thông tin chi tiết một nhân viên
+      tags: [Employees]
       security:
         - bearerAuth: []
       parameters:
@@ -333,17 +405,15 @@ paths:
           schema:
             type: string
           required: true
-          description: ID của người dùng
+          description: ID của nhân viên
       responses:
         200:
-          description: Thông tin người dùng
+          description: Thông tin nhân viên
         404:
           description: Không tìm thấy
-
-  /api/v1/users/{id}/update:
     put:
-      summary: Cập nhật thông tin người dùng
-      tags: [Users]
+      summary: Cập nhật thông tin nhân viên (phân quyền / đổi thông tin)
+      tags: [Employees]
       security:
         - bearerAuth: []
       parameters:
@@ -352,7 +422,7 @@ paths:
           schema:
             type: string
           required: true
-          description: ID của người dùng
+          description: ID của nhân viên
       requestBody:
         required: true
         content:
@@ -365,18 +435,17 @@ paths:
                 email:
                   type: string
                 role:
-                  type: string
-                  enum: [user, admin]
+                  type: integer
+                  description: 'Quyền: 1 (Admin), 2 (Cashier), 3 (Barista), 4 (Waiter)'
+                  enum: [1, 2, 3, 4]
       responses:
         200:
           description: Cập nhật thành công
         404:
           description: Không tìm thấy
-
-  /api/v1/users/{id}/delete:
     delete:
-      summary: Xóa người dùng
-      tags: [Users]
+      summary: Xóa nhân viên
+      tags: [Employees]
       security:
         - bearerAuth: []
       parameters:
@@ -385,7 +454,7 @@ paths:
           schema:
             type: string
           required: true
-          description: ID của người dùng
+          description: ID của nhân viên
       responses:
         200:
           description: Xóa thành công
@@ -675,6 +744,239 @@ paths:
         200:
           description: Thay đổi điểm thành công
 
+  /api/v1/zones:
+    get:
+      summary: Lấy danh sách khu vực
+      tags: [Zone]
+      responses:
+        200:
+          description: Danh sách khu vực
+    post:
+      summary: Tạo mới khu vực
+      tags: [Zone]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  description: Tên khu vực (ví dụ Tầng 1)
+                description:
+                  type: string
+                  description: Mô tả khu vực
+                isActive:
+                  type: number
+                  enum: [0, 1]
+                  default: 1
+      responses:
+        201:
+          description: Tạo khu vực thành công
+
+  /api/v1/zones/{id}:
+    get:
+      summary: Lấy chi tiết một khu vực
+      tags: [Zone]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID khu vực
+      responses:
+        200:
+          description: Chi tiết khu vực
+        404:
+          description: Không tìm thấy
+    put:
+      summary: Cập nhật khu vực
+      tags: [Zone]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID khu vực
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                isActive:
+                  type: number
+                  enum: [0, 1]
+      responses:
+        200:
+          description: Cập nhật thành công
+        404:
+          description: Không tìm thấy
+    delete:
+      summary: Xóa khu vực
+      tags: [Zone]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID khu vực
+      responses:
+        200:
+          description: Xóa thành công
+        404:
+          description: Không tìm thấy
+
+  /api/v1/tables:
+    get:
+      summary: Lấy danh sách bàn
+      tags: [Table]
+      parameters:
+        - in: query
+          name: zoneId
+          schema:
+            type: string
+          description: Lọc bàn theo ID khu vực
+      responses:
+        200:
+          description: Danh sách bàn
+    post:
+      summary: Tạo mới bàn
+      tags: [Table]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - zoneId
+              properties:
+                name:
+                  type: string
+                  description: Tên bàn (ví dụ Bàn 1)
+                zoneId:
+                  type: string
+                  description: ID của khu vực trực thuộc
+                status:
+                  type: number
+                  enum: [0, 1, 2]
+                  default: 0
+                isActive:
+                  type: number
+                  enum: [0, 1]
+                  default: 1
+      responses:
+        201:
+          description: Tạo bàn thành công
+
+  /api/v1/tables/{id}:
+    get:
+      summary: Lấy chi tiết bàn
+      tags: [Table]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID bàn
+      responses:
+        200:
+          description: Chi tiết bàn
+        404:
+          description: Không tìm thấy
+    put:
+      summary: Cập nhật bàn (Đổi tên, khu vực hoặc cập nhật trạng thái Bàn trống/Có khách/Đặt trước)
+      tags: [Table]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID bàn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                zoneId:
+                  type: string
+                status:
+                  type: number
+                  enum: [0, 1, 2]
+                isActive:
+                  type: number
+                  enum: [0, 1]
+      responses:
+        200:
+          description: Cập nhật thành công
+        404:
+          description: Không tìm thấy
+    delete:
+      summary: Xóa bàn
+      tags: [Table]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID bàn
+      responses:
+        200:
+          description: Xóa thành công
+        404:
+          description: Không tìm thấy
+
+  /api/v1/tables/{id}/qrcode:
+    post:
+      summary: Tạo lại/cập nhật mã QR Code của bàn
+      tags: [Table]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID bàn
+      responses:
+        200:
+          description: Tạo thành công
+        404:
+          description: Không tìm thấy
+
 tags:
   - name: Auth
     description: API Quản lý Xác thực
@@ -693,6 +995,10 @@ tags:
 
   - name: Customer
     description: API Quản lý Khách hàng
+  - name: Zone
+    description: API Quản lý Khu vực (Bàn ăn)
+  - name: Table
+    description: API Quản lý Bàn và sinh mã QR Code
 
 components:
   schemas:

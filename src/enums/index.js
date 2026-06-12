@@ -2,7 +2,6 @@
 // Khi gọi API, FE bắt buộc phải truyền lên Backend các giá trị SỐ (Number) tương ứng dưới đây.
 // Ví dụ: Truyền role = 1 (thay vì "admin"), status = 2 (thay vì "banned").
 const ROLE = {
-    USER: 0, // Người dùng
     ADMIN: 1, // Quản trị viên
     CASHIER: 2, // Thu ngân
     BARISTA: 3, // Pha chế
@@ -35,11 +34,18 @@ const VARIANT_TYPE = {
     TOPPING: 1,
 };
 
+const TABLE_STATUS = {
+    AVAILABLE: 0, // Bàn trống
+    OCCUPIED: 1,  // Đang có khách
+    RESERVED: 2,  // Đã đặt trước
+};
+
 module.exports = {
     ROLE,
     USER_STATUS,
     OTP_TYPE,
     IS_ACTIVE,
     DISCOUNT_TYPE,
-    VARIANT_TYPE
+    VARIANT_TYPE,
+    TABLE_STATUS
 };
