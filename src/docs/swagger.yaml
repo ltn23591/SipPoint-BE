@@ -36,6 +36,35 @@ paths:
         400:
           description: Lỗi dữ liệu
 
+  /api/v1/auth/register:
+    post:
+      summary: Đăng ký tài khoản Khách hàng mới (Alias đường dẫn gốc)
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - fullName
+                - phone
+                - password
+              properties:
+                fullName:
+                  type: string
+                phone:
+                  type: string
+                email:
+                  type: string
+                password:
+                  type: string
+      responses:
+        201:
+          description: Đăng ký thành công và nhận cookie token
+        400:
+          description: Lỗi dữ liệu
+
   /api/v1/auth/customer/login:
     post:
       summary: Đăng nhập Khách hàng (bằng Số điện thoại hoặc Email)

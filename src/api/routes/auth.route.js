@@ -27,6 +27,7 @@ router.post('/customer/resend-verify-email', customerResendVerifyEmail);
 router.post('/customer/login', customerLogin);
 
 // Cung cấp các đường dẫn alias gốc để tương thích ngược với FE/Postman
+router.post('/register', customerRegister);
 router.post('/verify-email', customerVerifyEmail);
 router.post('/resend-verify-email', customerResendVerifyEmail);
 
