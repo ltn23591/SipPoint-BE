@@ -99,10 +99,23 @@ class CustomerService {
       return { status: 404, success: false, message: 'Không tìm thấy khách hàng' };
     }
 
-    customer.currentPoints += Number(pointsChange);
+    const change = Number(pointsChange);
+    if (isNaN(change)) {
+      return { status: 400, success: false, message: 'Số điểm thay đổi không hợp lệ' };
+    }
+
+    if (change < 0 && customer.currentPoints + change < 0) {
+      return {
+        status: 400,
+        success: false,
+        message: 'Số điểm trừ vượt quá số điểm tích lũy hiện có của khách hàng',
+      };
+    }
+
+    customer.currentPoints += change;
     // Nếu điểm tổng cập nhật dựa theo điểm tích lũy:
-    if (pointsChange > 0) {
-      customer.totalSpent += Number(pointsChange) * 1000; // Giả sử 1 điểm = 1000đ chi tiêu
+    if (change > 0) {
+      customer.totalSpent += change * 1000; // Giả sử 1 điểm = 1000đ chi tiêu
     }
 
     // Tự động thăng hạng dựa trên tổng chi tiêu (query từ bảng CustomerRank)
@@ -125,7 +138,7 @@ class CustomerService {
       customerId: id,
       title,
       description,
-      pointsChange: Number(pointsChange),
+      pointsChange: change,
       transactionType,
     });
 

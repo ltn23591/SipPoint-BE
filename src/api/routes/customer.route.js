@@ -1,12 +1,16 @@
 const express = require('express');
 const CustomerController = require('../../controllers/customer.controller');
+const { protect } = require('../../middleware/auth.middleware');
+const { authorize } = require('../../middleware/authorize.middleware');
+const { ROLE } = require('../../enums');
 
 const router = express.Router();
 
-router.get('/', CustomerController.getAll);
-router.post('/', CustomerController.create);
-router.get('/:id', CustomerController.getById);
-router.put('/:id', CustomerController.update);
-router.post('/:id/points', CustomerController.adjustPoints);
+// Tất cả các routes quản lý khách hàng yêu cầu đăng nhập và có vai trò phù hợp
+router.get('/', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.getAll);
+router.post('/', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.create);
+router.get('/:id', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.getById);
+router.put('/:id', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.update);
+router.post('/:id/points', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.adjustPoints);
 
 module.exports = router;
