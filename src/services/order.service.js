@@ -15,7 +15,16 @@ class OrderService {
     const { tableId, customerId, items, voucherCode, note } = data;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
-      return { status: 400, success: false, message: 'Đơn hàng phải có ít nhất một món ăn/đồ uống' };
+      return { status: 400, success: false, message: 'Đơn hàng phải chứa ít nhất một món ăn/đồ uống' };
+    }
+
+    for (const item of items) {
+      if (!item.productId) {
+        return { status: 400, success: false, message: 'Mã sản phẩm (productId) là bắt buộc' };
+      }
+      if (item.quantity === undefined || item.quantity === null || isNaN(item.quantity) || parseInt(item.quantity) < 1) {
+        return { status: 400, success: false, message: 'Số lượng món ăn/đồ uống phải lớn hơn hoặc bằng 1' };
+      }
     }
 
     // 1. Kiểm tra bàn (nếu có)
@@ -138,6 +147,10 @@ class OrderService {
    * Cập nhật trạng thái đơn hàng
    */
   static async updateOrderStatus(orderId, newStatus, updatedById) {
+    if (newStatus === undefined || newStatus === null || isNaN(newStatus)) {
+      return { status: 400, success: false, message: 'Trạng thái đơn hàng phải là một số nguyên' };
+    }
+
     const order = await Order.findById(orderId);
     if (!order || order.isActive === 0) {
       return { status: 404, success: false, message: 'Không tìm thấy đơn hàng' };
@@ -200,6 +213,10 @@ class OrderService {
    * Hủy đơn hàng kèm lý do
    */
   static async cancelOrder(orderId, reason, updatedById) {
+    if (!reason || typeof reason !== 'string' || !reason.trim()) {
+      return { status: 400, success: false, message: 'Lý do hủy đơn hàng là bắt buộc' };
+    }
+
     const order = await Order.findById(orderId);
     if (!order || order.isActive === 0) {
       return { status: 404, success: false, message: 'Không tìm thấy đơn hàng' };
