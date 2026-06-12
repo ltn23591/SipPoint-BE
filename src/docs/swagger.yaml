@@ -1062,6 +1062,191 @@ paths:
         404:
           description: Không tìm thấy
 
+  /api/v1/orders:
+    get:
+      summary: Lấy danh sách tất cả đơn hàng (Phân trang & Lọc)
+      tags: [Order]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: status
+          schema:
+            type: integer
+          description: "0: Chờ xác nhận, 1: Đang pha chế, 2: Hoàn thành, 3: Đã hủy"
+        - in: query
+          name: tableId
+          schema:
+            type: string
+          description: ID của bàn
+        - in: query
+          name: customerId
+          schema:
+            type: string
+          description: ID của khách hàng
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date-time
+      responses:
+        200:
+          description: Danh sách đơn hàng
+    post:
+      summary: Tạo đơn hàng mới
+      tags: [Order]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - items
+              properties:
+                tableId:
+                  type: string
+                  description: ID của bàn (nếu ngồi tại bàn)
+                customerId:
+                  type: string
+                  description: ID của khách hàng (nếu có thẻ thành viên)
+                voucherCode:
+                  type: string
+                  description: Mã giảm giá áp dụng (nếu có)
+                note:
+                  type: string
+                  description: Ghi chú cho toàn bộ đơn hàng
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - productId
+                      - quantity
+                    properties:
+                      productId:
+                        type: string
+                      quantity:
+                        type: integer
+                        minimum: 1
+                      note:
+                        type: string
+                      variants:
+                        type: array
+                        items:
+                          type: object
+                          required:
+                            - variantId
+                          properties:
+                            variantId:
+                              type: string
+      responses:
+        201:
+          description: Đặt đơn hàng thành công
+
+  /api/v1/orders/{id}:
+    get:
+      summary: Lấy thông tin chi tiết một đơn hàng
+      tags: [Order]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID đơn hàng
+      responses:
+        200:
+          description: Chi tiết đơn hàng
+        404:
+          description: Không tìm thấy đơn hàng
+
+  /api/v1/orders/{id}/status:
+    patch:
+      summary: Cập nhật trạng thái đơn hàng
+      tags: [Order]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID đơn hàng
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                status:
+                  type: integer
+                  description: "0: Chờ xác nhận, 1: Đang pha chế, 2: Hoàn thành, 3: Đã hủy"
+                  enum: [0, 1, 2, 3]
+      responses:
+        200:
+          description: Cập nhật thành công
+        400:
+          description: Sai luồng trạng thái hoặc dữ liệu không hợp lệ
+        404:
+          description: Không tìm thấy đơn hàng
+
+  /api/v1/orders/{id}/cancel:
+    patch:
+      summary: Hủy đơn hàng kèm lý do
+      tags: [Order]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID đơn hàng
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                  description: Lý do hủy đơn hàng
+      responses:
+        200:
+          description: Hủy thành công
+        400:
+          description: Không thể hủy đơn hàng đã hoàn thành/đã hủy
+        404:
+          description: Không tìm thấy đơn hàng
+
 tags:
   - name: Auth
     description: API Quản lý Xác thực
@@ -1071,6 +1256,8 @@ tags:
     description: API Upload File (Hỗ trợ Local & Cloudinary)
   - name: Users
     description: API Quản lý Người Dùng (Cần quyền Admin)
+  - name: Order
+    description: API Quản lý Đơn hàng & Vận hành (Real-time)
 
   - name: Category
     description: API quản lý category
