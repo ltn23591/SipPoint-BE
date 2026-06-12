@@ -11,7 +11,8 @@ const { OTP_TYPE, USER_STATUS } = require('../enums');
 class AuthService {
   // Đăng ký cho Khách hàng (Customer) - Có xác thực OTP qua Email
   static async customerRegister(data) {
-    const { fullName, phone, email, password } = data;
+    const fullName = data.fullName || data.name;
+    const { phone, email, password } = data;
 
     if (!fullName || !fullName.toString().trim()) {
       return { status: 400, success: false, message: 'Tên khách hàng là bắt buộc' };

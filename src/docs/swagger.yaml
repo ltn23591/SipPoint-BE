@@ -36,35 +36,6 @@ paths:
         400:
           description: Lỗi dữ liệu
 
-  /api/v1/auth/register:
-    post:
-      summary: Đăng ký tài khoản Khách hàng mới (Alias đường dẫn gốc)
-      tags: [Auth]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - fullName
-                - phone
-                - password
-              properties:
-                fullName:
-                  type: string
-                phone:
-                  type: string
-                email:
-                  type: string
-                password:
-                  type: string
-      responses:
-        201:
-          description: Đăng ký thành công và nhận cookie token
-        400:
-          description: Lỗi dữ liệu
-
   /api/v1/auth/customer/login:
     post:
       summary: Đăng nhập Khách hàng (bằng Số điện thoại hoặc Email)
@@ -1112,7 +1083,7 @@ paths:
           name: status
           schema:
             type: integer
-          description: "0: Chờ xác nhận, 1: Đang pha chế, 2: Hoàn thành, 3: Đã hủy"
+          description: '0: Chờ xác nhận, 1: Đang pha chế, 2: Hoàn thành, 3: Đã hủy'
         - in: query
           name: tableId
           schema:
@@ -1233,7 +1204,7 @@ paths:
               properties:
                 status:
                   type: integer
-                  description: "0: Chờ xác nhận, 1: Đang pha chế, 2: Hoàn thành, 3: Đã hủy"
+                  description: '0: Chờ xác nhận, 1: Đang pha chế, 2: Hoàn thành, 3: Đã hủy'
                   enum: [0, 1, 2, 3]
       responses:
         200:
@@ -1386,7 +1357,7 @@ components:
           default: active
         variants:
           type: string
-          description: "Danh sách biến thể dạng JSON string (Ví dụ: '[{\"variantType\": 0, \"name\": \"Size L\", \"priceAdjustment\": 5000}]')"
+          description: 'Danh sách biến thể dạng JSON string (Ví dụ: ''[{"variantType": 0, "name": "Size L", "priceAdjustment": 5000}]'')'
     Product:
       type: object
       properties:
