@@ -6,7 +6,13 @@ const validator = require('validator');
 class EmployeeService {
   static async getAllEmployees() {
     const employees = await Employee.find({ isDeleted: false }).select('-password');
-    return { status: 200, success: true, count: employees.length, data: employees };
+    return {
+      status: 200,
+      success: true,
+      count: employees.length,
+      message: 'Lấy danh sách nhân viên thành công',
+      data: employees,
+    };
   }
 
   static async getEmployeeById(id) {
@@ -14,7 +20,12 @@ class EmployeeService {
     if (!employee) {
       return { status: 404, success: false, message: `Không tìm thấy nhân viên với ID: ${id}` };
     }
-    return { status: 200, success: true, data: employee, message: 'Lấy thông tin nhân viên thành công' };
+    return {
+      status: 200,
+      success: true,
+      data: employee,
+      message: 'Lấy thông tin nhân viên thành công',
+    };
   }
 
   static async getEmployeeByEmail(email) {
@@ -37,10 +48,9 @@ class EmployeeService {
     }
 
     if (role !== undefined && role !== null) {
-      if (!Object.values(ROLE).includes(Number(role))) {
+      if (!Object.values(ROLE).includes(role)) {
         return { status: 400, success: false, message: 'Role không hợp lệ' };
       }
-      role = Number(role);
     } else {
       return { status: 400, success: false, message: 'Vui lòng phân quyền cho nhân viên' };
     }
@@ -58,6 +68,7 @@ class EmployeeService {
     return {
       status: 201,
       success: true,
+      message: 'Tạo tài khoản nhân viên thành công',
       data: {
         _id: employee._id,
         name: employee.name,
@@ -76,10 +87,9 @@ class EmployeeService {
     }
 
     if (updateData.role !== undefined && updateData.role !== null) {
-      if (!Object.values(ROLE).includes(Number(updateData.role))) {
+      if (!Object.values(ROLE).includes(updateData.role)) {
         return { status: 400, success: false, message: 'Role không hợp lệ' };
       }
-      updateData.role = Number(updateData.role);
     }
 
     if (updateData.password) {
@@ -93,32 +103,38 @@ class EmployeeService {
         if (updateData.role !== undefined) employee.role = updateData.role;
         if (updateData.status !== undefined) employee.status = updateData.status;
         await employee.save();
-        return { status: 200, success: true, data: employee, message: 'Cập nhật thông tin nhân viên thành công' };
+        return {
+          status: 200,
+          success: true,
+          data: employee,
+          message: 'Cập nhật thông tin nhân viên thành công',
+        };
       }
       return { status: 404, success: false, message: `Không tìm thấy nhân viên với ID: ${id}` };
     }
 
-    const employee = await Employee.findOneAndUpdate(
-      { _id: id, isDeleted: false },
-      updateData,
-      {
-        new: true,
-        runValidators: true,
-      }
-    ).select('-password');
+    const employee = await Employee.findOneAndUpdate({ _id: id, isDeleted: false }, updateData, {
+      new: true,
+      runValidators: true,
+    }).select('-password');
 
     if (!employee) {
       return { status: 404, success: false, message: `Không tìm thấy nhân viên với ID: ${id}` };
     }
 
-    return { status: 200, success: true, data: employee, message: 'Cập nhật thông tin nhân viên thành công' };
+    return {
+      status: 200,
+      success: true,
+      data: employee,
+      message: 'Cập nhật thông tin nhân viên thành công',
+    };
   }
 
   static async deleteEmployee(id) {
     const employee = await Employee.findOneAndUpdate(
       { _id: id, isDeleted: false },
       { isDeleted: true },
-      { new: true }
+      { new: true },
     );
     if (!employee) {
       return { status: 404, success: false, message: `Không tìm thấy nhân viên với ID: ${id}` };

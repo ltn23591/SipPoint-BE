@@ -16,7 +16,7 @@ class VoucherService {
 
   static async getAllVouchers() {
     const vouchers = await Voucher.find({}).sort({ createdAt: -1 });
-    return { status: 200, success: true, data: vouchers };
+    return { status: 200, success: true, message: 'Lấy danh sách voucher thành công', data: vouchers };
   }
 
   static async getVoucherById(id) {
@@ -24,7 +24,7 @@ class VoucherService {
     if (!voucher) {
       return { status: 404, success: false, message: 'Không tìm thấy voucher' };
     }
-    return { status: 200, success: true, data: voucher };
+    return { status: 200, success: true, message: 'Lấy chi tiết voucher thành công', data: voucher };
   }
 
   static async updateVoucher(id, data) {
@@ -47,7 +47,7 @@ class VoucherService {
 
   // Kiểm tra (Validate) mã voucher khi áp dụng vào đơn hàng
   static async validateVoucher(code, orderValue) {
-    const voucher = await Voucher.findOne({ code: code.toUpperCase(), isActive: 1 });
+    const voucher = await Voucher.findOne({ code: code.toUpperCase(), isActive: 'active' });
     if (!voucher) {
       return { status: 404, success: false, message: 'Mã giảm giá không hợp lệ hoặc đã bị khóa' };
     }

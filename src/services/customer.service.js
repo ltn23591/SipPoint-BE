@@ -29,6 +29,7 @@ class CustomerService {
     return {
       status: 200,
       success: true,
+      message: 'Lấy danh sách khách hàng thành công',
       data: customers,
       pagination: {
         total,
@@ -54,6 +55,7 @@ class CustomerService {
     return {
       status: 200,
       success: true,
+      message: 'Lấy thông tin chi tiết khách hàng thành công',
       data: {
         customer,
         pointHistories,

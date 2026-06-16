@@ -18,12 +18,12 @@ const voucherSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    // Loại giảm giá: 0 (PERCENTAGE - phần trăm) hoặc 1 (FIXED - tiền mặt cố định)
+    // Loại giảm giá: PERCENT (phần trăm) hoặc FIXED (tiền mặt cố định)
     discountType: {
-      type: Number,
+      type: String,
       required: true,
-      enum: [0, 1], // 0: PERCENTAGE, 1: FIXED
-      default: 0,
+      enum: ['PERCENT', 'FIXED'],
+      default: 'PERCENT',
     },
     discountValue: {
       type: Number,
@@ -62,9 +62,9 @@ const voucherSchema = new mongoose.Schema(
       min: 0,
     },
     isActive: {
-      type: Number,
-      enum: [0, 1], // 0: Khoá/Không kích hoạt, 1: Đang kích hoạt
-      default: 1,
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active',
     },
   },
   {

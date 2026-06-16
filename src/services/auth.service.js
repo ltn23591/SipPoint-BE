@@ -6,7 +6,7 @@ const bcrypt = require('bcrypt');
 const Employee = require('../models/employee.model');
 const Customer = require('../models/customer.model');
 const OTP = require('../models/otp.model');
-const { OTP_TYPE } = require('../enums');
+const { OTP_TYPE, USER_STATUS } = require('../enums');
 
 class AuthService {
   // Đăng ký cho Khách hàng (Customer) - Có xác thực OTP qua Email
@@ -198,7 +198,7 @@ class AuthService {
       return { status: 401, success: false, message: 'Thông tin đăng nhập không hợp lệ' };
     }
 
-    if (employee.status === 2) { // BANNED
+    if (employee.status === USER_STATUS.BANNED) { // BANNED
       return { status: 403, success: false, message: 'Tài khoản của bạn đã bị khóa' };
     }
 

@@ -10,10 +10,11 @@ exports.getAll = async (req, res) => {
       success: true,
       count: products.length,
       data: products,
+      message: 'Lấy danh sách sản phẩm thành công',
     });
   } catch (error) {
     console.log(error);
-    res.json({ success: false, message: error.message });
+    res.json({ success: false, message: error.message || 'Lỗi server hệ thống!' });
   }
 };
 
@@ -22,7 +23,7 @@ exports.getById = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).populate('category', 'name');
     if (!product) {
-      return res.json({ success: false, message: 'Product not found' });
+      return res.json({ success: false, message: 'Không tìm thấy sản phẩm' });
     }
     const variants = await ProductVariant.find({ product: product._id });
     res.json({
@@ -31,10 +32,11 @@ exports.getById = async (req, res) => {
         ...product.toObject(),
         variants,
       },
+      message: 'Lấy chi tiết sản phẩm thành công',
     });
   } catch (error) {
     console.log(error);
-    res.json({ success: false, message: error.message });
+    res.json({ success: false, message: error.message || 'Lỗi server hệ thống!' });
   }
 };
 
@@ -63,7 +65,7 @@ exports.create = async (req, res) => {
       price: Number(price),
       category,
       stock: Number(stock) || 0,
-      isActive: Number(isActive) || 1,
+      isActive: isActive || 'active',
       // Ảnh chính là ảnh đầu tiên, danh sách ảnh phụ là tất cả các ảnh
       image: uploadedUrls.length > 0 ? uploadedUrls[0] : '',
       images: uploadedUrls,
@@ -84,10 +86,10 @@ exports.create = async (req, res) => {
       if (Array.isArray(parsedVariants) && parsedVariants.length > 0) {
         const variantsData = parsedVariants.map(variant => ({
           product: product._id,
-          variantType: Number(variant.variantType),
+          variantType: variant.variantType,
           name: variant.name,
           priceAdjustment: Number(variant.priceAdjustment) || 0,
-          isActive: variant.isActive !== undefined ? Number(variant.isActive) : 1,
+          isActive: variant.isActive !== undefined ? variant.isActive : 'active',
         }));
         createdVariants = await ProductVariant.insertMany(variantsData);
       }
@@ -95,7 +97,7 @@ exports.create = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Product Added',
+      message: 'Đã thêm sản phẩm thành công',
       data: {
         ...product.toObject(),
         variants: createdVariants,
@@ -103,7 +105,7 @@ exports.create = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.json({ success: false, message: error.message });
+    res.json({ success: false, message: error.message || 'Lỗi server hệ thống!' });
   }
 };
 
@@ -118,7 +120,7 @@ exports.update = async (req, res) => {
       price: Number(price),
       category,
       stock: Number(stock) || 0,
-      isActive: Number(isActive) || 1,
+      isActive: isActive || 'active',
     };
 
     // Lấy toàn bộ file ảnh mới tải lên (bất kể tên trường)
@@ -145,7 +147,7 @@ exports.update = async (req, res) => {
     });
 
     if (!updatedProduct) {
-      return res.json({ success: false, message: 'Product not found' });
+      return res.json({ success: false, message: 'Không tìm thấy sản phẩm' });
     }
 
     let updatedVariants = [];
@@ -164,10 +166,10 @@ exports.update = async (req, res) => {
         if (parsedVariants.length > 0) {
           const variantsData = parsedVariants.map(variant => ({
             product: req.params.id,
-            variantType: Number(variant.variantType),
+            variantType: variant.variantType,
             name: variant.name,
             priceAdjustment: Number(variant.priceAdjustment) || 0,
-            isActive: variant.isActive !== undefined ? Number(variant.isActive) : 1,
+            isActive: variant.isActive !== undefined ? variant.isActive : 'active',
           }));
           updatedVariants = await ProductVariant.insertMany(variantsData);
         }
@@ -179,7 +181,7 @@ exports.update = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Product Updated',
+      message: 'Cập nhật sản phẩm thành công',
       data: {
         ...updatedProduct.toObject(),
         variants: updatedVariants,
@@ -187,22 +189,25 @@ exports.update = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.json({ success: false, message: error.message });
+    res.json({ success: false, message: error.message || 'Lỗi server hệ thống!' });
   }
 };
 
 // funcion for removing product
 exports.remove = async (req, res) => {
   try {
-    await Product.findByIdAndDelete(req.params.id);
+    const deletedProduct = await Product.findByIdAndDelete(req.params.id);
+    if (!deletedProduct) {
+      return res.json({ success: false, message: 'Không tìm thấy sản phẩm' });
+    }
     // Xóa tất cả các biến thể đi kèm sản phẩm
     await ProductVariant.deleteMany({ product: req.params.id });
     res.json({
       success: true,
-      message: 'Product Removed',
+      message: 'Đã xóa sản phẩm thành công',
     });
   } catch (error) {
     console.log(error);
-    res.json({ success: false, message: error.message });
+    res.json({ success: false, message: error.message || 'Lỗi server hệ thống!' });
   }
 };

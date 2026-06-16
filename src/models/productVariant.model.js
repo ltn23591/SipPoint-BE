@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { IS_ACTIVE } = require('../enums');
 
 const productVariantSchema = new mongoose.Schema(
   {
@@ -7,11 +8,11 @@ const productVariantSchema = new mongoose.Schema(
       ref: 'Product',
       required: true,
     },
-    // Ví dụ: 0: SIZE, 1: TOPPING
+    // Ví dụ: size: SIZE, topping: TOPPING
     variantType: {
-      type: Number,
+      type: String,
       required: true,
-      enum: [0, 1], // 0: SIZE, 1: TOPPING
+      enum: ['size', 'topping'],
     },
     name: {
       type: String,
@@ -24,9 +25,9 @@ const productVariantSchema = new mongoose.Schema(
       default: 0,
     },
     isActive: {
-      type: Number,
-      enum: [0, 1], // 0: inactive, 1: active
-      default: 1,
+      type: String,
+      enum: [IS_ACTIVE.FALSE, IS_ACTIVE.TRUE],
+      default: IS_ACTIVE.TRUE,
     },
   },
   {

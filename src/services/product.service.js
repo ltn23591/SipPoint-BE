@@ -13,7 +13,7 @@ class ProductService {
       filter.category = query.category;
     }
     if (query.isActive !== undefined) {
-      filter.isActive = Number(query.isActive);
+      filter.isActive = query.isActive;
     }
 
     let sort = '-createdAt';

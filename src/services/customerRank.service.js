@@ -8,6 +8,7 @@ class CustomerRankService {
     return {
       status: 200,
       success: true,
+      message: 'Lấy danh sách hạng thẻ thành công',
       data: ranks,
     };
   }

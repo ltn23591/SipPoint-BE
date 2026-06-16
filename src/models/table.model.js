@@ -14,15 +14,15 @@ const tableSchema = new mongoose.Schema(
       required: true,
     },
     status: {
-      type: Number,
-      enum: [TABLE_STATUS.AVAILABLE, TABLE_STATUS.OCCUPIED, TABLE_STATUS.RESERVED],
+      type: String,
+      enum: [TABLE_STATUS.AVAILABLE, TABLE_STATUS.OCCUPIED, TABLE_STATUS.RESERVED, TABLE_STATUS.CLEANING],
       default: TABLE_STATUS.AVAILABLE,
     },
     qrCode: {
       type: String,
     },
     isActive: {
-      type: Number,
+      type: String,
       enum: [IS_ACTIVE.FALSE, IS_ACTIVE.TRUE],
       default: IS_ACTIVE.TRUE,
     },

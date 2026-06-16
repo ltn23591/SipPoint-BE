@@ -18,8 +18,8 @@ const otpSchema = new mongoose.Schema(
       required: true,
     },
     type: {
-      type: Number,
-      enum: [0, 1, 2], // 0: REGISTER, 1: TWO_FACTOR, 2: RESET_PASSWORD
+      type: String,
+      enum: ['register', 'two_factor', 'reset_password'],
       required: true,
     },
     createdAt: {

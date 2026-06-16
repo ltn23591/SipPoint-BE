@@ -50,9 +50,9 @@ const product = new mongoose.Schema(
       default: 0,
     },
     isActive: {
-      type: Number,
-      enum: [0, 1],
-      default: 1,
+      type: String,
+      enum: ['active', 'inactive'],
+      default: 'active',
     },
     createdAt: {
       type: Date,

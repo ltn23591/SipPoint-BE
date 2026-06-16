@@ -20,14 +20,14 @@ const employeeSchema = new mongoose.Schema(
       select: false,
     },
     role: {
-      type: Number,
-      enum: [1, 2, 3, 4], // 1: admin, 2: cashier, 3: barista, 4: waiter (no 0: user/customer)
+      type: String,
+      enum: ['admin', 'manager', 'cashier', 'barista', 'staff'],
       required: true,
     },
     status: {
-      type: Number,
-      enum: [0, 1, 2], // 0: pending, 1: active, 2: banned
-      default: 1, // Default active for staff
+      type: String,
+      enum: ['pending', 'active', 'banned'],
+      default: 'active', // Default active for staff
     },
     isTwoFactorEnabled: {
       type: Boolean,
