@@ -454,11 +454,11 @@ paths:
                   type: string
                 role:
                   type: string
-                  description: 'Quyền: admin, cashier, barista, staff'
+                  description: 'Quyền hạn: "admin" (Quản trị viên), "cashier" (Thu ngân), "barista" (Pha chế), "staff" (Phục vụ/Nhân viên)'
                   enum: ["admin", "cashier", "barista", "staff"]
                 status:
                   type: string
-                  description: 'Trạng thái hoạt động'
+                  description: 'Trạng thái hoạt động: "pending" (Chờ kích hoạt), "active" (Đang hoạt động), "banned" (Bị cấm)'
                   enum: ["pending", "active", "banned"]
                   default: active
       responses:
@@ -510,11 +510,11 @@ paths:
                   type: string
                 role:
                   type: string
-                  description: 'Quyền: admin, cashier, barista, staff'
+                  description: 'Quyền hạn: "admin" (Quản trị viên), "cashier" (Thu ngân), "barista" (Pha chế), "staff" (Phục vụ/Nhân viên)'
                   enum: ["admin", "cashier", "barista", "staff"]
                 status:
                   type: string
-                  description: 'Trạng thái hoạt động'
+                  description: 'Trạng thái hoạt động: "pending" (Chờ kích hoạt), "active" (Đang hoạt động), "banned" (Bị cấm)'
                   enum: ["pending", "active", "banned"]
       responses:
         200:
@@ -817,6 +817,7 @@ paths:
                   description: Mô tả chi tiết
                 transactionType:
                   type: string
+                  description: 'Loại giao dịch tích điểm: "ORDER" (Mua hàng), "REWARD" (Đổi thưởng), "BIRTHDAY_GIFT" (Quà sinh nhật), "ADJUSTMENT" (Điều chỉnh từ Admin)'
                   enum: ["ORDER", "REWARD", "BIRTHDAY_GIFT", "ADJUSTMENT"]
       responses:
         200:
@@ -851,6 +852,7 @@ paths:
                   description: Mô tả khu vực
                 isActive:
                   type: string
+                  description: 'Trạng thái hoạt động: "active" (Hoạt động/Kích hoạt), "inactive" (Tắt/Ngừng hoạt động)'
                   enum: ["active", "inactive"]
                   default: active
       responses:
@@ -898,6 +900,7 @@ paths:
                   type: string
                 isActive:
                   type: string
+                  description: 'Trạng thái hoạt động: "active" (Hoạt động/Kích hoạt), "inactive" (Tắt/Ngừng hoạt động)'
                   enum: ["active", "inactive"]
       responses:
         200:
@@ -958,10 +961,12 @@ paths:
                   description: ID của khu vực trực thuộc
                 status:
                   type: string
+                  description: 'Trạng thái bàn: "available" (Bàn trống), "occupied" (Đang có khách), "reserved" (Đã đặt trước), "cleaning" (Đang dọn dẹp)'
                   enum: ["available", "occupied", "reserved", "cleaning"]
                   default: available
                 isActive:
                   type: string
+                  description: 'Trạng thái hoạt động: "active" (Hoạt động/Kích hoạt), "inactive" (Tắt/Ngừng hoạt động)'
                   enum: ["active", "inactive"]
                   default: active
       responses:
@@ -1009,9 +1014,11 @@ paths:
                   type: string
                 status:
                   type: string
+                  description: 'Trạng thái bàn: "available" (Bàn trống), "occupied" (Đang có khách), "reserved" (Đã đặt trước), "cleaning" (Đang dọn dẹp)'
                   enum: ["available", "occupied", "reserved", "cleaning"]
                 isActive:
                   type: string
+                  description: 'Trạng thái hoạt động: "active" (Hoạt động/Kích hoạt), "inactive" (Tắt/Ngừng hoạt động)'
                   enum: ["active", "inactive"]
       responses:
         200:
@@ -1096,12 +1103,13 @@ components:
           format: email
         role:
           type: string
+          description: 'Quyền hạn: "admin" (Quản trị viên), "cashier" (Thu ngân), "barista" (Pha chế), "staff" (Phục vụ/Nhân viên)'
           enum: ["admin", "cashier", "barista", "staff"]
           default: staff
         status:
           type: string
+          description: 'Trạng thái hoạt động: "pending" (Chờ kích hoạt), "active" (Đang hoạt động), "banned" (Bị cấm)'
           enum: ["pending", "active", "banned"]
-          description: 'Trạng thái hoạt động'
           default: active
         createdAt:
           type: string
@@ -1157,6 +1165,7 @@ components:
           default: 0
         isActive:
           type: string
+          description: 'Trạng thái hoạt động: "active" (Hoạt động/Kích hoạt), "inactive" (Tắt/Ngừng hoạt động)'
           enum: ["active", "inactive"]
           default: active
         variants:
@@ -1240,8 +1249,8 @@ components:
           description: ID của sản phẩm gốc
         variantType:
           type: string
+          description: 'Loại biến thể: "size" (Kích thước), "topping" (Topping/Món thêm)'
           enum: ["size", "topping"]
-          description: 'Loại biến thể (size hoặc topping)'
         name:
           type: string
           description: Tên biến thể (ví dụ Size L, Trân châu đen)
@@ -1250,6 +1259,7 @@ components:
           description: Giá tiền tăng/giảm thêm khi chọn biến thể này
         isActive:
           type: string
+          description: 'Trạng thái hoạt động: "active" (Hoạt động/Kích hoạt), "inactive" (Tắt/Ngừng hoạt động)'
           enum: ["active", "inactive"]
           default: active
         createdAt:
@@ -1280,8 +1290,8 @@ components:
           description: Mô tả khuyến mãi
         discountType:
           type: string
+          description: 'Loại giảm giá: "PERCENT" (Giảm theo %), "FIXED" (Giảm theo số tiền cố định)'
           enum: ["PERCENT", "FIXED"]
-          description: 'Loại giảm giá (PERCENT hoặc FIXED)'
           default: PERCENT
         discountValue:
           type: number
@@ -1303,6 +1313,7 @@ components:
           description: Tổng số lượng mã phát hành
         isActive:
           type: string
+          description: 'Trạng thái hoạt động: "active" (Hoạt động/Kích hoạt), "inactive" (Tắt/Ngừng hoạt động)'
           enum: ["active", "inactive"]
           default: active
 
@@ -1319,8 +1330,8 @@ components:
           description: ID của người dùng sở hữu OTP (Employee hoặc Customer)
         userModel:
           type: string
+          description: 'Model người dùng tương ứng: "Employee" (Nhân viên), "Customer" (Khách hàng)'
           enum: ["Employee", "Customer"]
-          description: Model người dùng tương ứng
           example: Employee
         code:
           type: string
@@ -1328,6 +1339,6 @@ components:
           example: "123456"
         type:
           type: string
+          description: 'Loại mã xác thực OTP: "register" (Đăng ký), "two_factor" (Bảo mật 2 lớp), "reset_password" (Khôi phục mật khẩu)'
           enum: ["register", "two_factor", "reset_password"]
-          description: 'Loại mã xác thực OTP (Ví dụ: register, two_factor, reset_password)'
           example: register
