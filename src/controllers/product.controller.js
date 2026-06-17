@@ -6,10 +6,15 @@ const cloudinary = require('../config/cloudinary');
 exports.getAll = async (req, res) => {
   try {
     const products = await Product.find({}).populate('category', 'name');
+    const data = products.map(p => {
+      const obj = p.toObject();
+      obj.status = obj.isActive;
+      return obj;
+    });
     res.json({
       success: true,
       count: products.length,
-      data: products,
+      data,
       message: 'Lấy danh sách sản phẩm thành công',
     });
   } catch (error) {
@@ -30,6 +35,7 @@ exports.getById = async (req, res) => {
       success: true,
       data: {
         ...product.toObject(),
+        status: product.isActive,
         variants,
       },
       message: 'Lấy chi tiết sản phẩm thành công',
@@ -43,7 +49,7 @@ exports.getById = async (req, res) => {
 // funcion for add product
 exports.create = async (req, res) => {
   try {
-    const { name, description, price, category, stock, isActive, variants } = req.body;
+    const { name, description, price, category, stock, isActive, status, variants } = req.body;
 
     // Lấy toàn bộ mảng các file đã được multer upload (bất kể tên key là gì)
     const allImages = req.files || [];
@@ -65,7 +71,7 @@ exports.create = async (req, res) => {
       price: Number(price),
       category,
       stock: Number(stock) || 0,
-      isActive: isActive || 'active',
+      isActive: isActive || status || 'active',
       // Ảnh chính là ảnh đầu tiên, danh sách ảnh phụ là tất cả các ảnh
       image: uploadedUrls.length > 0 ? uploadedUrls[0] : '',
       images: uploadedUrls,
@@ -100,6 +106,7 @@ exports.create = async (req, res) => {
       message: 'Đã thêm sản phẩm thành công',
       data: {
         ...product.toObject(),
+        status: product.isActive,
         variants: createdVariants,
       },
     });
@@ -112,7 +119,7 @@ exports.create = async (req, res) => {
 // funcion for update product
 exports.update = async (req, res) => {
   try {
-    const { name, description, price, category, stock, isActive, variants } = req.body;
+    const { name, description, price, category, stock, isActive, status, variants } = req.body;
 
     const productData = {
       name,
@@ -120,7 +127,7 @@ exports.update = async (req, res) => {
       price: Number(price),
       category,
       stock: Number(stock) || 0,
-      isActive: isActive || 'active',
+      isActive: isActive || status || 'active',
     };
 
     // Lấy toàn bộ file ảnh mới tải lên (bất kể tên trường)
@@ -184,6 +191,7 @@ exports.update = async (req, res) => {
       message: 'Cập nhật sản phẩm thành công',
       data: {
         ...updatedProduct.toObject(),
+        status: updatedProduct.isActive,
         variants: updatedVariants,
       },
     });

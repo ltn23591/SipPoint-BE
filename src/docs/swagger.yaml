@@ -1388,7 +1388,9 @@ components:
         numReviews:
           type: number
         isActive:
-          type: number
+          type: string
+          description: 'Trạng thái hoạt động: "active" (Hoạt động/Kích hoạt), "inactive" (Tắt/Ngừng hoạt động)'
+          enum: ["active", "inactive"]
         variants:
           type: array
           items:
