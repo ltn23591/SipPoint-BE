@@ -259,6 +259,75 @@ paths:
         200:
           description: Tắt 2FA thành công
 
+  /api/v1/auth/forgot-password:
+    post:
+      summary: Yêu cầu khôi phục mật khẩu Nhân viên (Gửi mã OTP)
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        200:
+          description: Mã OTP đã được gửi và trả về activationToken
+
+  /api/v1/auth/verify-otp:
+    post:
+      summary: Xác thực mã OTP và sinh Reset Token cho nhân viên
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - activation_token
+                - activation_code
+              properties:
+                activation_token:
+                  type: string
+                  description: Token nhận từ API forgot-password
+                activation_code:
+                  type: string
+                  description: Mã OTP 6 số gửi qua Email
+      responses:
+        200:
+          description: OTP xác minh thành công và nhận resetToken
+
+  /api/v1/auth/reset-password:
+    post:
+      summary: Đặt lại mật khẩu nhân viên với Reset Token
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resetToken
+                - newPassword
+              properties:
+                resetToken:
+                  type: string
+                  description: Reset token nhận được từ API verify-otp
+                newPassword:
+                  type: string
+                  minLength: 6
+                  description: Mật khẩu mới (tối thiểu 6 ký tự)
+      responses:
+        200:
+          description: Đặt lại mật khẩu thành công
+
   /api/v1/export/employees:
     get:
       summary: Xuất danh sách nhân viên ra Excel
@@ -384,9 +453,14 @@ paths:
                 password:
                   type: string
                 role:
-                  type: integer
-                  description: 'Quyền: 1 (Admin), 2 (Cashier), 3 (Barista), 4 (Waiter)'
-                  enum: [1, 2, 3, 4]
+                  type: string
+                  description: 'Quyền: admin, cashier, barista, staff'
+                  enum: ["admin", "cashier", "barista", "staff"]
+                status:
+                  type: string
+                  description: 'Trạng thái hoạt động'
+                  enum: ["pending", "active", "banned"]
+                  default: active
       responses:
         201:
           description: Tạo thành công
@@ -435,9 +509,13 @@ paths:
                 email:
                   type: string
                 role:
-                  type: integer
-                  description: 'Quyền: 1 (Admin), 2 (Cashier), 3 (Barista), 4 (Waiter)'
-                  enum: [1, 2, 3, 4]
+                  type: string
+                  description: 'Quyền: admin, cashier, barista, staff'
+                  enum: ["admin", "cashier", "barista", "staff"]
+                status:
+                  type: string
+                  description: 'Trạng thái hoạt động'
+                  enum: ["pending", "active", "banned"]
       responses:
         200:
           description: Cập nhật thành công
@@ -739,7 +817,7 @@ paths:
                   description: Mô tả chi tiết
                 transactionType:
                   type: string
-                  enum: [ORDER, REWARD, BIRTHDAY_GIFT, ADJUSTMENT]
+                  enum: ["ORDER", "REWARD", "BIRTHDAY_GIFT", "ADJUSTMENT"]
       responses:
         200:
           description: Thay đổi điểm thành công
@@ -772,9 +850,9 @@ paths:
                   type: string
                   description: Mô tả khu vực
                 isActive:
-                  type: number
-                  enum: [0, 1]
-                  default: 1
+                  type: string
+                  enum: ["active", "inactive"]
+                  default: active
       responses:
         201:
           description: Tạo khu vực thành công
@@ -819,8 +897,8 @@ paths:
                 description:
                   type: string
                 isActive:
-                  type: number
-                  enum: [0, 1]
+                  type: string
+                  enum: ["active", "inactive"]
       responses:
         200:
           description: Cập nhật thành công
@@ -879,13 +957,13 @@ paths:
                   type: string
                   description: ID của khu vực trực thuộc
                 status:
-                  type: number
-                  enum: [0, 1, 2]
-                  default: 0
+                  type: string
+                  enum: ["available", "occupied", "reserved", "cleaning"]
+                  default: available
                 isActive:
-                  type: number
-                  enum: [0, 1]
-                  default: 1
+                  type: string
+                  enum: ["active", "inactive"]
+                  default: active
       responses:
         201:
           description: Tạo bàn thành công
@@ -930,11 +1008,11 @@ paths:
                 zoneId:
                   type: string
                 status:
-                  type: number
-                  enum: [0, 1, 2]
+                  type: string
+                  enum: ["available", "occupied", "reserved", "cleaning"]
                 isActive:
-                  type: number
-                  enum: [0, 1]
+                  type: string
+                  enum: ["active", "inactive"]
       responses:
         200:
           description: Cập nhật thành công
@@ -1017,9 +1095,14 @@ components:
           type: string
           format: email
         role:
-          type: number
-          enum: [0, 1]
-          default: 0
+          type: string
+          enum: ["admin", "cashier", "barista", "staff"]
+          default: staff
+        status:
+          type: string
+          enum: ["pending", "active", "banned"]
+          description: 'Trạng thái hoạt động'
+          default: active
         createdAt:
           type: string
           format: date-time
@@ -1073,9 +1156,9 @@ components:
           type: number
           default: 0
         isActive:
-          type: number
-          enum: [0, 1]
-          default: 1
+          type: string
+          enum: ["active", "inactive"]
+          default: active
         variants:
           type: string
           description: "Danh sách biến thể dạng JSON string (Ví dụ: '[{\"variantType\": 0, \"name\": \"Size L\", \"priceAdjustment\": 5000}]')"
@@ -1156,9 +1239,9 @@ components:
           type: string
           description: ID của sản phẩm gốc
         variantType:
-          type: number
-          enum: [0, 1]
-          description: "Loại biến thể (0: SIZE, 1: TOPPING)"
+          type: string
+          enum: ["size", "topping"]
+          description: 'Loại biến thể (size hoặc topping)'
         name:
           type: string
           description: Tên biến thể (ví dụ Size L, Trân châu đen)
@@ -1166,9 +1249,9 @@ components:
           type: number
           description: Giá tiền tăng/giảm thêm khi chọn biến thể này
         isActive:
-          type: number
-          enum: [0, 1]
-          default: 1
+          type: string
+          enum: ["active", "inactive"]
+          default: active
         createdAt:
           type: string
           format: date-time
@@ -1196,10 +1279,10 @@ components:
           type: string
           description: Mô tả khuyến mãi
         discountType:
-          type: number
-          enum: [0, 1]
-          description: "Loại giảm giá (0: PERCENTAGE, 1: FIXED)"
-          default: 0
+          type: string
+          enum: ["PERCENT", "FIXED"]
+          description: 'Loại giảm giá (PERCENT hoặc FIXED)'
+          default: PERCENT
         discountValue:
           type: number
           description: Giá trị phần trăm (0-100) hoặc số tiền cố định được giảm
@@ -1219,6 +1302,32 @@ components:
           type: number
           description: Tổng số lượng mã phát hành
         isActive:
-          type: number
-          enum: [0, 1]
-          default: 1
+          type: string
+          enum: ["active", "inactive"]
+          default: active
+
+    OTP:
+      type: object
+      required:
+        - userId
+        - userModel
+        - code
+        - type
+      properties:
+        userId:
+          type: string
+          description: ID của người dùng sở hữu OTP (Employee hoặc Customer)
+        userModel:
+          type: string
+          enum: ["Employee", "Customer"]
+          description: Model người dùng tương ứng
+          example: Employee
+        code:
+          type: string
+          description: Mã OTP (ví dụ 6 chữ số)
+          example: "123456"
+        type:
+          type: string
+          enum: ["register", "two_factor", "reset_password"]
+          description: 'Loại mã xác thực OTP (Ví dụ: register, two_factor, reset_password)'
+          example: register
