@@ -11,6 +11,16 @@ class TableService {
   }
 
   static async create(data) {
+    if (data.name && data.zoneId) {
+      const existingTable = await Table.findOne({
+        name: data.name.trim(),
+        zoneId: data.zoneId,
+      });
+      if (existingTable) {
+        throw new Error('Tên bàn này đã tồn tại trong khu vực này!');
+      }
+    }
+
     // 1. Create table first to get the ID
     const table = new Table(data);
     await table.save();
@@ -27,6 +37,19 @@ class TableService {
     // If table is being updated, we check if we need to regenerate QR code (normally QR code is static for the ID, but it's safe to check or preserve)
     const table = await Table.findById(id);
     if (!table) return null;
+
+    const checkName = data.name ? data.name.trim() : (table.name ? table.name : null);
+    const checkZone = data.zoneId ? data.zoneId : (table.zoneId ? table.zoneId : null);
+    if (checkName && checkZone) {
+      const duplicateTable = await Table.findOne({
+        name: checkName,
+        zoneId: checkZone,
+        _id: { $ne: id },
+      });
+      if (duplicateTable) {
+        throw new Error('Tên bàn này đã tồn tại trong khu vực này!');
+      }
+    }
 
     Object.assign(table, data);
     

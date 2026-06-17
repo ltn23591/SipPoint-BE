@@ -13,6 +13,10 @@ const tableSchema = new mongoose.Schema(
       ref: 'Zone',
       required: true,
     },
+    capacity: {
+      type: Number,
+      default: 4,
+    },
     status: {
       type: String,
       enum: [TABLE_STATUS.AVAILABLE, TABLE_STATUS.OCCUPIED, TABLE_STATUS.RESERVED, TABLE_STATUS.CLEANING],
@@ -29,5 +33,7 @@ const tableSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+tableSchema.index({ name: 1, zoneId: 1 }, { unique: true });
 
 module.exports = mongoose.model('Table', tableSchema);
