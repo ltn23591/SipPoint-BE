@@ -42,6 +42,21 @@ const TABLE_STATUS = {
     CLEANING: "cleaning",  // Đang dọn dẹp
 };
 
+const ORDER_STATUS = {
+    PENDING: "PENDING",
+    CONFIRMED: "CONFIRMED",
+    PREPARING: "PREPARING",
+    READY: "READY",
+    COMPLETED: "COMPLETED",
+    CANCELLED: "CANCELLED",
+};
+
+const ORDER_TYPE = {
+    DINE_IN: "dine_in",
+    TAKEAWAY: "takeaway",
+    DELIVERY: "delivery",
+};
+
 module.exports = {
     ROLE,
     USER_STATUS,
@@ -49,5 +64,7 @@ module.exports = {
     IS_ACTIVE,
     DISCOUNT_TYPE,
     VARIANT_TYPE,
-    TABLE_STATUS
+    TABLE_STATUS,
+    ORDER_STATUS,
+    ORDER_TYPE
 };

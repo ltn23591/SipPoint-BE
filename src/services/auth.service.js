@@ -11,7 +11,8 @@ const { OTP_TYPE, USER_STATUS } = require('../enums');
 class AuthService {
   // Đăng ký cho Khách hàng (Customer) - Có xác thực OTP qua Email
   static async customerRegister(data) {
-    const { fullName, phone, email, password } = data;
+    const fullName = data.fullName || data.name;
+    const { phone, email, password } = data;
 
     if (!fullName || !fullName.toString().trim()) {
       return { status: 400, success: false, message: 'Tên khách hàng là bắt buộc' };
@@ -340,6 +341,47 @@ class AuthService {
       return { status: 404, success: false, message: `Không tìm thấy thông tin tài khoản với ID: ${id}` };
     }
     return { status: 200, success: true, message: 'Lấy thông tin thành công', data: user, type };
+  }
+
+  // Đăng ký cho Nhân viên (Employee) với vai trò mặc định là ADMIN
+  static async employeeRegister(data) {
+    const name = data.name || data.fullName;
+    const { email, password } = data;
+
+    if (!name || !name.toString().trim()) {
+      return { status: 400, success: false, message: 'Họ và tên là bắt buộc' };
+    }
+
+    if (!email || !validator.isEmail(email)) {
+      return { status: 400, success: false, message: 'Email không hợp lệ' };
+    }
+
+    const employeeExists = await Employee.findOne({ email, isDeleted: false });
+    if (employeeExists) {
+      return { status: 400, success: false, message: 'Email đã được sử dụng' };
+    }
+
+    if (!password || password.length < 6) {
+      return { status: 400, success: false, message: 'Mật khẩu phải từ 6 ký tự trở lên' };
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const employee = await Employee.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: 1, // Mặc định khi đăng ký tự do là ADMIN
+    });
+
+    return {
+      status: 201,
+      success: true,
+      message: 'Đăng ký tài khoản Admin thành công',
+      user: employee,
+      userType: 'employee'
+    };
   }
 }
 

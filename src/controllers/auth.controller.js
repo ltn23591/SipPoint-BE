@@ -19,6 +19,21 @@ exports.customerRegister = async (req, res, next) => {
   }
 };
 
+// @desc    Đăng ký tài khoản Nhân viên (Employee / Admin)
+// @route   POST /api/v1/auth/register
+// @access  Public
+exports.employeeRegister = async (req, res, next) => {
+  try {
+    const result = await AuthService.employeeRegister(req.body);
+    if (result.user) {
+      return sendTokenResponse(result.user, result.status, res, result.message, result.userType);
+    }
+    return res.status(result.status).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @desc    Đăng nhập Khách hàng (Customer)
 // @route   POST /api/v1/auth/customer/login
 // @access  Public

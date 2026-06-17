@@ -2,6 +2,7 @@ const express = require('express');
 
 const {
   customerRegister,
+  employeeRegister,
   customerLogin,
   customerVerifyEmail,
   customerResendVerifyEmail,
@@ -27,6 +28,7 @@ router.post('/customer/resend-verify-email', customerResendVerifyEmail);
 router.post('/customer/login', customerLogin);
 
 // Cung cấp các đường dẫn alias gốc để tương thích ngược với FE/Postman
+router.post('/register', employeeRegister);
 router.post('/verify-email', customerVerifyEmail);
 router.post('/resend-verify-email', customerResendVerifyEmail);
 
