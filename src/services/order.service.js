@@ -22,7 +22,7 @@ class OrderService {
       if (!item.productId) {
         return { status: 400, success: false, message: 'Mã sản phẩm (productId) là bắt buộc' };
       }
-      if (item.quantity === undefined || item.quantity === null || isNaN(item.quantity) || parseInt(item.quantity) < 1) {
+      if (item.qty === undefined || item.qty === null || isNaN(item.qty) || parseInt(item.qty) < 1) {
         return { status: 400, success: false, message: 'Số lượng món ăn/đồ uống phải lớn hơn hoặc bằng 1' };
       }
     }
@@ -40,7 +40,7 @@ class OrderService {
 
     // 2. Xử lý danh sách items
     const orderItems = [];
-    let totalAmount = 0;
+    let subtotalSum = 0;
 
     for (const item of items) {
       const product = await Product.findById(item.productId);
@@ -68,28 +68,28 @@ class OrderService {
       }
 
       const itemPrice = product.price;
-      const quantity = parseInt(item.quantity) || 1;
-      const subtotal = (itemPrice + variantPriceSum) * quantity;
+      const quantity = parseInt(item.qty) || 1;
+      const itemSubtotal = (itemPrice + variantPriceSum) * quantity;
 
       orderItems.push({
         productId: product._id,
         name: product.name,
-        price: itemPrice,
-        quantity,
+        unitPrice: itemPrice,
+        qty: quantity,
         variants: itemVariants,
         note: item.note || '',
-        subtotal,
+        subtotal: itemSubtotal,
       });
 
-      totalAmount += subtotal;
+      subtotalSum += itemSubtotal;
     }
 
     // 3. Xử lý Voucher (nếu có)
     let discountAmount = 0;
-    let finalAmount = totalAmount;
+    let finalAmount = subtotalSum;
 
     if (voucherCode) {
-      const voucherRes = await VoucherService.validateVoucher(voucherCode, totalAmount);
+      const voucherRes = await VoucherService.validateVoucher(voucherCode, subtotalSum);
       if (!voucherRes.success) {
         return voucherRes;
       }
@@ -104,21 +104,26 @@ class OrderService {
     }
 
     // 4. Sinh mã đơn hàng ngẫu nhiên duy nhất
-    const orderCode = `OD-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`.toUpperCase();
+    const code = `OD-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`.toUpperCase();
 
     // 5. Tạo đơn hàng mới
     const order = await Order.create({
-      orderCode,
+      code,
+      orderNumber: code,
       tableId: tableId || null,
       customerId: customerId || null,
       items: orderItems,
-      totalAmount,
-      discountAmount,
-      finalAmount,
-      voucherCode: voucherCode ? voucherCode.toUpperCase() : null,
+      subtotal: subtotalSum,
+      discount: discountAmount,
+      total: finalAmount,
+      promotionCode: voucherCode ? voucherCode.toUpperCase() : null,
       status: ORDER_STATUS.PENDING,
       note: note || '',
       createdBy: createdById || null,
+      isUrgent: data.isUrgent || false,
+      isPaid: data.isPaid || false,
+      isPickup: data.isPickup || false,
+      type: data.type || 'dine_in',
     });
 
     // 6. Cập nhật trạng thái bàn sang OCCUPIED (Đang có khách) nếu là đơn tại bàn

@@ -4,12 +4,16 @@ const { ORDER_STATUS, IS_ACTIVE } = require('../enums');
 
 const orderSchema = new mongoose.Schema(
   {
-    orderCode: {
+    code: {
       type: String,
       required: true,
       unique: true,
       trim: true,
       uppercase: true,
+    },
+    orderNumber: {
+      type: String,
+      trim: true,
     },
     tableId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -22,29 +26,46 @@ const orderSchema = new mongoose.Schema(
       required: false,
     },
     items: [orderItemSchema],
-    totalAmount: {
+    subtotal: {
       type: Number,
       required: true,
       min: 0,
       default: 0,
     },
-    discountAmount: {
+    discount: {
       type: Number,
       required: true,
       min: 0,
       default: 0,
     },
-    finalAmount: {
+    total: {
       type: Number,
       required: true,
       min: 0,
       default: 0,
     },
-    voucherCode: {
+    promotionCode: {
       type: String,
       trim: true,
       uppercase: true,
       required: false,
+    },
+    isUrgent: {
+      type: Boolean,
+      default: false,
+    },
+    isPaid: {
+      type: Boolean,
+      default: false,
+    },
+    isPickup: {
+      type: Boolean,
+      default: false,
+    },
+    type: {
+      type: String,
+      enum: ['dine_in', 'takeaway', 'delivery'],
+      default: 'dine_in',
     },
     status: {
       type: Number,
