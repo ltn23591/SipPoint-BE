@@ -68,7 +68,7 @@ const orderSchema = new mongoose.Schema(
       default: 'dine_in',
     },
     status: {
-      type: Number,
+      type: String,
       enum: Object.values(ORDER_STATUS),
       default: ORDER_STATUS.PENDING,
     },

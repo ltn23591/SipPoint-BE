@@ -43,10 +43,18 @@ const TABLE_STATUS = {
 };
 
 const ORDER_STATUS = {
-    PENDING: 0,      // Chờ xác nhận
-    PREPARING: 1,    // Đang pha chế
-    COMPLETED: 2,    // Hoàn thành
-    CANCELLED: 3,    // Đã hủy
+    PENDING: "PENDING",
+    CONFIRMED: "CONFIRMED",
+    PREPARING: "PREPARING",
+    READY: "READY",
+    COMPLETED: "COMPLETED",
+    CANCELLED: "CANCELLED",
+};
+
+const ORDER_TYPE = {
+    DINE_IN: "dine_in",
+    TAKEAWAY: "takeaway",
+    DELIVERY: "delivery",
 };
 
 module.exports = {
@@ -57,5 +65,6 @@ module.exports = {
     DISCOUNT_TYPE,
     VARIANT_TYPE,
     TABLE_STATUS,
-    ORDER_STATUS
+    ORDER_STATUS,
+    ORDER_TYPE
 };

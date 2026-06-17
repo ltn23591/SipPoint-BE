@@ -1082,8 +1082,8 @@ paths:
         - in: query
           name: status
           schema:
-            type: integer
-          description: '0: Chờ xác nhận, 1: Đang pha chế, 2: Hoàn thành, 3: Đã hủy'
+            type: string
+          description: 'Trạng thái đơn: PENDING, CONFIRMED, PREPARING, READY, COMPLETED, CANCELLED'
         - in: query
           name: tableId
           schema:
@@ -1127,7 +1127,7 @@ paths:
                 customerId:
                   type: string
                   description: ID của khách hàng (nếu có thẻ thành viên)
-                voucherCode:
+                promotionCode:
                   type: string
                   description: Mã giảm giá áp dụng (nếu có)
                 note:
@@ -1139,11 +1139,11 @@ paths:
                     type: object
                     required:
                       - productId
-                      - quantity
+                      - qty
                     properties:
                       productId:
                         type: string
-                      quantity:
+                      qty:
                         type: integer
                         minimum: 1
                       note:
@@ -1203,9 +1203,8 @@ paths:
                 - status
               properties:
                 status:
-                  type: integer
-                  description: '0: Chờ xác nhận, 1: Đang pha chế, 2: Hoàn thành, 3: Đã hủy'
-                  enum: [0, 1, 2, 3]
+                  type: string
+                  description: 'Trạng thái đơn: PENDING, CONFIRMED, PREPARING, READY, COMPLETED, CANCELLED'
       responses:
         200:
           description: Cập nhật thành công

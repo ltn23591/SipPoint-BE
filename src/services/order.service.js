@@ -152,8 +152,8 @@ class OrderService {
    * Cập nhật trạng thái đơn hàng
    */
   static async updateOrderStatus(orderId, newStatus, updatedById) {
-    if (newStatus === undefined || newStatus === null || isNaN(newStatus)) {
-      return { status: 400, success: false, message: 'Trạng thái đơn hàng phải là một số nguyên' };
+    if (!newStatus || typeof newStatus !== 'string') {
+      return { status: 400, success: false, message: 'Trạng thái đơn hàng không hợp lệ' };
     }
 
     const order = await Order.findById(orderId);
@@ -293,7 +293,7 @@ class OrderService {
     const filter = { isActive: 1 };
 
     if (status !== undefined && status !== '') {
-      filter.status = parseInt(status);
+      filter.status = status;
     }
     if (tableId) {
       filter.tableId = tableId;
