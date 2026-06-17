@@ -1083,7 +1083,8 @@ paths:
           name: status
           schema:
             type: string
-          description: 'Trạng thái đơn: PENDING, CONFIRMED, PREPARING, READY, COMPLETED, CANCELLED'
+            enum: ["PENDING", "CONFIRMED", "PREPARING", "READY", "COMPLETED", "CANCELLED"]
+          description: 'Trạng thái đơn: "PENDING" (Chờ xác nhận), "CONFIRMED" (Đã xác nhận), "PREPARING" (Đang chế biến), "READY" (Sẵn sàng phục vụ), "COMPLETED" (Đã hoàn thành), "CANCELLED" (Đã hủy)'
         - in: query
           name: tableId
           schema:
@@ -1204,7 +1205,8 @@ paths:
               properties:
                 status:
                   type: string
-                  description: 'Trạng thái đơn: PENDING, CONFIRMED, PREPARING, READY, COMPLETED, CANCELLED'
+                  description: 'Trạng thái đơn: "PENDING" (Chờ xác nhận), "CONFIRMED" (Đã xác nhận), "PREPARING" (Đang chế biến), "READY" (Sẵn sàng phục vụ), "COMPLETED" (Đã hoàn thành), "CANCELLED" (Đã hủy)'
+                  enum: ["PENDING", "CONFIRMED", "PREPARING", "READY", "COMPLETED", "CANCELLED"]
       responses:
         200:
           description: Cập nhật thành công
@@ -1528,3 +1530,109 @@ components:
           description: 'Loại mã xác thực OTP: "register" (Đăng ký), "two_factor" (Bảo mật 2 lớp), "reset_password" (Khôi phục mật khẩu)'
           enum: ["register", "two_factor", "reset_password"]
           example: register
+
+    Order:
+      type: object
+      properties:
+        _id:
+          type: string
+        code:
+          type: string
+          description: Mã đơn hàng viết hoa duy nhất
+        orderNumber:
+          type: string
+          description: Số thứ tự đơn hàng trong ngày
+        tableId:
+          type: string
+          description: ID của bàn ăn tương ứng
+        customerId:
+          type: string
+          description: ID của khách hàng sở hữu
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        subtotal:
+          type: number
+          description: Tổng tiền trước giảm giá
+        discount:
+          type: number
+          description: Tiền giảm giá
+        total:
+          type: number
+          description: Tổng tiền thanh toán cuối cùng
+        promotionCode:
+          type: string
+          description: Mã khuyến mãi áp dụng
+        isUrgent:
+          type: boolean
+          description: Đánh dấu đơn hàng cần làm gấp
+        isPaid:
+          type: boolean
+          description: Trạng thái thanh toán của đơn
+        isPickup:
+          type: boolean
+          description: Đơn hàng mang đi/tự lấy
+        type:
+          type: string
+          description: 'Loại đơn hàng: "dine_in" (Ăn tại bàn), "takeaway" (Mang đi), "delivery" (Giao hàng)'
+          enum: ["dine_in", "takeaway", "delivery"]
+        status:
+          type: string
+          description: 'Trạng thái đơn: "PENDING" (Chờ xác nhận), "CONFIRMED" (Đã xác nhận), "PREPARING" (Đang chế biến), "READY" (Sẵn sàng phục vụ), "COMPLETED" (Đã hoàn thành), "CANCELLED" (Đã hủy)'
+          enum: ["PENDING", "CONFIRMED", "PREPARING", "READY", "COMPLETED", "CANCELLED"]
+        note:
+          type: string
+          description: Ghi chú của đơn hàng
+        isActive:
+          type: string
+          description: 'Trạng thái hoạt động: "active" (Hoạt động/Kích hoạt), "inactive" (Tắt/Ngừng hoạt động)'
+          enum: ["active", "inactive"]
+        createdBy:
+          type: string
+          description: ID nhân viên tạo đơn
+        updatedBy:
+          type: string
+          description: ID nhân viên cập nhật cuối
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    OrderItem:
+      type: object
+      properties:
+        productId:
+          type: string
+          description: ID sản phẩm
+        name:
+          type: string
+          description: Tên sản phẩm tại thời điểm gọi
+        unitPrice:
+          type: number
+          description: Đơn giá sản phẩm
+        qty:
+          type: integer
+          description: Số lượng gọi
+        variants:
+          type: array
+          items:
+            type: object
+            properties:
+              variantId:
+                type: string
+                description: ID của biến thể sản phẩm
+              name:
+                type: string
+                description: Tên biến thể (ví dụ Size L, Thêm đường)
+              priceAdjustment:
+                type: number
+                description: Giá điều chỉnh của biến thể
+        note:
+          type: string
+          description: Ghi chú riêng cho món này
+        subtotal:
+          type: number
+          description: Tổng tiền của món (Đã bao gồm biến thể nhân số lượng)
