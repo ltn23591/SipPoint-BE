@@ -1918,51 +1918,6 @@ paths:
       responses:
         200:
           description: Thành công
-
-  /api/v1/location/filter/province:
-    post:
-      summary: Lọc danh sách Tỉnh/Thành phố
-      tags: [Location]
-      responses:
-        200:
-          description: Thành công
-
-  /api/v1/location/filter/district:
-    post:
-      summary: Lọc danh sách Quận/Huyện theo Tỉnh
-      tags: [Location]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [provinceId]
-              properties:
-                provinceId:
-                  type: string
-      responses:
-        200:
-          description: Thành công
-
-  /api/v1/location/filter/ward:
-    post:
-      summary: Lọc danh sách Phường/Xã theo Quận/Huyện
-      tags: [Location]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [districtId]
-              properties:
-                districtId:
-                  type: string
-      responses:
-        200:
-          description: Thành công
-
   /api/v1/document/upload-file:
     post:
       summary: Upload một file tài liệu lên Cloudinary

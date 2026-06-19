@@ -20,7 +20,6 @@ const promotionProgramRoutes = require('./routes/promotionProgram.route');
 const notificationRoutes = require('./routes/notification.route');
 const feedbackRoutes = require('./routes/feedback.route');
 const activityLogRoutes = require('./routes/activityLog.route');
-const locationRoutes = require('./routes/location.route');
 const documentRoutes = require('./routes/document.route');
 const reportRoutes = require('./routes/report.route');
 const router = express.Router();
@@ -55,7 +54,6 @@ router.use('/promotion-program', promotionProgramRoutes);
 router.use('/notification', notificationRoutes);
 router.use('/feedback', feedbackRoutes);
 router.use('/activity-log', activityLogRoutes);
-router.use('/location', locationRoutes);
 router.use('/document', documentRoutes);
 router.use('/report', reportRoutes);
 
