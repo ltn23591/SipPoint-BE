@@ -22,6 +22,7 @@ const feedbackRoutes = require('./routes/feedback.route');
 const activityLogRoutes = require('./routes/activityLog.route');
 const locationRoutes = require('./routes/location.route');
 const documentRoutes = require('./routes/document.route');
+const reportRoutes = require('./routes/report.route');
 const router = express.Router();
 
 router.get('/health', (req, res) => {
@@ -56,5 +57,6 @@ router.use('/feedback', feedbackRoutes);
 router.use('/activity-log', activityLogRoutes);
 router.use('/location', locationRoutes);
 router.use('/document', documentRoutes);
+router.use('/report', reportRoutes);
 
 module.exports = router;
