@@ -12,6 +12,7 @@ const zoneRoutes = require('./routes/zone.route');
 const tableRoutes = require('./routes/table.route');
 const orderRoutes = require('./routes/order.route');
 const storeRoutes = require('./routes/store.route');
+const staffRoleRoutes = require('./routes/staffRole.route');
 const router = express.Router();
 
 router.get('/health', (req, res) => {
@@ -36,5 +37,6 @@ router.use('/zones', zoneRoutes);
 router.use('/tables', tableRoutes);
 router.use('/orders', orderRoutes);
 router.use('/store', storeRoutes);
+router.use('/staff/role', staffRoleRoutes);
 
 module.exports = router;
