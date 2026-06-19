@@ -17,6 +17,7 @@ const productPriceRoutes = require('./routes/productPrice.route');
 const membershipProgramRoutes = require('./routes/membershipProgram.route');
 const membershipTierRoutes = require('./routes/membershipTier.route');
 const promotionProgramRoutes = require('./routes/promotionProgram.route');
+const notificationRoutes = require('./routes/notification.route');
 const router = express.Router();
 
 router.get('/health', (req, res) => {
@@ -46,5 +47,6 @@ router.use('/product-price', productPriceRoutes);
 router.use('/membership-program', membershipProgramRoutes);
 router.use('/membership-tier', membershipTierRoutes);
 router.use('/promotion-program', promotionProgramRoutes);
+router.use('/notification', notificationRoutes);
 
 module.exports = router;
