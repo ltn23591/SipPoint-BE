@@ -14,6 +14,7 @@ const orderRoutes = require('./routes/order.route');
 const storeRoutes = require('./routes/store.route');
 const staffRoleRoutes = require('./routes/staffRole.route');
 const productPriceRoutes = require('./routes/productPrice.route');
+const membershipProgramRoutes = require('./routes/membershipProgram.route');
 const router = express.Router();
 
 router.get('/health', (req, res) => {
@@ -40,5 +41,6 @@ router.use('/orders', orderRoutes);
 router.use('/store', storeRoutes);
 router.use('/staff/role', staffRoleRoutes);
 router.use('/product-price', productPriceRoutes);
+router.use('/membership-program', membershipProgramRoutes);
 
 module.exports = router;
