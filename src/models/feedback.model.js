@@ -9,6 +9,8 @@ const feedbackSchema = new mongoose.Schema(
     orderId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Order',
+      unique: true,
+      sparse: true, // Cho phép null nhưng nếu có giá trị thì phải duy nhất
     },
     rating: {
       type: Number,

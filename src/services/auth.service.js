@@ -5,6 +5,8 @@ const crypto = require('crypto');
 const bcrypt = require('bcrypt');
 const Employee = require('../models/employee.model');
 const Customer = require('../models/customer.model');
+const StaffRole = require('../models/staffRole.model');
+const MembershipTier = require('../models/membershipTier.model');
 const OTP = require('../models/otp.model');
 const { OTP_TYPE, USER_STATUS } = require('../enums');
 
@@ -46,12 +48,20 @@ class AuthService {
     // Tạo mã số khách hàng 8 chữ số ngẫu nhiên
     const customerId = Math.floor(10000000 + Math.random() * 90000000).toString();
 
+    // Tự động gán hạng thấp nhất của MembershipTier
+    let defaultTierId = null;
+    const lowestTier = await MembershipTier.findOne({ status: 'active' }).sort({ minPoints: 1 });
+    if (lowestTier) {
+      defaultTierId = lowestTier._id;
+    }
+
     const customer = await Customer.create({
       customerId,
       fullName,
       phone,
       email,
       password: hashedPassword,
+      tierId: defaultTierId,
       isActive: true,
       isVerified: false, // Bắt buộc xác thực trước
     });
@@ -73,17 +83,19 @@ class AuthService {
       data: { name: customer.fullName, otp: otp }
     }).catch(err => logger.error('Gửi email xác thực khách hàng thất bại', err));
 
+    const populatedCustomer = await Customer.findById(customer._id).populate('tierId');
+
     return {
       status: 201,
       success: true,
       message: 'Đăng ký thành công. Vui lòng kiểm tra email để lấy mã xác thực kích hoạt tài khoản.',
       data: {
-        _id: customer._id,
-        customerId: customer.customerId,
-        fullName: customer.fullName,
-        phone: customer.phone,
-        email: customer.email,
-        tier: customer.tier,
+        _id: populatedCustomer._id,
+        customerId: populatedCustomer.customerId,
+        fullName: populatedCustomer.fullName,
+        phone: populatedCustomer.phone,
+        email: populatedCustomer.email,
+        tierId: populatedCustomer.tierId,
       },
     };
   }
@@ -194,7 +206,7 @@ class AuthService {
       return { status: 400, success: false, message: 'Vui lòng cung cấp email và mật khẩu' };
     }
 
-    const employee = await Employee.findOne({ email, isDeleted: false }).select('+password');
+    const employee = await Employee.findOne({ email, isDeleted: false }).select('+password').populate('roleId');
     if (!employee) {
       return { status: 401, success: false, message: 'Thông tin đăng nhập không hợp lệ' };
     }
@@ -295,7 +307,7 @@ class AuthService {
       return { status: 400, success: false, message: 'Vui lòng cung cấp email và mã OTP' };
     }
 
-    const employee = await Employee.findOne({ email, isDeleted: false }).select('+password');
+    const employee = await Employee.findOne({ email, isDeleted: false }).select('+password').populate('roleId');
 
     if (!employee || !employee.isTwoFactorEnabled) {
       return { status: 400, success: false, message: 'Tài khoản không tồn tại hoặc chưa bật 2FA' };
@@ -331,10 +343,10 @@ class AuthService {
   }
 
   static async getMe(id) {
-    let user = await Employee.findById(id).select('-password');
+    let user = await Employee.findById(id).select('-password').populate('roleId');
     let type = 'employee';
     if (!user) {
-      user = await Customer.findById(id).select('-password');
+      user = await Customer.findById(id).select('-password').populate('tierId');
       type = 'customer';
     }
     if (!user) {
@@ -365,6 +377,13 @@ class AuthService {
       return { status: 400, success: false, message: 'Mật khẩu phải từ 6 ký tự trở lên' };
     }
 
+    // Tìm role admin trong bảng StaffRole
+    let adminRole = await StaffRole.findOne({ code: 'admin' });
+    if (!adminRole) {
+      // Nếu chưa có role admin, tự tạo mới
+      adminRole = await StaffRole.create({ name: 'Admin', code: 'admin', permissions: [], description: 'Quản trị viên hệ thống' });
+    }
+
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -372,14 +391,16 @@ class AuthService {
       name,
       email,
       password: hashedPassword,
-      role: 'admin', // Mặc định khi đăng ký tự do là ADMIN
+      roleId: adminRole._id, // Mặc định khi đăng ký tự do là ADMIN
     });
+
+    const populatedEmployee = await Employee.findById(employee._id).populate('roleId');
 
     return {
       status: 201,
       success: true,
       message: 'Đăng ký tài khoản Admin thành công',
-      user: employee,
+      user: populatedEmployee,
       userType: 'employee'
     };
   }
