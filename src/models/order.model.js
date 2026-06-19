@@ -77,7 +77,7 @@ const orderSchema = new mongoose.Schema(
       trim: true,
     },
     isActive: {
-      type: Number,
+      type: String,
       enum: [IS_ACTIVE.FALSE, IS_ACTIVE.TRUE],
       default: IS_ACTIVE.TRUE,
     },

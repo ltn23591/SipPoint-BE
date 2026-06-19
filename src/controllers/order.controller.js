@@ -32,9 +32,10 @@ class OrderController {
 
   static async updateStatus(req, res) {
     try {
-      const { status } = req.body;
+      const { status, id, orderId } = req.body;
+      const targetId = req.params.id || id || orderId;
       const updatedById = req.user ? req.user._id : null;
-      const result = await OrderService.updateOrderStatus(req.params.id, status, updatedById);
+      const result = await OrderService.updateOrderStatus(targetId, status, updatedById);
       res.status(result.status).json(result);
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
@@ -46,6 +47,26 @@ class OrderController {
       const { reason } = req.body;
       const updatedById = req.user ? req.user._id : null;
       const result = await OrderService.cancelOrder(req.params.id, reason, updatedById);
+      res.status(result.status).json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  static async confirm(req, res) {
+    try {
+      const updatedById = req.user ? req.user._id : null;
+      const result = await OrderService.confirmOrder(req.params.id, updatedById);
+      res.status(result.status).json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  static async complete(req, res) {
+    try {
+      const updatedById = req.user ? req.user._id : null;
+      const result = await OrderService.completeOrder(req.params.id, updatedById);
       res.status(result.status).json(result);
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });

@@ -1,16 +1,41 @@
+openapi: 3.0.0
+info:
+  title: Node.js Express API Documentation (JavaScript)
+  version: 1.0.0
+  description: |
+    ### Hướng dẫn kiểm thử API trên Swagger UI:
+    1. **Đăng nhập/Đăng ký để lấy Token**:
+       - Sử dụng API đăng nhập nhân viên tại `/api/v1/auth/login` (hoặc `/api/v1/auth/customer/login` dành cho khách hàng).
+       - Copy chuỗi `token` hoặc `accessToken` nhận được từ phản hồi thành công.
+    2. **Cấu hình Authenticate**:
+       - Nhấp vào nút **Authorize** màu xanh lá ở phía góc trên bên phải trang Swagger.
+       - Dán trực tiếp chuỗi token vừa copy vào ô nhập liệu (không cần viết thêm từ khóa "Bearer" vì Swagger đã tự động thêm tiền tố này dựa trên cấu hình Bearer Auth).
+       - Nhấp **Authorize** rồi đóng hộp thoại lại.
+    3. **Tiến hành kiểm thử**:
+       - Chọn API bạn muốn kiểm thử, nhấp **Try it out**, điền các tham số hoặc Request Body rồi nhấp **Execute** để xem kết quả trả về.
+servers:
+  - url: /
+    description: Default Server (Dynamic)
+security:
+  - bearerAuth: []
 paths:
   /api/v1/health:
     get:
       summary: Kiểm tra trạng thái hoạt động của Server (Health Check)
-      tags: [System]
+      tags:
+        - System
       responses:
-        200:
+        "200":
           description: Server hoạt động bình thường
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp chọn nút **Try it out** ở góc phải của API.
+        2. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/auth/customer/register:
     post:
       summary: Đăng ký tài khoản Khách hàng mới
-      tags: [Auth]
+      tags:
+        - Auth
       requestBody:
         required: true
         content:
@@ -31,15 +56,20 @@ paths:
                 password:
                   type: string
       responses:
-        201:
+        "201":
           description: Đăng ký thành công và nhận cookie token
-        400:
+        "400":
           description: Lỗi dữ liệu
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp chọn nút **Try it out** ở góc phải của API.
+        2. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/auth/customer/login:
     post:
       summary: Đăng nhập Khách hàng (bằng Số điện thoại hoặc Email)
-      tags: [Auth]
+      tags:
+        - Auth
       requestBody:
         required: true
         content:
@@ -56,15 +86,20 @@ paths:
                 password:
                   type: string
       responses:
-        200:
+        "200":
           description: Đăng nhập thành công và nhận cookie token
-        401:
+        "401":
           description: Sai thông tin đăng nhập
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp chọn nút **Try it out** ở góc phải của API.
+        2. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/auth/customer/verify-email:
     post:
       summary: Xác thực tài khoản Khách hàng bằng OTP qua Email
-      tags: [Auth]
+      tags:
+        - Auth
       requestBody:
         required: true
         content:
@@ -80,15 +115,20 @@ paths:
                 otp:
                   type: string
       responses:
-        200:
+        "200":
           description: Xác thực thành công và tự động đăng nhập (nhận token)
-        400:
+        "400":
           description: Lỗi OTP hoặc tài khoản đã xác thực
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp chọn nút **Try it out** ở góc phải của API.
+        2. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/auth/verify-email:
     post:
       summary: Xác thực tài khoản Khách hàng bằng OTP qua Email (Alias đường dẫn gốc)
-      tags: [Auth]
+      tags:
+        - Auth
       requestBody:
         required: true
         content:
@@ -104,15 +144,20 @@ paths:
                 otp:
                   type: string
       responses:
-        200:
+        "200":
           description: Xác thực thành công và tự động đăng nhập (nhận token)
-        400:
+        "400":
           description: Lỗi OTP hoặc tài khoản đã xác thực
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp chọn nút **Try it out** ở góc phải của API.
+        2. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/auth/customer/resend-verify-email:
     post:
       summary: Gửi lại mã OTP xác thực Email cho Khách hàng
-      tags: [Auth]
+      tags:
+        - Auth
       requestBody:
         required: true
         content:
@@ -125,15 +170,20 @@ paths:
                 email:
                   type: string
       responses:
-        200:
+        "200":
           description: Gửi OTP thành công
-        400:
+        "400":
           description: Email không hợp lệ hoặc tài khoản đã xác thực
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp chọn nút **Try it out** ở góc phải của API.
+        2. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/auth/resend-verify-email:
     post:
       summary: Gửi lại mã OTP xác thực Email cho Khách hàng (Alias đường dẫn gốc)
-      tags: [Auth]
+      tags:
+        - Auth
       requestBody:
         required: true
         content:
@@ -146,15 +196,20 @@ paths:
                 email:
                   type: string
       responses:
-        200:
+        "200":
           description: Gửi OTP thành công
-        400:
+        "400":
           description: Email không hợp lệ hoặc tài khoản đã xác thực
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp chọn nút **Try it out** ở góc phải của API.
+        2. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/auth/login:
     post:
       summary: Đăng nhập Nhân viên (Admin, Cashier, Barista, Waiter)
-      tags: [Auth]
+      tags:
+        - Auth
       requestBody:
         required: true
         content:
@@ -170,45 +225,65 @@ paths:
                 password:
                   type: string
       responses:
-        200:
+        "200":
           description: Đăng nhập thành công và nhận cookie token
-        401:
+        "401":
           description: Sai thông tin đăng nhập
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp chọn nút **Try it out** ở góc phải của API.
+        2. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/auth/logout:
     get:
       summary: Đăng xuất (xóa cookie)
-      tags: [Auth]
+      tags:
+        - Auth
       responses:
-        200:
+        "200":
           description: Đăng xuất thành công
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp chọn nút **Try it out** ở góc phải của API.
+        2. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/auth/me:
     get:
       summary: Lấy thông tin tài khoản đang đăng nhập
-      tags: [Auth]
+      tags:
+        - Auth
       security:
         - bearerAuth: []
       responses:
-        200:
+        "200":
           description: Thông tin user
-        401:
+        "401":
           description: Chưa đăng nhập
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/auth/2fa/enable:
     post:
       summary: Bật cấu hình 2FA (Gửi mã OTP qua email)
-      tags: [Auth]
+      tags:
+        - Auth
       security:
         - bearerAuth: []
       responses:
-        200:
+        "200":
           description: Đã gửi mã OTP qua email
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/auth/2fa/verify-enable:
     post:
       summary: Xác nhận OTP để chính thức BẬT 2FA
-      tags: [Auth]
+      tags:
+        - Auth
       security:
         - bearerAuth: []
       requestBody:
@@ -223,13 +298,19 @@ paths:
                 otp:
                   type: string
       responses:
-        200:
+        "200":
           description: Kích hoạt 2FA thành công
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/auth/2fa/login:
     post:
       summary: Nhập mã OTP để đăng nhập khi có 2FA
-      tags: [Auth]
+      tags:
+        - Auth
       requestBody:
         required: true
         content:
@@ -246,23 +327,34 @@ paths:
                 otp:
                   type: string
       responses:
-        200:
+        "200":
           description: Đăng nhập thành công, trả về token
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp chọn nút **Try it out** ở góc phải của API.
+        2. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/auth/2fa/disable:
     post:
       summary: Tắt tính năng bảo mật 2 lớp
-      tags: [Auth]
+      tags:
+        - Auth
       security:
         - bearerAuth: []
       responses:
-        200:
+        "200":
           description: Tắt 2FA thành công
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/auth/forgot-password:
     post:
       summary: Yêu cầu khôi phục mật khẩu Nhân viên (Gửi mã OTP)
-      tags: [Auth]
+      tags:
+        - Auth
       requestBody:
         required: true
         content:
@@ -276,13 +368,18 @@ paths:
                   type: string
                   format: email
       responses:
-        200:
+        "200":
           description: Mã OTP đã được gửi và trả về activationToken
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp chọn nút **Try it out** ở góc phải của API.
+        2. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/auth/verify-otp:
     post:
       summary: Xác thực mã OTP và sinh Reset Token cho nhân viên
-      tags: [Auth]
+      tags:
+        - Auth
       requestBody:
         required: true
         content:
@@ -300,13 +397,18 @@ paths:
                   type: string
                   description: Mã OTP 6 số gửi qua Email
       responses:
-        200:
+        "200":
           description: OTP xác minh thành công và nhận resetToken
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp chọn nút **Try it out** ở góc phải của API.
+        2. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/auth/reset-password:
     post:
       summary: Đặt lại mật khẩu nhân viên với Reset Token
-      tags: [Auth]
+      tags:
+        - Auth
       requestBody:
         required: true
         content:
@@ -325,28 +427,38 @@ paths:
                   minLength: 6
                   description: Mật khẩu mới (tối thiểu 6 ký tự)
       responses:
-        200:
+        "200":
           description: Đặt lại mật khẩu thành công
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp chọn nút **Try it out** ở góc phải của API.
+        2. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/export/employees:
     get:
       summary: Xuất danh sách nhân viên ra Excel
-      tags: [Exports]
+      tags:
+        - Exports
       security:
         - bearerAuth: []
       responses:
-        200:
+        "200":
           description: File excel
           content:
             application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
               schema:
                 type: string
                 format: binary
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu quyền Admin**: Cần đăng nhập tài khoản Admin và lấy Token dán vào nút **Authorize** ở trên cùng bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/upload/local:
     post:
       summary: Tải lên một hình ảnh (Lưu local)
-      tags: [Uploads]
+      tags:
+        - Uploads
       security:
         - bearerAuth: []
       requestBody:
@@ -362,13 +474,19 @@ paths:
                   type: string
                   format: binary
       responses:
-        200:
+        "200":
           description: Tải lên thành công
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/upload/cloudinary/url:
     post:
       summary: Upload ảnh từ URL lên Cloudinary
-      tags: [Uploads]
+      tags:
+        - Uploads
       security:
         - bearerAuth: []
       requestBody:
@@ -387,15 +505,21 @@ paths:
                   type: string
                   description: Thư mục lưu trữ trên Cloudinary (tùy chọn)
       responses:
-        200:
+        "200":
           description: Upload thành công
-        400:
+        "400":
           description: Thiếu URL
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/upload/cloudinary/file:
     post:
       summary: Upload ảnh từ file lên Cloudinary
-      tags: [Uploads]
+      tags:
+        - Uploads
       security:
         - bearerAuth: []
       requestBody:
@@ -415,23 +539,35 @@ paths:
                   type: string
                   description: Thư mục lưu trữ trên Cloudinary (tùy chọn)
       responses:
-        200:
+        "200":
           description: Upload thành công
-        400:
+        "400":
           description: Thiếu file
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/employees:
     get:
       summary: Lấy danh sách tất cả nhân viên
-      tags: [Employees]
+      tags:
+        - Employees
       security:
         - bearerAuth: []
       responses:
-        200:
+        "200":
           description: Danh sách nhân viên
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu quyền Admin**: Cần đăng nhập tài khoản Admin và lấy Token dán vào nút **Authorize** ở trên cùng bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     post:
       summary: Tạo nhân viên mới (Admin thêm tài khoản)
-      tags: [Employees]
+      tags:
+        - Employees
       security:
         - bearerAuth: []
       requestBody:
@@ -455,22 +591,35 @@ paths:
                 role:
                   type: string
                   description: 'Quyền hạn: "admin" (Quản trị viên), "cashier" (Thu ngân), "barista" (Pha chế), "staff" (Phục vụ/Nhân viên)'
-                  enum: ["admin", "cashier", "barista", "staff"]
+                  enum:
+                    - admin
+                    - cashier
+                    - barista
+                    - staff
                 status:
                   type: string
                   description: 'Trạng thái hoạt động: "pending" (Chờ kích hoạt), "active" (Đang hoạt động), "banned" (Bị cấm)'
-                  enum: ["pending", "active", "banned"]
+                  enum:
+                    - pending
+                    - active
+                    - banned
                   default: active
       responses:
-        201:
+        "201":
           description: Tạo thành công
-        400:
+        "400":
           description: Lỗi dữ liệu
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu quyền Admin**: Cần đăng nhập tài khoản Admin và lấy Token dán vào nút **Authorize** ở trên cùng bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/employees/{id}:
     get:
       summary: Lấy thông tin chi tiết một nhân viên
-      tags: [Employees]
+      tags:
+        - Employees
       security:
         - bearerAuth: []
       parameters:
@@ -481,13 +630,20 @@ paths:
           required: true
           description: ID của nhân viên
       responses:
-        200:
+        "200":
           description: Thông tin nhân viên
-        404:
+        "404":
           description: Không tìm thấy
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu quyền Admin**: Cần đăng nhập tài khoản Admin và lấy Token dán vào nút **Authorize** ở trên cùng bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     put:
       summary: Cập nhật thông tin nhân viên (phân quyền / đổi thông tin)
-      tags: [Employees]
+      tags:
+        - Employees
       security:
         - bearerAuth: []
       parameters:
@@ -511,19 +667,34 @@ paths:
                 role:
                   type: string
                   description: 'Quyền hạn: "admin" (Quản trị viên), "cashier" (Thu ngân), "barista" (Pha chế), "staff" (Phục vụ/Nhân viên)'
-                  enum: ["admin", "cashier", "barista", "staff"]
+                  enum:
+                    - admin
+                    - cashier
+                    - barista
+                    - staff
                 status:
                   type: string
                   description: 'Trạng thái hoạt động: "pending" (Chờ kích hoạt), "active" (Đang hoạt động), "banned" (Bị cấm)'
-                  enum: ["pending", "active", "banned"]
+                  enum:
+                    - pending
+                    - active
+                    - banned
       responses:
-        200:
+        "200":
           description: Cập nhật thành công
-        404:
+        "404":
           description: Không tìm thấy
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu quyền Admin**: Cần đăng nhập tài khoản Admin và lấy Token dán vào nút **Authorize** ở trên cùng bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     delete:
       summary: Xóa nhân viên
-      tags: [Employees]
+      tags:
+        - Employees
       security:
         - bearerAuth: []
       parameters:
@@ -534,21 +705,32 @@ paths:
           required: true
           description: ID của nhân viên
       responses:
-        200:
+        "200":
           description: Xóa thành công
-        404:
+        "404":
           description: Không tìm thấy
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu quyền Admin**: Cần đăng nhập tài khoản Admin và lấy Token dán vào nút **Authorize** ở trên cùng bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/categories:
     get:
       summary: Lấy danh sách category
-      tags: [Category]
+      tags:
+        - Category
       responses:
-        200:
+        "200":
           description: Danh sách category
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp chọn nút **Try it out** ở góc phải của API.
+        2. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     post:
       summary: Tạo mới category
-      tags: [Category]
+      tags:
+        - Category
       requestBody:
         required: true
         content:
@@ -559,13 +741,19 @@ paths:
                 name:
                   type: string
       responses:
-        201:
+        "201":
           description: Tạo thành công
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/categories/{id}:
     get:
       summary: Lấy chi tiết một category
-      tags: [Category]
+      tags:
+        - Category
       parameters:
         - in: path
           name: id
@@ -574,13 +762,19 @@ paths:
           required: true
           description: ID của category
       responses:
-        200:
+        "200":
           description: Chi tiết category
-        404:
+        "404":
           description: Không tìm thấy
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp chọn nút **Try it out** ở góc phải của API.
+        2. Điền giá trị cho tham số trong URL path (id).
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     put:
       summary: Cập nhật category
-      tags: [Category]
+      tags:
+        - Category
       parameters:
         - in: path
           name: id
@@ -595,13 +789,21 @@ paths:
             schema:
               type: object
       responses:
-        200:
+        "200":
           description: Cập nhật thành công
-        404:
+        "404":
           description: Không tìm thấy
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     delete:
       summary: Xóa category
-      tags: [Category]
+      tags:
+        - Category
       parameters:
         - in: path
           name: id
@@ -610,15 +812,21 @@ paths:
           required: true
           description: ID của category
       responses:
-        200:
+        "200":
           description: Xóa thành công
-        404:
+        "404":
           description: Không tìm thấy
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/products:
     get:
       summary: Lấy danh sách product
-      tags: [Product]
+      tags:
+        - Product
       parameters:
         - in: query
           name: page
@@ -643,25 +851,37 @@ paths:
             type: string
           description: Lọc theo ID danh mục
       responses:
-        200:
+        "200":
           description: Danh sách product
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp chọn nút **Try it out** ở góc phải của API.
+        2. Có thể nhập các tham số lọc hoặc phân trang (page, limit, keyword,...) tại mục Query parameters.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     post:
       summary: Tạo mới product
-      tags: [Product]
+      tags:
+        - Product
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ProductInput'
+              $ref: "#/components/schemas/ProductInput"
       responses:
-        201:
+        "201":
           description: Tạo thành công
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/products/{id}:
     get:
       summary: Lấy chi tiết một product
-      tags: [Product]
+      tags:
+        - Product
       parameters:
         - in: path
           name: id
@@ -670,13 +890,20 @@ paths:
           required: true
           description: ID của product
       responses:
-        200:
+        "200":
           description: Chi tiết product
-        404:
+        "404":
           description: Không tìm thấy
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp chọn nút **Try it out** ở góc phải của API.
+        2. Điền giá trị cho tham số trong URL path (id).
+        3. Có thể nhập các tham số lọc hoặc phân trang (page, limit, keyword,...) tại mục Query parameters.
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     put:
       summary: Cập nhật product
-      tags: [Product]
+      tags:
+        - Product
       parameters:
         - in: path
           name: id
@@ -689,15 +916,23 @@ paths:
         content:
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/ProductInput'
+              $ref: "#/components/schemas/ProductInput"
       responses:
-        200:
+        "200":
           description: Cập nhật thành công
-        404:
+        "404":
           description: Không tìm thấy
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     delete:
       summary: Xóa product
-      tags: [Product]
+      tags:
+        - Product
       parameters:
         - in: path
           name: id
@@ -706,15 +941,21 @@ paths:
           required: true
           description: ID của product
       responses:
-        200:
+        "200":
           description: Xóa thành công
-        404:
+        "404":
           description: Không tìm thấy
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/customers:
     get:
       summary: Lấy danh sách khách hàng (có phân trang và lọc)
-      tags: [Customer]
+      tags:
+        - Customer
       parameters:
         - in: query
           name: page
@@ -735,25 +976,38 @@ paths:
           schema:
             type: string
       responses:
-        200:
+        "200":
           description: Danh sách khách hàng
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Có thể nhập các tham số lọc hoặc phân trang (page, limit, keyword,...) tại mục Query parameters.
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     post:
       summary: Tạo khách hàng mới
-      tags: [Customer]
+      tags:
+        - Customer
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerInput'
+              $ref: "#/components/schemas/CustomerInput"
       responses:
-        201:
+        "201":
           description: Tạo thành công
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/customers/{id}:
     get:
       summary: Lấy chi tiết khách hàng
-      tags: [Customer]
+      tags:
+        - Customer
       parameters:
         - in: path
           name: id
@@ -761,13 +1015,21 @@ paths:
             type: string
           required: true
       responses:
-        200:
+        "200":
           description: Chi tiết khách hàng
-        404:
+        "404":
           description: Không tìm thấy
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Có thể nhập các tham số lọc hoặc phân trang (page, limit, keyword,...) tại mục Query parameters.
+        5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     put:
       summary: Cập nhật thông tin khách hàng
-      tags: [Customer]
+      tags:
+        - Customer
       parameters:
         - in: path
           name: id
@@ -779,17 +1041,24 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CustomerInput'
+              $ref: "#/components/schemas/CustomerInput"
       responses:
-        200:
+        "200":
           description: Cập nhật thành công
-        404:
+        "404":
           description: Không tìm thấy
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/customers/{id}/points:
     post:
       summary: Cộng / Trừ điểm khách hàng
-      tags: [Customer]
+      tags:
+        - Customer
       parameters:
         - in: path
           name: id
@@ -818,21 +1087,38 @@ paths:
                 transactionType:
                   type: string
                   description: 'Loại giao dịch tích điểm: "ORDER" (Mua hàng), "REWARD" (Đổi thưởng), "BIRTHDAY_GIFT" (Quà sinh nhật), "ADJUSTMENT" (Điều chỉnh từ Admin)'
-                  enum: ["ORDER", "REWARD", "BIRTHDAY_GIFT", "ADJUSTMENT"]
+                  enum:
+                    - ORDER
+                    - REWARD
+                    - BIRTHDAY_GIFT
+                    - ADJUSTMENT
       responses:
-        200:
+        "200":
           description: Thay đổi điểm thành công
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/zones:
     get:
       summary: Lấy danh sách khu vực
-      tags: [Zone]
+      tags:
+        - Zone
       responses:
-        200:
+        "200":
           description: Danh sách khu vực
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     post:
       summary: Tạo mới khu vực
-      tags: [Zone]
+      tags:
+        - Zone
       security:
         - bearerAuth: []
       requestBody:
@@ -853,16 +1139,24 @@ paths:
                 isActive:
                   type: string
                   description: 'Trạng thái hoạt động: "active" (Hoạt động/Kích hoạt), "inactive" (Tắt/Ngừng hoạt động)'
-                  enum: ["active", "inactive"]
+                  enum:
+                    - active
+                    - inactive
                   default: active
       responses:
-        201:
+        "201":
           description: Tạo khu vực thành công
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/zones/{id}:
     get:
       summary: Lấy chi tiết một khu vực
-      tags: [Zone]
+      tags:
+        - Zone
       parameters:
         - in: path
           name: id
@@ -871,13 +1165,20 @@ paths:
           required: true
           description: ID khu vực
       responses:
-        200:
+        "200":
           description: Chi tiết khu vực
-        404:
+        "404":
           description: Không tìm thấy
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     put:
       summary: Cập nhật khu vực
-      tags: [Zone]
+      tags:
+        - Zone
       security:
         - bearerAuth: []
       parameters:
@@ -901,15 +1202,25 @@ paths:
                 isActive:
                   type: string
                   description: 'Trạng thái hoạt động: "active" (Hoạt động/Kích hoạt), "inactive" (Tắt/Ngừng hoạt động)'
-                  enum: ["active", "inactive"]
+                  enum:
+                    - active
+                    - inactive
       responses:
-        200:
+        "200":
           description: Cập nhật thành công
-        404:
+        "404":
           description: Không tìm thấy
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     delete:
       summary: Xóa khu vực
-      tags: [Zone]
+      tags:
+        - Zone
       security:
         - bearerAuth: []
       parameters:
@@ -920,15 +1231,21 @@ paths:
           required: true
           description: ID khu vực
       responses:
-        200:
+        "200":
           description: Xóa thành công
-        404:
+        "404":
           description: Không tìm thấy
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/tables:
     get:
       summary: Lấy danh sách bàn
-      tags: [Table]
+      tags:
+        - Table
       parameters:
         - in: query
           name: zoneId
@@ -936,11 +1253,17 @@ paths:
             type: string
           description: Lọc bàn theo ID khu vực
       responses:
-        200:
+        "200":
           description: Danh sách bàn
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     post:
       summary: Tạo mới bàn
-      tags: [Table]
+      tags:
+        - Table
       security:
         - bearerAuth: []
       requestBody:
@@ -962,21 +1285,33 @@ paths:
                 status:
                   type: string
                   description: 'Trạng thái bàn: "available" (Bàn trống), "occupied" (Đang có khách), "reserved" (Đã đặt trước), "cleaning" (Đang dọn dẹp)'
-                  enum: ["available", "occupied", "reserved", "cleaning"]
+                  enum:
+                    - available
+                    - occupied
+                    - reserved
+                    - cleaning
                   default: available
                 isActive:
                   type: string
                   description: 'Trạng thái hoạt động: "active" (Hoạt động/Kích hoạt), "inactive" (Tắt/Ngừng hoạt động)'
-                  enum: ["active", "inactive"]
+                  enum:
+                    - active
+                    - inactive
                   default: active
       responses:
-        201:
+        "201":
           description: Tạo bàn thành công
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/tables/{id}:
     get:
       summary: Lấy chi tiết bàn
-      tags: [Table]
+      tags:
+        - Table
       parameters:
         - in: path
           name: id
@@ -985,13 +1320,20 @@ paths:
           required: true
           description: ID bàn
       responses:
-        200:
+        "200":
           description: Chi tiết bàn
-        404:
+        "404":
           description: Không tìm thấy
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     put:
       summary: Cập nhật bàn (Đổi tên, khu vực hoặc cập nhật trạng thái Bàn trống/Có khách/Đặt trước)
-      tags: [Table]
+      tags:
+        - Table
       security:
         - bearerAuth: []
       parameters:
@@ -1015,19 +1357,33 @@ paths:
                 status:
                   type: string
                   description: 'Trạng thái bàn: "available" (Bàn trống), "occupied" (Đang có khách), "reserved" (Đã đặt trước), "cleaning" (Đang dọn dẹp)'
-                  enum: ["available", "occupied", "reserved", "cleaning"]
+                  enum:
+                    - available
+                    - occupied
+                    - reserved
+                    - cleaning
                 isActive:
                   type: string
                   description: 'Trạng thái hoạt động: "active" (Hoạt động/Kích hoạt), "inactive" (Tắt/Ngừng hoạt động)'
-                  enum: ["active", "inactive"]
+                  enum:
+                    - active
+                    - inactive
       responses:
-        200:
+        "200":
           description: Cập nhật thành công
-        404:
+        "404":
           description: Không tìm thấy
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     delete:
       summary: Xóa bàn
-      tags: [Table]
+      tags:
+        - Table
       security:
         - bearerAuth: []
       parameters:
@@ -1038,15 +1394,21 @@ paths:
           required: true
           description: ID bàn
       responses:
-        200:
+        "200":
           description: Xóa thành công
-        404:
+        "404":
           description: Không tìm thấy
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/tables/{id}/qrcode:
     post:
       summary: Tạo lại/cập nhật mã QR Code của bàn
-      tags: [Table]
+      tags:
+        - Table
       security:
         - bearerAuth: []
       parameters:
@@ -1057,15 +1419,22 @@ paths:
           required: true
           description: ID bàn
       responses:
-        200:
+        "200":
           description: Tạo thành công
-        404:
+        "404":
           description: Không tìm thấy
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/orders:
     get:
       summary: Lấy danh sách tất cả đơn hàng (Phân trang & Lọc)
-      tags: [Order]
+      tags:
+        - Order
       security:
         - bearerAuth: []
       parameters:
@@ -1083,7 +1452,7 @@ paths:
           name: status
           schema:
             type: string
-          description: 'Trạng thái đơn: PENDING, CONFIRMED, PREPARING, READY, COMPLETED, CANCELLED'
+          description: "Trạng thái đơn: PENDING, CONFIRMED, PREPARING, READY, COMPLETED, CANCELLED"
         - in: query
           name: tableId
           schema:
@@ -1105,11 +1474,17 @@ paths:
             type: string
             format: date-time
       responses:
-        200:
+        "200":
           description: Danh sách đơn hàng
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
     post:
       summary: Tạo đơn hàng mới
-      tags: [Order]
+      tags:
+        - Order
       security:
         - bearerAuth: []
       requestBody:
@@ -1158,13 +1533,19 @@ paths:
                             variantId:
                               type: string
       responses:
-        201:
+        "201":
           description: Đặt đơn hàng thành công
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/orders/{id}:
     get:
       summary: Lấy thông tin chi tiết một đơn hàng
-      tags: [Order]
+      tags:
+        - Order
       security:
         - bearerAuth: []
       parameters:
@@ -1175,15 +1556,21 @@ paths:
           required: true
           description: ID đơn hàng
       responses:
-        200:
+        "200":
           description: Chi tiết đơn hàng
-        404:
+        "404":
           description: Không tìm thấy đơn hàng
-
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/orders/{id}/status:
     patch:
       summary: Cập nhật trạng thái đơn hàng
-      tags: [Order]
+      tags:
+        - Order
       security:
         - bearerAuth: []
       parameters:
@@ -1204,19 +1591,29 @@ paths:
               properties:
                 status:
                   type: string
-                  description: 'Trạng thái đơn: PENDING, CONFIRMED, PREPARING, READY, COMPLETED, CANCELLED'
+                  description: "Trạng thái mới: PENDING, CONFIRMED, PREPARING, READY, COMPLETED, CANCELLED"
+                  enum:
+                    - PENDING
+                    - CONFIRMED
+                    - PREPARING
+                    - READY
+                    - COMPLETED
+                    - CANCELLED
       responses:
-        200:
-          description: Cập nhật thành công
-        400:
-          description: Sai luồng trạng thái hoặc dữ liệu không hợp lệ
-        404:
-          description: Không tìm thấy đơn hàng
-
-  /api/v1/orders/{id}/cancel:
+        "200":
+          description: Cập nhật trạng thái thành công
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
+  /api/v1/order/{id}/status:
     patch:
-      summary: Hủy đơn hàng kèm lý do
-      tags: [Order]
+      summary: Cập nhật trạng thái đơn hàng (Alias)
+      tags:
+        - Order
       security:
         - bearerAuth: []
       parameters:
@@ -1233,27 +1630,58 @@ paths:
             schema:
               type: object
               required:
-                - reason
+                - status
               properties:
-                reason:
+                status:
                   type: string
-                  description: Lý do hủy đơn hàng
+                  description: "Trạng thái mới: PENDING, CONFIRMED, PREPARING, READY, COMPLETED, CANCELLED"
+                  enum:
+                    - PENDING
+                    - CONFIRMED
+                    - PREPARING
+                    - READY
+                    - COMPLETED
+                    - CANCELLED
       responses:
-        404:
-          description: Không tìm thấy đơn hàng
-
+        "200":
+          description: Cập nhật trạng thái thành công
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+        3. Điền giá trị cho tham số trong URL path (id).
+        4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+        5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
   /api/v1/store/all:
     get:
       summary: Lấy tất cả cửa hàng/chi nhánh
-      tags: [Store]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Không yêu cầu Token đăng nhập.
+        - Nhấp **Try it out** -> **Execute** để lấy toàn bộ danh sách cửa hàng/chi nhánh trong hệ thống.
+      tags:
+        - Store
       responses:
-        200:
-          description: Thành công
-
+        "200":
+          description: Lấy danh sách thành công
   /api/v1/store/search:
     post:
       summary: Tìm kiếm cửa hàng có phân trang
-      tags: [Store]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Không yêu cầu Token đăng nhập.
+        - Nhấp **Try it out**.
+        - Truyền Request Body có dạng:
+          ```json
+          {
+            "search": "Cửa hàng A",
+            "page": 1,
+            "pageSize": 10
+          }
+          ```
+        - Nhấp **Execute** để xem danh sách kết quả kèm phân trang.
+      tags:
+        - Store
       requestBody:
         required: true
         content:
@@ -1268,13 +1696,19 @@ paths:
                 pageSize:
                   type: number
       responses:
-        200:
-          description: Thành công
-
+        "200":
+          description: Tìm kiếm thành công
   /api/v1/store/create:
     post:
       summary: Tạo cửa hàng mới
-      tags: [Store]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. **Bắt buộc** phải đăng nhập tài khoản Admin bằng API `/api/v1/auth/login` để lấy token.
+        2. Nhấp nút **Authorize** ở trên cùng và dán token vào.
+        3. Nhấp **Try it out** ở API này, điền đầy đủ dữ liệu trong Request Body (tên cửa hàng là duy nhất).
+        4. Nhấp **Execute** để thực hiện tạo mới.
+      tags:
+        - Store
       security:
         - bearerAuth: []
       requestBody:
@@ -1282,15 +1716,28 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Store'
+              $ref: "#/components/schemas/Store"
       responses:
-        201:
-          description: Thành công
-
+        "201":
+          description: Tạo thành công
   /api/v1/store/update:
     put:
       summary: Cập nhật thông tin cửa hàng
-      tags: [Store]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu đăng nhập tài khoản Admin (nhận Bearer token).
+        2. Nhấp **Try it out**.
+        3. Trong Request Body, bắt buộc phải bổ sung thuộc tính `id` hoặc `_id` của cửa hàng cần sửa đổi, đi kèm các thông tin mới:
+          ```json
+          {
+            "id": "mã_id_của_cửa_hàng",
+            "name": "Tên cửa hàng mới cập nhật",
+            "address": "Địa chỉ mới"
+          }
+          ```
+        4. Nhấp **Execute** để hoàn tất cập nhật.
+      tags:
+        - Store
       security:
         - bearerAuth: []
       requestBody:
@@ -1298,15 +1745,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Store'
+              $ref: "#/components/schemas/Store"
       responses:
-        200:
-          description: Thành công
-
+        "200":
+          description: Cập nhật thành công
   /api/v1/store/delete/{id}:
     delete:
       summary: Xóa cửa hàng
-      tags: [Store]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu quyền Admin (cần Token đăng nhập).
+        2. Nhấp **Try it out**.
+        3. Điền giá trị `id` của cửa hàng cần xóa vào tham số đường dẫn (Path parameter).
+        4. Nhấp **Execute** để thực hiện xóa khỏi cơ sở dữ liệu.
+      tags:
+        - Store
       security:
         - bearerAuth: []
       parameters:
@@ -1315,38 +1768,56 @@ paths:
           schema:
             type: string
           required: true
+          description: ID của cửa hàng cần xóa
       responses:
-        200:
-          description: Thành công
-
+        "200":
+          description: Xóa thành công
   /api/v1/store/details/{id}:
     get:
       summary: Lấy chi tiết cửa hàng
-      tags: [Store]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Không yêu cầu Token đăng nhập.
+        - Nhấp **Try it out**.
+        - Điền `id` của cửa hàng vào tham số đường dẫn.
+        - Nhấp **Execute** để xem chi tiết thông tin cửa hàng.
+      tags:
+        - Store
       parameters:
         - in: path
           name: id
           schema:
             type: string
           required: true
+          description: ID của cửa hàng cần xem chi tiết
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/staff/role/all:
     get:
       summary: Lấy tất cả vai trò nhân viên
-      tags: [StaffRole]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Yêu cầu đăng nhập bằng tài khoản có quyền Admin.
+        - Nhấp **Try it out** -> **Execute** để xem danh sách toàn bộ các vai trò và quyền hạn tương ứng được lưu trong hệ thống.
+      tags:
+        - StaffRole
       security:
         - bearerAuth: []
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/staff/role/create:
     post:
       summary: Tạo vai trò mới
-      tags: [StaffRole]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu quyền Admin (nhận token đăng nhập).
+        2. Nhấp **Try it out**.
+        3. Nhập thông tin vai trò mới trong Request Body (ví dụ: `code: "shift_leader"`, `name: "Trưởng ca"`, `permissions: ["read:orders", "write:orders"]`).
+        4. Nhấp **Execute** để lưu vai trò vào DB.
+      tags:
+        - StaffRole
       security:
         - bearerAuth: []
       requestBody:
@@ -1354,15 +1825,28 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StaffRole'
+              $ref: "#/components/schemas/StaffRole"
       responses:
-        201:
-          description: Thành công
-
+        "201":
+          description: Tạo thành công
   /api/v1/staff/role/update:
     put:
       summary: Cập nhật vai trò nhân viên
-      tags: [StaffRole]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu quyền Admin.
+        2. Nhấp **Try it out**.
+        3. Nhập Request Body chứa `id` hoặc `_id` của vai trò cần cập nhật kèm danh sách quyền mới:
+          ```json
+          {
+            "id": "id_vai_trò_cần_sửa",
+            "name": "Tên vai trò mới",
+            "permissions": ["all"]
+          }
+          ```
+        4. Nhấp **Execute** để áp dụng thay đổi.
+      tags:
+        - StaffRole
       security:
         - bearerAuth: []
       requestBody:
@@ -1370,15 +1854,28 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StaffRole'
+              $ref: "#/components/schemas/StaffRole"
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/product-price/search:
     post:
       summary: Tìm kiếm giá sản phẩm
-      tags: [ProductPrice]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Cần Token đăng nhập để xác thực.
+        - Nhấp **Try it out**.
+        - Điền Request Body dạng:
+          ```json
+          {
+            "search": "Tên sản phẩm cần tìm",
+            "page": 1,
+            "pageSize": 10
+          }
+          ```
+        - Nhấp **Execute** để xem danh mục giá chi tiết theo size, ghi chú...
+      tags:
+        - ProductPrice
       security:
         - bearerAuth: []
       requestBody:
@@ -1388,13 +1885,31 @@ paths:
             schema:
               type: object
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/product-price/create-or-update:
     post:
       summary: Tạo hoặc cập nhật giá sản phẩm
-      tags: [ProductPrice]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Chỉ tài khoản Admin mới thực hiện được (cần Bearer Token).
+        2. Nhấp **Try it out**.
+        3. Điền đầy đủ thông tin sản phẩm và giá trong Request Body:
+          ```json
+          {
+            "productId": "id_của_sản_phẩm",
+            "price": 35000,
+            "sizePriceMap": {
+              "S": 35000,
+              "M": 40000,
+              "L": 45000
+            },
+            "notes": "Giá áp dụng cho mùa hè"
+          }
+          ```
+        4. Nhấp **Execute**. Hệ thống sẽ tự động cập nhật giá gốc của sản phẩm tương ứng và lưu trữ bảng giá.
+      tags:
+        - ProductPrice
       security:
         - bearerAuth: []
       requestBody:
@@ -1402,15 +1917,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProductPrice'
+              $ref: "#/components/schemas/ProductPrice"
       responses:
-        200:
-          description: Thành công
-
+        "200":
+          description: Cập nhật thành công
   /api/v1/product-price/details/{id}:
     get:
       summary: Chi tiết giá của một sản phẩm
-      tags: [ProductPrice]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Cần Token đăng nhập.
+        - Nhấp **Try it out**.
+        - Điền ID bảng giá hoặc ID sản phẩm (`productId`) vào tham số đường dẫn.
+        - Nhấp **Execute** để nhận kết quả bảng giá chi tiết.
+      tags:
+        - ProductPrice
       security:
         - bearerAuth: []
       parameters:
@@ -1419,24 +1940,35 @@ paths:
           schema:
             type: string
           required: true
+          description: ID của sản phẩm hoặc ID bảng giá
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/membership-program/details/current:
     get:
       summary: Lấy chương trình loyalty hiện tại
-      tags: [MembershipProgram]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Yêu cầu Token đăng nhập.
+        - Nhấp **Try it out** -> **Execute** để nhận chương trình loyalty (tích điểm thành viên) đang được kích hoạt và áp dụng hiện tại.
+      tags:
+        - MembershipProgram
       security:
         - bearerAuth: []
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/membership-program/details/{id}:
     get:
       summary: Chi tiết chương trình loyalty
-      tags: [MembershipProgram]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Yêu cầu Token đăng nhập.
+        - Nhấp **Try it out**.
+        - Nhập `id` chương trình loyalty cần xem chi tiết.
+        - Nhấp **Execute**.
+      tags:
+        - MembershipProgram
       security:
         - bearerAuth: []
       parameters:
@@ -1445,14 +1977,29 @@ paths:
           schema:
             type: string
           required: true
+          description: ID chương trình loyalty
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/membership-program/create:
     post:
       summary: Tạo chương trình loyalty mới
-      tags: [MembershipProgram]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu quyền Admin (đăng nhập và nhập token).
+        2. Nhấp **Try it out**.
+        3. Cung cấp thông tin chương trình loyalty mới:
+          ```json
+          {
+            "name": "Chương trình Khách hàng thân thiết 2026",
+            "description": "Tích điểm đổi quà và giảm giá trực tiếp",
+            "startDate": "2026-01-01T00:00:00.000Z",
+            "endDate": "2026-12-31T23:59:59.000Z"
+          }
+          ```
+        4. Nhấp **Execute** để tạo chương trình ở trạng thái chờ duyệt.
+      tags:
+        - MembershipProgram
       security:
         - bearerAuth: []
       requestBody:
@@ -1460,15 +2007,28 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MembershipProgram'
+              $ref: "#/components/schemas/MembershipProgram"
       responses:
-        201:
-          description: Thành công
-
+        "201":
+          description: Tạo thành công
   /api/v1/membership-program/update:
     put:
       summary: Cập nhật chương trình loyalty
-      tags: [MembershipProgram]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu quyền Admin (Bearer Token).
+        2. Nhấp **Try it out**.
+        3. Gửi Request Body chứa `id` chương trình cần cập nhật:
+          ```json
+          {
+            "id": "id_chương_trình",
+            "name": "Cập nhật tên chương trình mới",
+            "status": "active"
+          }
+          ```
+        4. Nhấp **Execute** để hoàn tất cập nhật.
+      tags:
+        - MembershipProgram
       security:
         - bearerAuth: []
       requestBody:
@@ -1476,15 +2036,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MembershipProgram'
+              $ref: "#/components/schemas/MembershipProgram"
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/membership-program/search:
     post:
       summary: Tìm kiếm chương trình loyalty
-      tags: [MembershipProgram]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Yêu cầu Token đăng nhập.
+        - Nhấp **Try it out**.
+        - Gửi Request Body lọc (ví dụ: `{"search": "2026"}`).
+        - Nhấp **Execute**.
+      tags:
+        - MembershipProgram
       security:
         - bearerAuth: []
       requestBody:
@@ -1494,13 +2060,25 @@ paths:
             schema:
               type: object
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/membership-program/approve:
     patch:
       summary: Phê duyệt chương trình loyalty
-      tags: [MembershipProgram]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu quyền Admin.
+        2. Nhấp **Try it out**.
+        3. Điền Request Body phê duyệt:
+          ```json
+          {
+            "id": "id_chương_trình_loyalty",
+            "isApproved": true
+          }
+          ```
+        4. Nhấp **Execute** để chính thức kích hoạt chương trình.
+      tags:
+        - MembershipProgram
       security:
         - bearerAuth: []
       requestBody:
@@ -1509,20 +2087,28 @@ paths:
           application/json:
             schema:
               type: object
-              required: [id, isApproved]
+              required:
+                - id
+                - isApproved
               properties:
                 id:
                   type: string
                 isApproved:
                   type: boolean
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/membership-tier/all/{programId}:
     get:
       summary: Lấy tất cả hạng của chương trình
-      tags: [MembershipTier]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Cần Token đăng nhập.
+        - Nhấp **Try it out**.
+        - Điền `programId` của chương trình thành viên vào tham số đường dẫn.
+        - Nhấp **Execute** để xem toàn bộ danh sách hạng thành viên (Gold, Silver...) của chương trình đó.
+      tags:
+        - MembershipTier
       security:
         - bearerAuth: []
       parameters:
@@ -1531,24 +2117,35 @@ paths:
           schema:
             type: string
           required: true
+          description: ID chương trình loyalty
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/membership-tier/all/current:
     get:
       summary: Lấy tất cả hạng của chương trình hiện tại
-      tags: [MembershipTier]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Yêu cầu Token đăng nhập.
+        - Nhấp **Try it out** -> **Execute** để nhận toàn bộ danh sách hạng thành viên (Tier) được xếp từ thấp đến cao theo điểm tích lũy của chương trình hiện hành.
+      tags:
+        - MembershipTier
       security:
         - bearerAuth: []
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/membership-tier/search:
     post:
       summary: Tìm kiếm hạng thành viên
-      tags: [MembershipTier]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Yêu cầu Token đăng nhập.
+        - Nhấp **Try it out**.
+        - Truyền dữ liệu lọc (Ví dụ: `{"programId": "id_chương_trình"}`) trong body.
+        - Nhấp **Execute**.
+      tags:
+        - MembershipTier
       security:
         - bearerAuth: []
       requestBody:
@@ -1558,13 +2155,28 @@ paths:
             schema:
               type: object
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/membership-tier/create:
     post:
       summary: Tạo hạng thành viên mới
-      tags: [MembershipTier]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu quyền Admin (nhập token).
+        2. Nhấp **Try it out**.
+        3. Gửi Request Body định nghĩa hạng thành viên:
+          ```json
+          {
+            "programId": "id_chương_trình_loyalty",
+            "name": "Gold Member",
+            "minPoints": 1000,
+            "discountPercentage": 5,
+            "description": "Ưu đãi giảm 5% cho mỗi hóa đơn"
+          }
+          ```
+        4. Nhấp **Execute** để thêm mới hạng thành viên.
+      tags:
+        - MembershipTier
       security:
         - bearerAuth: []
       requestBody:
@@ -1572,15 +2184,28 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MembershipTier'
+              $ref: "#/components/schemas/MembershipTier"
       responses:
-        201:
-          description: Thành công
-
+        "201":
+          description: Tạo thành công
   /api/v1/membership-tier/update:
     put:
       summary: Cập nhật hạng thành viên
-      tags: [MembershipTier]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu quyền Admin.
+        2. Nhấp **Try it out**.
+        3. Điền Request Body chứa ID hạng thành viên cần cập nhật:
+          ```json
+          {
+            "id": "id_hạng_thành_viên",
+            "discountPercentage": 7,
+            "description": "Cập nhật ưu đãi giảm giá lên 7%"
+          }
+          ```
+        4. Nhấp **Execute**.
+      tags:
+        - MembershipTier
       security:
         - bearerAuth: []
       requestBody:
@@ -1588,15 +2213,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MembershipTier'
+              $ref: "#/components/schemas/MembershipTier"
       responses:
-        200:
-          description: Thành công
-
+        "200":
+          description: Cập nhật thành công
   /api/v1/membership-tier/detail/{id}:
     get:
       summary: Chi tiết hạng thành viên
-      tags: [MembershipTier]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Cần có Token đăng nhập.
+        - Nhấp **Try it out**.
+        - Điền `id` hạng thành viên cần xem thông tin chi tiết vào tham số đường dẫn.
+        - Nhấp **Execute**.
+      tags:
+        - MembershipTier
       security:
         - bearerAuth: []
       parameters:
@@ -1605,14 +2236,21 @@ paths:
           schema:
             type: string
           required: true
+          description: ID của hạng thành viên
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/promotion-program/search:
     post:
       summary: Tìm kiếm chương trình khuyến mãi
-      tags: [PromotionProgram]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Yêu cầu Token đăng nhập.
+        - Nhấp **Try it out**.
+        - Gửi Request Body lọc (Ví dụ: `{"isActive": "active"}`).
+        - Nhấp **Execute** để nhận kết quả danh sách chương trình khuyến mãi.
+      tags:
+        - PromotionProgram
       security:
         - bearerAuth: []
       requestBody:
@@ -1622,13 +2260,19 @@ paths:
             schema:
               type: object
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/promotion-program/details/{id}:
     get:
       summary: Chi tiết chương trình khuyến mãi
-      tags: [PromotionProgram]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Cần Token đăng nhập.
+        - Nhấp **Try it out**.
+        - Nhập `id` chương trình khuyến mãi ở Path parameter.
+        - Nhấp **Execute**.
+      tags:
+        - PromotionProgram
       security:
         - bearerAuth: []
       parameters:
@@ -1637,14 +2281,32 @@ paths:
           schema:
             type: string
           required: true
+          description: ID chương trình khuyến mãi
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/promotion-program/create:
     post:
       summary: Tạo chương trình khuyến mãi mới
-      tags: [PromotionProgram]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu quyền Admin (đăng nhập lấy token).
+        2. Nhấp **Try it out**.
+        3. Điền đầy đủ thông tin chi tiết chương trình trong body:
+          ```json
+          {
+            "name": "Giảm giá khai trương chi nhánh mới",
+            "description": "Giảm 10% cho hóa đơn từ 100K",
+            "discountType": "PERCENT",
+            "discountValue": 10,
+            "minOrderValue": 100000,
+            "startDate": "2026-06-01T00:00:00.000Z",
+            "endDate": "2026-06-30T23:59:59.000Z"
+          }
+          ```
+        4. Nhấp **Execute** để lưu chương trình ở trạng thái chờ duyệt.
+      tags:
+        - PromotionProgram
       security:
         - bearerAuth: []
       requestBody:
@@ -1652,15 +2314,28 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PromotionProgram'
+              $ref: "#/components/schemas/PromotionProgram"
       responses:
-        201:
-          description: Thành công
-
+        "201":
+          description: Tạo thành công
   /api/v1/promotion-program/update:
     put:
       summary: Cập nhật chương trình khuyến mãi
-      tags: [PromotionProgram]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu quyền Admin.
+        2. Nhấp **Try it out**.
+        3. Cung cấp Request Body kèm `id` chương trình cần cập nhật:
+          ```json
+          {
+            "id": "id_chương_trình",
+            "discountValue": 15,
+            "description": "Tăng mức giảm giá lên 15% cho hóa đơn từ 100K"
+          }
+          ```
+        4. Nhấp **Execute**.
+      tags:
+        - PromotionProgram
       security:
         - bearerAuth: []
       requestBody:
@@ -1668,15 +2343,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PromotionProgram'
+              $ref: "#/components/schemas/PromotionProgram"
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/promotion-program/delete/{id}:
     delete:
       summary: Xóa chương trình khuyến mãi
-      tags: [PromotionProgram]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu quyền Admin.
+        2. Nhấp **Try it out**.
+        3. Điền `id` chương trình khuyến mãi cần xóa ở tham số đường dẫn.
+        4. Nhấp **Execute**.
+      tags:
+        - PromotionProgram
       security:
         - bearerAuth: []
       parameters:
@@ -1685,14 +2366,27 @@ paths:
           schema:
             type: string
           required: true
+          description: ID chương trình khuyến mãi
       responses:
-        200:
-          description: Thành công
-
+        "200":
+          description: Xóa thành công
   /api/v1/promotion-program/update-active:
     patch:
       summary: Bật/tắt trạng thái chương trình khuyến mãi
-      tags: [PromotionProgram]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu quyền Admin.
+        2. Nhấp **Try it out**.
+        3. Gửi Request Body chứa ID và trạng thái kích hoạt mong muốn:
+          ```json
+          {
+            "id": "id_chương_trình",
+            "isActive": "inactive"
+          }
+          ```
+        4. Nhấp **Execute**.
+      tags:
+        - PromotionProgram
       security:
         - bearerAuth: []
       requestBody:
@@ -1701,21 +2395,38 @@ paths:
           application/json:
             schema:
               type: object
-              required: [id, isActive]
+              required:
+                - id
+                - isActive
               properties:
                 id:
                   type: string
                 isActive:
                   type: string
-                  enum: [active, inactive]
+                  enum:
+                    - active
+                    - inactive
+                  description: Trạng thái kích hoạt (active hoặc inactive)
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/promotion-program/approve:
     patch:
       summary: Phê duyệt chương trình khuyến mãi
-      tags: [PromotionProgram]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu quyền Admin.
+        2. Nhấp **Try it out**.
+        3. Điền thông tin phê duyệt trong Request Body:
+          ```json
+          {
+            "id": "id_chương_trình",
+            "isApproved": true
+          }
+          ```
+        4. Nhấp **Execute** để kích hoạt chương trình khuyến mãi cho khách hàng.
+      tags:
+        - PromotionProgram
       security:
         - bearerAuth: []
       requestBody:
@@ -1724,20 +2435,29 @@ paths:
           application/json:
             schema:
               type: object
-              required: [id, isApproved]
+              required:
+                - id
+                - isApproved
               properties:
                 id:
                   type: string
                 isApproved:
                   type: boolean
+                  description: Trạng thái duyệt
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/notification/search:
     post:
       summary: Tìm kiếm thông báo có phân trang
-      tags: [Notification]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Cần Token đăng nhập.
+        - Nhấp **Try it out**.
+        - Gửi Request Body (Ví dụ: `{"recipientType": "staff"}`).
+        - Nhấp **Execute** để xem danh sách thông báo.
+      tags:
+        - Notification
       security:
         - bearerAuth: []
       requestBody:
@@ -1747,13 +2467,19 @@ paths:
             schema:
               type: object
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/notification/details/{id}:
     get:
       summary: Chi tiết thông báo
-      tags: [Notification]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Yêu cầu Token đăng nhập.
+        - Nhấp **Try it out**.
+        - Nhập `id` của thông báo vào Path parameter.
+        - Nhấp **Execute**.
+      tags:
+        - Notification
       security:
         - bearerAuth: []
       parameters:
@@ -1762,14 +2488,29 @@ paths:
           schema:
             type: string
           required: true
+          description: ID của thông báo
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/notification/create:
     post:
       summary: Tạo thông báo mới
-      tags: [Notification]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu quyền Admin.
+        2. Nhấp **Try it out**.
+        3. Điền Request Body thông báo mới:
+          ```json
+          {
+            "title": "Thông báo bảo trì hệ thống",
+            "content": "Hệ thống POS sẽ bảo trì vào lúc 2h sáng ngày mai.",
+            "recipientType": "staff",
+            "type": "system"
+          }
+          ```
+        4. Nhấp **Execute** để phát đi thông báo.
+      tags:
+        - Notification
       security:
         - bearerAuth: []
       requestBody:
@@ -1777,15 +2518,28 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Notification'
+              $ref: "#/components/schemas/Notification"
       responses:
-        201:
-          description: Thành công
-
+        "201":
+          description: Tạo thành công
   /api/v1/notification/update:
     put:
       summary: Cập nhật thông báo
-      tags: [Notification]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu quyền Admin.
+        2. Nhấp **Try it out**.
+        3. Gửi Request Body chứa ID thông báo cần sửa:
+          ```json
+          {
+            "id": "id_thông_báo",
+            "title": "Thông báo bảo trì hệ thống (Thay đổi giờ)",
+            "content": "Bảo trì dời lại sang 3h sáng."
+          }
+          ```
+        4. Nhấp **Execute**.
+      tags:
+        - Notification
       security:
         - bearerAuth: []
       requestBody:
@@ -1793,15 +2547,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Notification'
+              $ref: "#/components/schemas/Notification"
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/notification/delete/{id}:
     delete:
       summary: Xóa thông báo
-      tags: [Notification]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu quyền Admin.
+        2. Nhấp **Try it out**.
+        3. Điền `id` thông báo vào Path parameter.
+        4. Nhấp **Execute**.
+      tags:
+        - Notification
       security:
         - bearerAuth: []
       parameters:
@@ -1810,14 +2570,27 @@ paths:
           schema:
             type: string
           required: true
+          description: ID của thông báo cần xóa
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/notification/update-status:
     put:
       summary: Cập nhật trạng thái đọc/hoạt động của thông báo
-      tags: [Notification]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu Token đăng nhập.
+        2. Nhấp **Try it out**.
+        3. Cung cấp Request Body cập nhật:
+          ```json
+          {
+            "id": "id_thông_báo",
+            "isRead": true
+          }
+          ```
+        4. Nhấp **Execute**.
+      tags:
+        - Notification
       security:
         - bearerAuth: []
       requestBody:
@@ -1826,23 +2599,34 @@ paths:
           application/json:
             schema:
               type: object
-              required: [id]
+              required:
+                - id
               properties:
                 id:
                   type: string
                 isRead:
                   type: boolean
+                  description: Đã đọc hay chưa
                 status:
                   type: string
-                  enum: [active, inactive]
+                  enum:
+                    - active
+                    - inactive
+                  description: Trạng thái hoạt động
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/feedback/search:
     post:
       summary: Tìm kiếm đánh giá & phản hồi
-      tags: [Feedback]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Cần Token đăng nhập.
+        - Nhấp **Try it out**.
+        - Gửi Request Body lọc (Ví dụ: `{"rating": 5}`).
+        - Nhấp **Execute** để xem danh sách bình luận/đánh giá.
+      tags:
+        - Feedback
       security:
         - bearerAuth: []
       requestBody:
@@ -1852,13 +2636,19 @@ paths:
             schema:
               type: object
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/feedback/detail/{id}:
     get:
       summary: Chi tiết đánh giá
-      tags: [Feedback]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Yêu cầu Token đăng nhập.
+        - Nhấp **Try it out**.
+        - Điền `id` phản hồi đánh giá vào Path parameter.
+        - Nhấp **Execute**.
+      tags:
+        - Feedback
       security:
         - bearerAuth: []
       parameters:
@@ -1867,14 +2657,28 @@ paths:
           schema:
             type: string
           required: true
+          description: ID của phản hồi đánh giá
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/feedback/update:
     put:
       summary: Cập nhật hoặc phản hồi đánh giá
-      tags: [Feedback]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Yêu cầu đăng nhập. Nhân viên có thể sử dụng API này để trả lời đánh giá của khách hàng.
+        2. Nhấp **Try it out**.
+        3. Điền Request Body chứa ID đánh giá và nội dung phản hồi:
+          ```json
+          {
+            "id": "id_đánh_giá",
+            "reply": "Cảm ơn bạn đã phản hồi, chúng tôi sẽ cải thiện chất lượng phục vụ!",
+            "status": "approved"
+          }
+          ```
+        4. Nhấp **Execute**.
+      tags:
+        - Feedback
       security:
         - bearerAuth: []
       requestBody:
@@ -1882,15 +2686,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Feedback'
+              $ref: "#/components/schemas/Feedback"
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/feedback/export:
     post:
       summary: Xuất danh sách đánh giá ra Excel
-      tags: [Feedback]
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Yêu cầu Token đăng nhập.
+        - Nhấp **Try it out**.
+        - Điền tham số lọc nếu có trong Request Body (hoặc gửi `{}` để xuất toàn bộ).
+        - Nhấp **Execute**. Kết quả trả về sẽ là một File Excel nhị phân dạng Blob.
+      tags:
+        - Feedback
       security:
         - bearerAuth: []
       requestBody:
@@ -1900,13 +2710,19 @@ paths:
             schema:
               type: object
       responses:
-        200:
+        "200":
           description: File Excel dạng Blob
-
   /api/v1/activity-log/search:
     post:
       summary: Tìm kiếm nhật ký hoạt động (Admin)
-      tags: [ActivityLog]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. **Bắt buộc** quyền Admin (nhập Bearer Token).
+        2. Nhấp **Try it out**.
+        3. Gửi Request Body tìm kiếm (Ví dụ: `{"search": "đăng nhập"}`).
+        4. Nhấp **Execute** để kiểm tra hoạt động hệ thống.
+      tags:
+        - ActivityLog
       security:
         - bearerAuth: []
       requestBody:
@@ -1916,12 +2732,20 @@ paths:
             schema:
               type: object
       responses:
-        200:
+        "200":
           description: Thành công
   /api/v1/document/upload-file:
     post:
       summary: Upload một file tài liệu lên Cloudinary
-      tags: [Document]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Cần Token đăng nhập.
+        2. Nhấp **Try it out**.
+        3. Trong phần Form-data, chọn tệp tin tải lên tại trường `file` (chọn định dạng ảnh hoặc tài liệu).
+        4. Điền tên thư mục lưu trữ tại Cloudinary vào trường `folder` (tùy chọn).
+        5. Nhấp **Execute** để tải tệp lên.
+      tags:
+        - Document
       security:
         - bearerAuth: []
       requestBody:
@@ -1930,21 +2754,30 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              required: [file]
+              required:
+                - file
               properties:
                 file:
                   type: string
                   format: binary
+                  description: File cần upload
                 folder:
                   type: string
+                  description: Tên folder lưu trên Cloudinary
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/document/upload-multiple-file:
     post:
       summary: Upload nhiều file tài liệu lên Cloudinary
-      tags: [Document]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Cần Token đăng nhập.
+        2. Nhấp **Try it out**.
+        3. Chọn nhiều file cùng một lúc tại trường `files`.
+        4. Nhấp **Execute** để nhận về danh sách URLs và Public IDs của các tệp đã tải lên.
+      tags:
+        - Document
       security:
         - bearerAuth: []
       requestBody:
@@ -1953,23 +2786,37 @@ paths:
           multipart/form-data:
             schema:
               type: object
-              required: [files]
+              required:
+                - files
               properties:
                 files:
                   type: array
                   items:
                     type: string
                     format: binary
+                  description: Danh sách files cần upload
                 folder:
                   type: string
+                  description: Tên folder lưu trên Cloudinary
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/document/delete-file:
     delete:
       summary: Xóa file khỏi Cloudinary
-      tags: [Document]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Cần Token đăng nhập.
+        2. Nhấp **Try it out**.
+        3. Gửi Request Body chứa `publicId` của tệp tin lưu trên Cloudinary cần xóa:
+          ```json
+          {
+            "publicId": "tên_thư_mục/mã_của_tệp_tin"
+          }
+          ```
+        4. Nhấp **Execute** để thực hiện xóa file.
+      tags:
+        - Document
       security:
         - bearerAuth: []
       requestBody:
@@ -1978,28 +2825,40 @@ paths:
           application/json:
             schema:
               type: object
-              required: [publicId]
+              required:
+                - publicId
               properties:
                 publicId:
                   type: string
+                  description: Public ID của file trên Cloudinary
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/report/dashboard:
     get:
       summary: Lấy thống kê tổng quan dashboard
-      tags: [Report]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. **Bắt buộc** quyền Admin (cần Token đăng nhập).
+        2. Nhấp **Try it out** -> **Execute** để nhận các chỉ số tổng doanh thu, tổng số đơn, tổng số khách hàng và danh sách 5 đơn hàng mới nhất.
+      tags:
+        - Report
       security:
         - bearerAuth: []
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/report/revenue:
     get:
       summary: Lấy dữ liệu báo cáo doanh thu
-      tags: [Report]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Bắt buộc quyền Admin.
+        2. Nhấp **Try it out**.
+        3. Điền khoảng thời gian `startDate` và `endDate` (dạng chuỗi ngày, ví dụ `2026-06-01` đến `2026-06-30`) tại mục Query parameters.
+        4. Nhấp **Execute** để nhận thống kê doanh thu theo từng ngày.
+      tags:
+        - Report
       security:
         - bearerAuth: []
       parameters:
@@ -2007,18 +2866,26 @@ paths:
           name: startDate
           schema:
             type: string
+          description: Ngày bắt đầu (YYYY-MM-DD)
         - in: query
           name: endDate
           schema:
             type: string
+          description: Ngày kết thúc (YYYY-MM-DD)
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/report/top-products:
     get:
       summary: Báo cáo sản phẩm bán chạy nhất
-      tags: [Report]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Bắt buộc quyền Admin.
+        2. Nhấp **Try it out**.
+        3. Nhập khoảng thời gian và giới hạn số sản phẩm (`limit`, ví dụ `5`) tại Query parameters.
+        4. Nhấp **Execute** để nhận kết quả sản phẩm kèm số lượng và doanh số tương ứng.
+      tags:
+        - Report
       security:
         - bearerAuth: []
       parameters:
@@ -2026,22 +2893,31 @@ paths:
           name: startDate
           schema:
             type: string
+          description: Ngày bắt đầu (YYYY-MM-DD)
         - in: query
           name: endDate
           schema:
             type: string
+          description: Ngày kết thúc (YYYY-MM-DD)
         - in: query
           name: limit
           schema:
             type: number
+          description: Số sản phẩm tối đa hiển thị
       responses:
-        200:
+        "200":
           description: Thành công
-
   /api/v1/report/export/revenue:
     post:
       summary: Xuất Excel báo cáo doanh thu
-      tags: [Report]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Bắt buộc quyền Admin.
+        2. Nhấp **Try it out**.
+        3. Nhập khoảng ngày cần xuất báo cáo doanh thu trong Request Body (nếu có).
+        4. Nhấp **Execute** để nhận về tệp tin Excel nhị phân tải về máy.
+      tags:
+        - Report
       security:
         - bearerAuth: []
       requestBody:
@@ -2050,13 +2926,19 @@ paths:
             schema:
               type: object
       responses:
-        200:
-          description: Thành công
-
+        "200":
+          description: File Excel tải xuống
   /api/v1/report/export/orders:
     post:
       summary: Xuất Excel báo cáo đơn hàng
-      tags: [Report]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Bắt buộc quyền Admin.
+        2. Nhấp **Try it out**.
+        3. Điền tham số lọc khoảng thời gian trong Request Body (nếu có).
+        4. Nhấp **Execute** để xuất file báo cáo đơn hàng dạng Excel.
+      tags:
+        - Report
       security:
         - bearerAuth: []
       requestBody:
@@ -2065,13 +2947,17 @@ paths:
             schema:
               type: object
       responses:
-        200:
-          description: Thành công
-
+        "200":
+          description: File Excel tải xuống
   /api/v1/report/export/customers:
     post:
       summary: Xuất Excel báo cáo khách hàng
-      tags: [Report]
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Bắt buộc quyền Admin.
+        2. Nhấp **Try it out** -> **Execute** để xuất toàn bộ danh sách thông tin khách hàng, số điểm tích lũy, tổng chi tiêu ra file Excel tải về.
+      tags:
+        - Report
       security:
         - bearerAuth: []
       requestBody:
@@ -2080,9 +2966,339 @@ paths:
             schema:
               type: object
       responses:
-        200:
-          description: Thành công
+        "200":
+          description: File Excel tải xuống
+  /api/v1/auth/change-password:
+    put:
+      summary: Đổi mật khẩu tài khoản đang đăng nhập
+      tags:
+        - Auth
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                  description: Mật khẩu hiện tại
+                newPassword:
+                  type: string
+                  minLength: 6
+                  description: Mật khẩu mới (tối thiểu 6 ký tự)
+      responses:
+        "200":
+          description: Đổi mật khẩu thành công
+        "400":
+          description: Sai mật khẩu cũ hoặc lỗi mật khẩu không hợp lệ
+        "401":
+          description: Chưa đăng nhập (Không có token)
+      description: |-
+        ### Cách kiểm thử (How to test):
 
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+
+        3. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
+  /api/v1/orders/confirm/{id}:
+    patch:
+      summary: Xác nhận đơn hàng (Chuyển sang CONFIRMED)
+      tags:
+        - Order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID đơn hàng cần xác nhận
+      responses:
+        "200":
+          description: Xác nhận đơn hàng thành công
+        "404":
+          description: Không tìm thấy đơn hàng
+      description: |-
+        ### Cách kiểm thử (How to test):
+
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+
+        3. Điền giá trị cho tham số trong URL path (id).
+
+        4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+
+        5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
+  /api/v1/order/confirm/{id}:
+    patch:
+      summary: Xác nhận đơn hàng (Alias - Chuyển sang CONFIRMED)
+      tags:
+        - Order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID đơn hàng cần xác nhận
+      responses:
+        "200":
+          description: Xác nhận đơn hàng thành công
+        "404":
+          description: Không tìm thấy đơn hàng
+      description: |-
+        ### Cách kiểm thử (How to test):
+
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+
+        3. Điền giá trị cho tham số trong URL path (id).
+
+        4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+
+        5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
+  /api/v1/orders/complete/{id}:
+    patch:
+      summary: Hoàn tất đơn hàng (Chuyển sang COMPLETED)
+      tags:
+        - Order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID đơn hàng cần hoàn tất
+      responses:
+        "200":
+          description: Hoàn tất đơn hàng thành công
+        "404":
+          description: Không tìm thấy đơn hàng
+      description: |-
+        ### Cách kiểm thử (How to test):
+
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+
+        3. Điền giá trị cho tham số trong URL path (id).
+
+        4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+
+        5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
+  /api/v1/order/complete/{id}:
+    patch:
+      summary: Hoàn tất đơn hàng (Alias - Chuyển sang COMPLETED)
+      tags:
+        - Order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID đơn hàng cần hoàn tất
+      responses:
+        "200":
+          description: Hoàn tất đơn hàng thành công
+        "404":
+          description: Không tìm thấy đơn hàng
+      description: |-
+        ### Cách kiểm thử (How to test):
+
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+
+        3. Điền giá trị cho tham số trong URL path (id).
+
+        4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+
+        5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
+  /api/v1/orders/cancel/{id}:
+    patch:
+      summary: Hủy đơn hàng kèm lý do
+      tags:
+        - Order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID đơn hàng cần hủy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                  description: Lý do hủy đơn hàng
+      responses:
+        "200":
+          description: Hủy đơn hàng thành công
+        "404":
+          description: Không tìm thấy đơn hàng
+      description: |-
+        ### Cách kiểm thử (How to test):
+
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+
+        3. Điền giá trị cho tham số trong URL path (id).
+
+        4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+
+        5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
+  /api/v1/order/cancel/{id}:
+    patch:
+      summary: Hủy đơn hàng kèm lý do (Alias)
+      tags:
+        - Order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID đơn hàng cần hủy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                  description: Lý do hủy đơn hàng
+      responses:
+        "200":
+          description: Hủy đơn hàng thành công
+        "404":
+          description: Không tìm thấy đơn hàng
+      description: |-
+        ### Cách kiểm thử (How to test):
+
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+
+        3. Điền giá trị cho tham số trong URL path (id).
+
+        4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+
+        5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
+  /api/v1/orders/update-status:
+    patch:
+      summary: Cập nhật trạng thái đơn hàng
+      tags:
+        - Order
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                id:
+                  type: string
+                  description: ID đơn hàng (Tùy chọn)
+                orderId:
+                  type: string
+                  description: ID đơn hàng (Tùy chọn thay thế)
+                status:
+                  type: string
+                  description: "Trạng thái mới: PENDING, CONFIRMED, PREPARING, READY, COMPLETED, CANCELLED"
+      responses:
+        "200":
+          description: Cập nhật trạng thái đơn hàng thành công
+        "404":
+          description: Không tìm thấy đơn hàng
+      description: |-
+        ### Cách kiểm thử (How to test):
+
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+
+        3. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
+  /api/v1/order/update-status:
+    patch:
+      summary: Cập nhật trạng thái đơn hàng (Alias)
+      tags:
+        - Order
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - status
+              properties:
+                id:
+                  type: string
+                  description: ID đơn hàng (Tùy chọn)
+                orderId:
+                  type: string
+                  description: ID đơn hàng (Tùy chọn thay thế)
+                status:
+                  type: string
+                  description: "Trạng thái mới: PENDING, CONFIRMED, PREPARING, READY, COMPLETED, CANCELLED"
+      responses:
+        "200":
+          description: Cập nhật trạng thái đơn hàng thành công
+        "404":
+          description: Không tìm thấy đơn hàng
+      description: |-
+        ### Cách kiểm thử (How to test):
+
+        1. **Yêu cầu Token**: Hãy chắc chắn bạn đã đăng nhập và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+
+        2. Nhấp chọn nút **Try it out** ở góc phải của API.
+
+        3. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
+
+        4. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
 tags:
   - name: Auth
     description: API Quản lý Xác thực
@@ -2094,21 +3310,22 @@ tags:
     description: API Quản lý Người Dùng (Cần quyền Admin)
   - name: Order
     description: API Quản lý Đơn hàng & Vận hành (Real-time)
-
   - name: Category
     description: API quản lý category
-
   - name: Product
     description: API quản lý product
-
   - name: Customer
     description: API Quản lý Khách hàng
   - name: Zone
     description: API Quản lý Khu vực (Bàn ăn)
   - name: Table
     description: API Quản lý Bàn và sinh mã QR Code
-
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     User:
       type: object
@@ -2127,12 +3344,19 @@ components:
         role:
           type: string
           description: 'Quyền hạn: "admin" (Quản trị viên), "cashier" (Thu ngân), "barista" (Pha chế), "staff" (Phục vụ/Nhân viên)'
-          enum: ["admin", "cashier", "barista", "staff"]
+          enum:
+            - admin
+            - cashier
+            - barista
+            - staff
           default: staff
         status:
           type: string
           description: 'Trạng thái hoạt động: "pending" (Chờ kích hoạt), "active" (Đang hoạt động), "banned" (Bị cấm)'
-          enum: ["pending", "active", "banned"]
+          enum:
+            - pending
+            - active
+            - banned
           default: active
         createdAt:
           type: string
@@ -2140,7 +3364,6 @@ components:
         updatedAt:
           type: string
           format: date-time
-
     Category:
       type: object
       properties:
@@ -2189,11 +3412,13 @@ components:
         isActive:
           type: string
           description: 'Trạng thái hoạt động: "active" (Hoạt động/Kích hoạt), "inactive" (Tắt/Ngừng hoạt động)'
-          enum: ["active", "inactive"]
+          enum:
+            - active
+            - inactive
           default: active
         variants:
           type: string
-          description: 'Danh sách biến thể dạng JSON string (Ví dụ: ''[{"variantType": 0, "name": "Size L", "priceAdjustment": 5000}]'')'
+          description: "Danh sách biến thể dạng JSON string (Ví dụ: '[{\"variantType\": 0, \"name\": \"Size L\", \"priceAdjustment\": 5000}]')"
     Product:
       type: object
       properties:
@@ -2227,18 +3452,19 @@ components:
         isActive:
           type: string
           description: 'Trạng thái hoạt động: "active" (Hoạt động/Kích hoạt), "inactive" (Tắt/Ngừng hoạt động)'
-          enum: ["active", "inactive"]
+          enum:
+            - active
+            - inactive
         variants:
           type: array
           items:
-            $ref: '#/components/schemas/ProductVariant'
+            $ref: "#/components/schemas/ProductVariant"
         createdAt:
           type: string
           format: date-time
         updatedAt:
           type: string
           format: date-time
-
     CustomerInput:
       type: object
       required:
@@ -2258,7 +3484,6 @@ components:
           type: string
           format: date
           description: Ngày sinh
-
     ProductVariant:
       type: object
       required:
@@ -2275,7 +3500,9 @@ components:
         variantType:
           type: string
           description: 'Loại biến thể: "size" (Kích thước), "topping" (Topping/Món thêm)'
-          enum: ["size", "topping"]
+          enum:
+            - size
+            - topping
         name:
           type: string
           description: Tên biến thể (ví dụ Size L, Trân châu đen)
@@ -2285,7 +3512,9 @@ components:
         isActive:
           type: string
           description: 'Trạng thái hoạt động: "active" (Hoạt động/Kích hoạt), "inactive" (Tắt/Ngừng hoạt động)'
-          enum: ["active", "inactive"]
+          enum:
+            - active
+            - inactive
           default: active
         createdAt:
           type: string
@@ -2293,7 +3522,6 @@ components:
         updatedAt:
           type: string
           format: date-time
-
     VoucherInput:
       type: object
       required:
@@ -2316,7 +3544,9 @@ components:
         discountType:
           type: string
           description: 'Loại giảm giá: "PERCENT" (Giảm theo %), "FIXED" (Giảm theo số tiền cố định)'
-          enum: ["PERCENT", "FIXED"]
+          enum:
+            - PERCENT
+            - FIXED
           default: PERCENT
         discountValue:
           type: number
@@ -2339,9 +3569,10 @@ components:
         isActive:
           type: string
           description: 'Trạng thái hoạt động: "active" (Hoạt động/Kích hoạt), "inactive" (Tắt/Ngừng hoạt động)'
-          enum: ["active", "inactive"]
+          enum:
+            - active
+            - inactive
           default: active
-
     OTP:
       type: object
       required:
@@ -2356,7 +3587,9 @@ components:
         userModel:
           type: string
           description: 'Model người dùng tương ứng: "Employee" (Nhân viên), "Customer" (Khách hàng)'
-          enum: ["Employee", "Customer"]
+          enum:
+            - Employee
+            - Customer
           example: Employee
         code:
           type: string
@@ -2365,9 +3598,11 @@ components:
         type:
           type: string
           description: 'Loại mã xác thực OTP: "register" (Đăng ký), "two_factor" (Bảo mật 2 lớp), "reset_password" (Khôi phục mật khẩu)'
-          enum: ["register", "two_factor", "reset_password"]
+          enum:
+            - register
+            - two_factor
+            - reset_password
           example: register
-
     Store:
       type: object
       required:
@@ -2387,9 +3622,10 @@ components:
           type: string
         isActive:
           type: string
-          enum: ["active", "inactive"]
+          enum:
+            - active
+            - inactive
           default: active
-
     StaffRole:
       type: object
       required:
@@ -2408,7 +3644,6 @@ components:
             type: string
         description:
           type: string
-
     ProductPrice:
       type: object
       required:
@@ -2427,7 +3662,6 @@ components:
             type: number
         notes:
           type: string
-
     MembershipProgram:
       type: object
       required:
@@ -2441,7 +3675,9 @@ components:
           type: string
         status:
           type: string
-          enum: ["active", "inactive"]
+          enum:
+            - active
+            - inactive
           default: active
         startDate:
           type: string
@@ -2456,7 +3692,6 @@ components:
           type: string
         createdBy:
           type: string
-
     MembershipTier:
       type: object
       required:
@@ -2479,9 +3714,10 @@ components:
           type: string
         status:
           type: string
-          enum: ["active", "inactive"]
+          enum:
+            - active
+            - inactive
           default: active
-
     PromotionProgram:
       type: object
       required:
@@ -2496,7 +3732,9 @@ components:
           type: string
         discountType:
           type: string
-          enum: ["PERCENT", "FIXED"]
+          enum:
+            - PERCENT
+            - FIXED
           default: PERCENT
         discountValue:
           type: number
@@ -2513,12 +3751,13 @@ components:
           format: date-time
         isActive:
           type: string
-          enum: ["active", "inactive"]
+          enum:
+            - active
+            - inactive
           default: active
         isApproved:
           type: boolean
           default: false
-
     Notification:
       type: object
       required:
@@ -2533,22 +3772,29 @@ components:
           type: string
         recipientType:
           type: string
-          enum: ["all", "customer", "staff"]
+          enum:
+            - all
+            - customer
+            - staff
           default: all
         recipientId:
           type: string
         type:
           type: string
-          enum: ["system", "promotion", "order"]
+          enum:
+            - system
+            - promotion
+            - order
           default: system
         status:
           type: string
-          enum: ["active", "inactive"]
+          enum:
+            - active
+            - inactive
           default: active
         isRead:
           type: boolean
           default: false
-
     Feedback:
       type: object
       required:
@@ -2573,9 +3819,11 @@ components:
           type: string
         status:
           type: string
-          enum: ["pending", "approved", "rejected"]
+          enum:
+            - pending
+            - approved
+            - rejected
           default: pending
-
     ActivityLog:
       type: object
       required:

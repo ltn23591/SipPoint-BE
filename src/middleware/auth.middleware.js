@@ -40,7 +40,7 @@ exports.protect = async (req, res, next) => {
 
         if (!user) {
             res.status(401);
-            return next(new Error('Tài khoản không tồn tại trong hệ thống'));
+            return next(new Error('Phiên đăng nhập đã hết hạn hoặc tài khoản không tồn tại, vui lòng đăng nhập lại.'));
         }
 
         req.user = user;

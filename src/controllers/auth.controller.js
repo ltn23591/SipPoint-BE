@@ -337,3 +337,46 @@ exports.customerResendVerifyEmail = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Đổi mật khẩu nhân viên/khách hàng đang đăng nhập
+// @route   PUT /api/v1/auth/change-password
+// @access  Private
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Vui lòng điền đầy đủ mật khẩu cũ và mới' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'Mật khẩu mới phải từ 6 ký tự trở lên' });
+    }
+
+    // Tìm user đang đăng nhập (Employee hoặc Customer)
+    let user = await Employee.findById(req.user.id).select('+password');
+    if (!user) {
+      const Customer = require('../models/customer.model');
+      user = await Customer.findById(req.user.id).select('+password');
+    }
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản người dùng' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: 'Mật khẩu hiện tại không chính xác' });
+    }
+
+    // Hash mật khẩu mới
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save({ validateBeforeSave: false });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Đổi mật khẩu thành công'
+    });
+  } catch (error) {
+    next(error);
+  }
+};

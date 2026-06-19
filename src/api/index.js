@@ -34,17 +34,25 @@ router.get('/health', (req, res) => {
 
 // Gắn các API Router
 router.use('/auth', authRoutes);
+router.use('/authen/portal', authRoutes); // Compatibility alias
 router.use('/employees', employeeRoutes);
+router.use('/staff', employeeRoutes); // Compatibility alias
 router.use('/upload', uploadRoutes);
 router.use('/export', exportRoutes);
 router.use('/products', productRoutes);
+router.use('/product', productRoutes); // Compatibility alias
 router.use('/categories', categoryRoutes);
+router.use('/product-category', categoryRoutes); // Compatibility alias
 router.use('/customers', customerRoutes);
+router.use('/customer', customerRoutes); // Compatibility alias
 router.use('/customer-ranks', customerRankRoutes);
 router.use('/vouchers', voucherRoutes);
+router.use('/voucher', voucherRoutes); // Compatibility alias
 router.use('/zones', zoneRoutes);
 router.use('/tables', tableRoutes);
+router.use('/table', tableRoutes); // Compatibility alias
 router.use('/orders', orderRoutes);
+router.use('/order', orderRoutes); // Compatibility alias
 router.use('/store', storeRoutes);
 router.use('/staff/role', staffRoleRoutes);
 router.use('/product-price', productPriceRoutes);

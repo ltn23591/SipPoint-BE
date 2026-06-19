@@ -16,6 +16,7 @@ const {
   forgotPassword,
   resetPassword,
   verifyOtpCode,
+  changePassword,
 } = require('../../controllers/auth.controller');
 const { protect } = require('../../middleware/auth.middleware');
 
@@ -37,9 +38,13 @@ router.post('/login', login);
 
 // Route Đăng xuất chung
 router.get('/logout', logout);
+router.post('/logout', logout); // Support POST logout from FE
 
 // Lấy thông tin cá nhân (Cả Khách hàng và Nhân viên đều có thể gọi)
 router.get('/me', protect, getMe);
+
+// Đổi mật khẩu
+router.put('/change-password', protect, changePassword);
 
 // Routes 2FA cho Nhân viên
 router.post('/2fa/enable', protect, enable2FA);

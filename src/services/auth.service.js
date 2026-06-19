@@ -372,7 +372,7 @@ class AuthService {
       name,
       email,
       password: hashedPassword,
-      role: 1, // Mặc định khi đăng ký tự do là ADMIN
+      role: 'admin', // Mặc định khi đăng ký tự do là ADMIN
     });
 
     return {

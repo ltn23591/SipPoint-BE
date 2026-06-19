@@ -6,13 +6,29 @@ const Voucher = require('../models/voucher.model');
 const VoucherService = require('./voucher.service');
 const { ORDER_STATUS, TABLE_STATUS } = require('../enums');
 const { emitToAll } = require('./socket.service');
-
+const mongoose = require('mongoose');
 class OrderService {
   /**
    * Tạo đơn hàng mới
    */
   static async createOrder(data, createdById) {
     const { tableId, customerId, items, voucherCode, note } = data;
+
+    let resolvedCustomerId = null;
+    if (customerId) {
+
+      if (mongoose.Types.ObjectId.isValid(customerId)) {
+        resolvedCustomerId = customerId;
+      } else {
+
+        const customerObj = await Customer.findOne({ customerId: customerId });
+        if (customerObj) {
+          resolvedCustomerId = customerObj._id;
+        } else {
+          return { status: 404, success: false, message: `Không tìm thấy khách hàng với mã số ${customerId}` };
+        }
+      }
+    }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return { status: 400, success: false, message: 'Đơn hàng phải chứa ít nhất một món ăn/đồ uống' };
@@ -111,7 +127,7 @@ class OrderService {
       code,
       orderNumber: code,
       tableId: tableId || null,
-      customerId: customerId || null,
+      customerId: resolvedCustomerId || null,
       items: orderItems,
       subtotal: subtotalSum,
       discount: discountAmount,
@@ -338,6 +354,20 @@ class OrderService {
         },
       },
     };
+  }
+
+  /**
+   * Xác nhận đơn hàng
+   */
+  static async confirmOrder(orderId, updatedById) {
+    return this.updateOrderStatus(orderId, ORDER_STATUS.CONFIRMED, updatedById);
+  }
+
+  /**
+   * Hoàn tất đơn hàng
+   */
+  static async completeOrder(orderId, updatedById) {
+    return this.updateOrderStatus(orderId, ORDER_STATUS.COMPLETED, updatedById);
   }
 }
 
