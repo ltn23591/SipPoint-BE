@@ -18,6 +18,7 @@ const membershipProgramRoutes = require('./routes/membershipProgram.route');
 const membershipTierRoutes = require('./routes/membershipTier.route');
 const promotionProgramRoutes = require('./routes/promotionProgram.route');
 const notificationRoutes = require('./routes/notification.route');
+const feedbackRoutes = require('./routes/feedback.route');
 const router = express.Router();
 
 router.get('/health', (req, res) => {
@@ -48,5 +49,6 @@ router.use('/membership-program', membershipProgramRoutes);
 router.use('/membership-tier', membershipTierRoutes);
 router.use('/promotion-program', promotionProgramRoutes);
 router.use('/notification', notificationRoutes);
+router.use('/feedback', feedbackRoutes);
 
 module.exports = router;
