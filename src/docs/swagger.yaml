@@ -1239,12 +1239,894 @@ paths:
                   type: string
                   description: Lý do hủy đơn hàng
       responses:
-        200:
-          description: Hủy thành công
-        400:
-          description: Không thể hủy đơn hàng đã hoàn thành/đã hủy
         404:
           description: Không tìm thấy đơn hàng
+
+  /api/v1/store/all:
+    get:
+      summary: Lấy tất cả cửa hàng/chi nhánh
+      tags: [Store]
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/store/search:
+    post:
+      summary: Tìm kiếm cửa hàng có phân trang
+      tags: [Store]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                search:
+                  type: string
+                page:
+                  type: number
+                pageSize:
+                  type: number
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/store/create:
+    post:
+      summary: Tạo cửa hàng mới
+      tags: [Store]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Store'
+      responses:
+        201:
+          description: Thành công
+
+  /api/v1/store/update:
+    put:
+      summary: Cập nhật thông tin cửa hàng
+      tags: [Store]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Store'
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/store/delete/{id}:
+    delete:
+      summary: Xóa cửa hàng
+      tags: [Store]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/store/details/{id}:
+    get:
+      summary: Lấy chi tiết cửa hàng
+      tags: [Store]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/staff/role/all:
+    get:
+      summary: Lấy tất cả vai trò nhân viên
+      tags: [StaffRole]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/staff/role/create:
+    post:
+      summary: Tạo vai trò mới
+      tags: [StaffRole]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffRole'
+      responses:
+        201:
+          description: Thành công
+
+  /api/v1/staff/role/update:
+    put:
+      summary: Cập nhật vai trò nhân viên
+      tags: [StaffRole]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffRole'
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/product-price/search:
+    post:
+      summary: Tìm kiếm giá sản phẩm
+      tags: [ProductPrice]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/product-price/create-or-update:
+    post:
+      summary: Tạo hoặc cập nhật giá sản phẩm
+      tags: [ProductPrice]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductPrice'
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/product-price/details/{id}:
+    get:
+      summary: Chi tiết giá của một sản phẩm
+      tags: [ProductPrice]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/membership-program/details/current:
+    get:
+      summary: Lấy chương trình loyalty hiện tại
+      tags: [MembershipProgram]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/membership-program/details/{id}:
+    get:
+      summary: Chi tiết chương trình loyalty
+      tags: [MembershipProgram]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/membership-program/create:
+    post:
+      summary: Tạo chương trình loyalty mới
+      tags: [MembershipProgram]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipProgram'
+      responses:
+        201:
+          description: Thành công
+
+  /api/v1/membership-program/update:
+    put:
+      summary: Cập nhật chương trình loyalty
+      tags: [MembershipProgram]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipProgram'
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/membership-program/search:
+    post:
+      summary: Tìm kiếm chương trình loyalty
+      tags: [MembershipProgram]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/membership-program/approve:
+    patch:
+      summary: Phê duyệt chương trình loyalty
+      tags: [MembershipProgram]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, isApproved]
+              properties:
+                id:
+                  type: string
+                isApproved:
+                  type: boolean
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/membership-tier/all/{programId}:
+    get:
+      summary: Lấy tất cả hạng của chương trình
+      tags: [MembershipTier]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: programId
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/membership-tier/all/current:
+    get:
+      summary: Lấy tất cả hạng của chương trình hiện tại
+      tags: [MembershipTier]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/membership-tier/search:
+    post:
+      summary: Tìm kiếm hạng thành viên
+      tags: [MembershipTier]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/membership-tier/create:
+    post:
+      summary: Tạo hạng thành viên mới
+      tags: [MembershipTier]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipTier'
+      responses:
+        201:
+          description: Thành công
+
+  /api/v1/membership-tier/update:
+    put:
+      summary: Cập nhật hạng thành viên
+      tags: [MembershipTier]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MembershipTier'
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/membership-tier/detail/{id}:
+    get:
+      summary: Chi tiết hạng thành viên
+      tags: [MembershipTier]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/promotion-program/search:
+    post:
+      summary: Tìm kiếm chương trình khuyến mãi
+      tags: [PromotionProgram]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/promotion-program/details/{id}:
+    get:
+      summary: Chi tiết chương trình khuyến mãi
+      tags: [PromotionProgram]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/promotion-program/create:
+    post:
+      summary: Tạo chương trình khuyến mãi mới
+      tags: [PromotionProgram]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromotionProgram'
+      responses:
+        201:
+          description: Thành công
+
+  /api/v1/promotion-program/update:
+    put:
+      summary: Cập nhật chương trình khuyến mãi
+      tags: [PromotionProgram]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromotionProgram'
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/promotion-program/delete/{id}:
+    delete:
+      summary: Xóa chương trình khuyến mãi
+      tags: [PromotionProgram]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/promotion-program/update-active:
+    patch:
+      summary: Bật/tắt trạng thái chương trình khuyến mãi
+      tags: [PromotionProgram]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, isActive]
+              properties:
+                id:
+                  type: string
+                isActive:
+                  type: string
+                  enum: [active, inactive]
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/promotion-program/approve:
+    patch:
+      summary: Phê duyệt chương trình khuyến mãi
+      tags: [PromotionProgram]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id, isApproved]
+              properties:
+                id:
+                  type: string
+                isApproved:
+                  type: boolean
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/notification/search:
+    post:
+      summary: Tìm kiếm thông báo có phân trang
+      tags: [Notification]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/notification/details/{id}:
+    get:
+      summary: Chi tiết thông báo
+      tags: [Notification]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/notification/create:
+    post:
+      summary: Tạo thông báo mới
+      tags: [Notification]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+      responses:
+        201:
+          description: Thành công
+
+  /api/v1/notification/update:
+    put:
+      summary: Cập nhật thông báo
+      tags: [Notification]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Notification'
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/notification/delete/{id}:
+    delete:
+      summary: Xóa thông báo
+      tags: [Notification]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/notification/update-status:
+    put:
+      summary: Cập nhật trạng thái đọc/hoạt động của thông báo
+      tags: [Notification]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: string
+                isRead:
+                  type: boolean
+                status:
+                  type: string
+                  enum: [active, inactive]
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/feedback/search:
+    post:
+      summary: Tìm kiếm đánh giá & phản hồi
+      tags: [Feedback]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/feedback/detail/{id}:
+    get:
+      summary: Chi tiết đánh giá
+      tags: [Feedback]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/feedback/update:
+    put:
+      summary: Cập nhật hoặc phản hồi đánh giá
+      tags: [Feedback]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Feedback'
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/feedback/export:
+    post:
+      summary: Xuất danh sách đánh giá ra Excel
+      tags: [Feedback]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: File Excel dạng Blob
+
+  /api/v1/activity-log/search:
+    post:
+      summary: Tìm kiếm nhật ký hoạt động (Admin)
+      tags: [ActivityLog]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/location/filter/province:
+    post:
+      summary: Lọc danh sách Tỉnh/Thành phố
+      tags: [Location]
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/location/filter/district:
+    post:
+      summary: Lọc danh sách Quận/Huyện theo Tỉnh
+      tags: [Location]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [provinceId]
+              properties:
+                provinceId:
+                  type: string
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/location/filter/ward:
+    post:
+      summary: Lọc danh sách Phường/Xã theo Quận/Huyện
+      tags: [Location]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [districtId]
+              properties:
+                districtId:
+                  type: string
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/document/upload-file:
+    post:
+      summary: Upload một file tài liệu lên Cloudinary
+      tags: [Document]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                folder:
+                  type: string
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/document/upload-multiple-file:
+    post:
+      summary: Upload nhiều file tài liệu lên Cloudinary
+      tags: [Document]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [files]
+              properties:
+                files:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                folder:
+                  type: string
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/document/delete-file:
+    delete:
+      summary: Xóa file khỏi Cloudinary
+      tags: [Document]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [publicId]
+              properties:
+                publicId:
+                  type: string
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/report/dashboard:
+    get:
+      summary: Lấy thống kê tổng quan dashboard
+      tags: [Report]
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/report/revenue:
+    get:
+      summary: Lấy dữ liệu báo cáo doanh thu
+      tags: [Report]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+        - in: query
+          name: endDate
+          schema:
+            type: string
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/report/top-products:
+    get:
+      summary: Báo cáo sản phẩm bán chạy nhất
+      tags: [Report]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+        - in: query
+          name: endDate
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: number
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/report/export/revenue:
+    post:
+      summary: Xuất Excel báo cáo doanh thu
+      tags: [Report]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/report/export/orders:
+    post:
+      summary: Xuất Excel báo cáo đơn hàng
+      tags: [Report]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Thành công
+
+  /api/v1/report/export/customers:
+    post:
+      summary: Xuất Excel báo cáo khách hàng
+      tags: [Report]
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Thành công
 
 tags:
   - name: Auth
@@ -1530,3 +2412,230 @@ components:
           description: 'Loại mã xác thực OTP: "register" (Đăng ký), "two_factor" (Bảo mật 2 lớp), "reset_password" (Khôi phục mật khẩu)'
           enum: ["register", "two_factor", "reset_password"]
           example: register
+
+    Store:
+      type: object
+      required:
+        - name
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        address:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        description:
+          type: string
+        isActive:
+          type: string
+          enum: ["active", "inactive"]
+          default: active
+
+    StaffRole:
+      type: object
+      required:
+        - name
+        - code
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        code:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+
+    ProductPrice:
+      type: object
+      required:
+        - productId
+        - price
+      properties:
+        _id:
+          type: string
+        productId:
+          type: string
+        price:
+          type: number
+        sizePriceMap:
+          type: object
+          additionalProperties:
+            type: number
+        notes:
+          type: string
+
+    MembershipProgram:
+      type: object
+      required:
+        - name
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: ["active", "inactive"]
+          default: active
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        isApproved:
+          type: boolean
+          default: false
+        approvedBy:
+          type: string
+        createdBy:
+          type: string
+
+    MembershipTier:
+      type: object
+      required:
+        - programId
+        - name
+      properties:
+        _id:
+          type: string
+        programId:
+          type: string
+        name:
+          type: string
+        minPoints:
+          type: number
+          default: 0
+        discountPercentage:
+          type: number
+          default: 0
+        description:
+          type: string
+        status:
+          type: string
+          enum: ["active", "inactive"]
+          default: active
+
+    PromotionProgram:
+      type: object
+      required:
+        - name
+        - discountValue
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        discountType:
+          type: string
+          enum: ["PERCENT", "FIXED"]
+          default: PERCENT
+        discountValue:
+          type: number
+        minOrderValue:
+          type: number
+          default: 0
+        maxDiscountAmount:
+          type: number
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        isActive:
+          type: string
+          enum: ["active", "inactive"]
+          default: active
+        isApproved:
+          type: boolean
+          default: false
+
+    Notification:
+      type: object
+      required:
+        - title
+        - content
+      properties:
+        _id:
+          type: string
+        title:
+          type: string
+        content:
+          type: string
+        recipientType:
+          type: string
+          enum: ["all", "customer", "staff"]
+          default: all
+        recipientId:
+          type: string
+        type:
+          type: string
+          enum: ["system", "promotion", "order"]
+          default: system
+        status:
+          type: string
+          enum: ["active", "inactive"]
+          default: active
+        isRead:
+          type: boolean
+          default: false
+
+    Feedback:
+      type: object
+      required:
+        - rating
+        - comment
+      properties:
+        _id:
+          type: string
+        customerId:
+          type: string
+        orderId:
+          type: string
+        rating:
+          type: number
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+        reply:
+          type: string
+        replyBy:
+          type: string
+        status:
+          type: string
+          enum: ["pending", "approved", "rejected"]
+          default: pending
+
+    ActivityLog:
+      type: object
+      required:
+        - employeeId
+        - action
+      properties:
+        _id:
+          type: string
+        employeeId:
+          type: string
+        action:
+          type: string
+        target:
+          type: string
+        details:
+          type: string
+        ipAddress:
+          type: string
