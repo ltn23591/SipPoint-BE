@@ -1,8 +1,11 @@
 const jwt = require('jsonwebtoken');
 
 const sendTokenResponse = (user, status, res, message = 'Thành công', userType = 'employee') => {
+  // Lấy role code từ roleId (nếu đã populate) hoặc fallback
+  const roleCode = user.roleId && user.roleId.code ? user.roleId.code : (userType === 'customer' ? 'customer' : 'unknown');
+
   // Tạo token
-  const token = jwt.sign({ id: user._id, role: user.role, type: userType }, process.env.JWT_SECRET || 'secret123', {
+  const token = jwt.sign({ id: user._id, role: roleCode, type: userType }, process.env.JWT_SECRET || 'secret123', {
     expiresIn: '30d',
   });
 
@@ -21,7 +24,7 @@ const sendTokenResponse = (user, status, res, message = 'Thành công', userType
     _id: user._id,
     name: user.name || user.fullName,
     email: user.email,
-    role: user.role !== undefined ? user.role : 'customer'
+    role: roleCode
   };
 
   res
