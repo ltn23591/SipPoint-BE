@@ -6,7 +6,6 @@ const exportRoutes = require('./routes/export.route');
 const productRoutes = require('./routes/product.route');
 const categoryRoutes = require('./routes/category.route');
 const customerRoutes = require('./routes/customer.route');
-const customerRankRoutes = require('./routes/customerRank.route');
 const voucherRoutes = require('./routes/voucher.route');
 const zoneRoutes = require('./routes/zone.route');
 const tableRoutes = require('./routes/table.route');
@@ -45,7 +44,6 @@ router.use('/categories', categoryRoutes);
 router.use('/product-category', categoryRoutes); // Compatibility alias
 router.use('/customers', customerRoutes);
 router.use('/customer', customerRoutes); // Compatibility alias
-router.use('/customer-ranks', customerRankRoutes);
 router.use('/vouchers', voucherRoutes);
 router.use('/voucher', voucherRoutes); // Compatibility alias
 router.use('/zones', zoneRoutes);

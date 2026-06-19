@@ -30,9 +30,10 @@ const customerSchema = new mongoose.Schema(
     dateOfBirth: {
       type: Date,
     },
-    tier: {
-      type: String,
-      default: 'ĐỒNG',
+    tierId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'MembershipTier',
+      required: false,
     },
     currentPoints: {
       type: Number,
@@ -61,6 +62,4 @@ const customerSchema = new mongoose.Schema(
   }
 );
 
-
 module.exports = mongoose.model('Customer', customerSchema);
-

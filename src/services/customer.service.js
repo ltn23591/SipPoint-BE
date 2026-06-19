@@ -1,16 +1,16 @@
 const Customer = require('../models/customer.model');
 const PointHistory = require('../models/pointHistory.model');
 const CustomerVoucher = require('../models/customerVoucher.model');
-const CustomerRank = require('../models/customerRank.model');
+const MembershipTier = require('../models/membershipTier.model');
 
 class CustomerService {
   // Lấy danh sách khách hàng (có phân trang và lọc)
   static async getAllCustomers(query) {
-    const { page = 1, limit = 10, tier, search } = query;
+    const { page = 1, limit = 10, tierId, search } = query;
     const skip = (page - 1) * limit;
 
     const filter = {};
-    if (tier) filter.tier = tier;
+    if (tierId) filter.tierId = tierId;
     if (search) {
       filter.$or = [
         { fullName: { $regex: search, $options: 'i' } },
@@ -20,6 +20,7 @@ class CustomerService {
     }
 
     const customers = await Customer.find(filter)
+      .populate('tierId')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));
@@ -42,7 +43,7 @@ class CustomerService {
 
   // Lấy chi tiết khách hàng (kèm lịch sử điểm và voucher)
   static async getCustomerById(id) {
-    const customer = await Customer.findById(id);
+    const customer = await Customer.findById(id).populate('tierId');
     if (!customer) {
       return { status: 404, success: false, message: 'Không tìm thấy khách hàng' };
     }
@@ -76,8 +77,17 @@ class CustomerService {
       data.customerId = Math.floor(10000000 + Math.random() * 90000000).toString();
     }
 
+    // Tự động gán hạng thấp nhất của MembershipTier
+    if (!data.tierId) {
+      const lowestTier = await MembershipTier.findOne({ status: 'active' }).sort({ minPoints: 1 });
+      if (lowestTier) {
+        data.tierId = lowestTier._id;
+      }
+    }
+
     const newCustomer = await Customer.create(data);
-    return { status: 201, success: true, message: 'Thêm khách hàng thành công', data: newCustomer };
+    const populated = await Customer.findById(newCustomer._id).populate('tierId');
+    return { status: 201, success: true, message: 'Thêm khách hàng thành công', data: populated };
   }
 
   // Cập nhật thông tin khách hàng
@@ -85,7 +95,7 @@ class CustomerService {
     const updatedCustomer = await Customer.findByIdAndUpdate(id, data, {
       new: true,
       runValidators: true,
-    });
+    }).populate('tierId');
 
     if (!updatedCustomer) {
       return { status: 404, success: false, message: 'Không tìm thấy khách hàng' };
@@ -115,21 +125,20 @@ class CustomerService {
     }
 
     customer.currentPoints += change;
-    // Nếu điểm tổng cập nhật dựa theo điểm tích lũy:
     if (change > 0) {
       customer.totalSpent += change * 1000; // Giả sử 1 điểm = 1000đ chi tiêu
     }
 
-    // Tự động thăng hạng dựa trên tổng chi tiêu (query từ bảng CustomerRank)
-    const ranks = await CustomerRank.find().sort({ minSpent: -1 });
+    // Tự động thăng hạng dựa trên điểm tích lũy (MembershipTier)
+    const tiers = await MembershipTier.find({ status: 'active' }).sort({ minPoints: -1 });
 
-    if (ranks.length > 0) {
-      const matchedRank = ranks.find((r) => customer.totalSpent >= r.minSpent);
-      if (matchedRank) {
-        customer.tier = matchedRank.name;
+    if (tiers.length > 0) {
+      const matchedTier = tiers.find((t) => customer.currentPoints >= t.minPoints);
+      if (matchedTier) {
+        customer.tierId = matchedTier._id;
       } else {
         // Nếu không đủ điểm cho bất kỳ hạng nào, lấy hạng thấp nhất
-        customer.tier = ranks[ranks.length - 1].name;
+        customer.tierId = tiers[tiers.length - 1]._id;
       }
     }
 
@@ -144,7 +153,9 @@ class CustomerService {
       transactionType,
     });
 
-    return { status: 200, success: true, message: 'Điều chỉnh điểm thành công', data: customer };
+    const updatedCustomer = await Customer.findById(customer._id).populate('tierId');
+
+    return { status: 200, success: true, message: 'Điều chỉnh điểm thành công', data: updatedCustomer };
   }
 }
 
