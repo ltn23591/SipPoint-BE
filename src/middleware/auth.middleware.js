@@ -33,9 +33,9 @@ exports.protect = async (req, res, next) => {
         // Lấy thông tin tài khoản từ DB dựa trên type được lưu trong token
         let user;
         if (decoded.type === 'customer') {
-            user = await Customer.findById(decoded.id).select('-password');
+            user = await Customer.findById(decoded.id).select('-password').populate('tierId');
         } else {
-            user = await Employee.findById(decoded.id).select('-password');
+            user = await Employee.findById(decoded.id).select('-password').populate('roleId');
         }
 
         if (!user) {

@@ -19,9 +19,9 @@ const employeeSchema = new mongoose.Schema(
       required: true,
       select: false,
     },
-    role: {
-      type: String,
-      enum: ['admin', 'manager', 'cashier', 'barista', 'staff'],
+    roleId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'StaffRole',
       required: true,
     },
     status: {

@@ -1,12 +1,15 @@
 const Order = require('../models/order.model');
+const { OrderItem } = require('../models/orderItem.model');
 const Product = require('../models/product.model');
 const ProductVariant = require('../models/productVariant.model');
 const Table = require('../models/table.model');
 const Voucher = require('../models/voucher.model');
+const Customer = require('../models/customer.model');
 const VoucherService = require('./voucher.service');
 const { ORDER_STATUS, TABLE_STATUS } = require('../enums');
 const { emitToAll } = require('./socket.service');
 const mongoose = require('mongoose');
+
 class OrderService {
   /**
    * Tạo đơn hàng mới
@@ -16,11 +19,9 @@ class OrderService {
 
     let resolvedCustomerId = null;
     if (customerId) {
-
       if (mongoose.Types.ObjectId.isValid(customerId)) {
         resolvedCustomerId = customerId;
       } else {
-
         const customerObj = await Customer.findOne({ customerId: customerId });
         if (customerObj) {
           resolvedCustomerId = customerObj._id;
@@ -55,7 +56,7 @@ class OrderService {
     }
 
     // 2. Xử lý danh sách items
-    const orderItems = [];
+    const orderItemsToCreate = [];
     let subtotalSum = 0;
 
     for (const item of items) {
@@ -87,7 +88,7 @@ class OrderService {
       const quantity = parseInt(item.qty) || 1;
       const itemSubtotal = (itemPrice + variantPriceSum) * quantity;
 
-      orderItems.push({
+      orderItemsToCreate.push({
         productId: product._id,
         name: product.name,
         unitPrice: itemPrice,
@@ -103,8 +104,15 @@ class OrderService {
     // 3. Xử lý Voucher (nếu có)
     let discountAmount = 0;
     let finalAmount = subtotalSum;
+    let resolvedVoucherId = null;
 
     if (voucherCode) {
+      const voucherObj = await Voucher.findOne({ code: voucherCode.toUpperCase() });
+      if (!voucherObj) {
+        return { status: 404, success: false, message: 'Voucher không tồn tại' };
+      }
+      resolvedVoucherId = voucherObj._id;
+
       const voucherRes = await VoucherService.validateVoucher(voucherCode, subtotalSum);
       if (!voucherRes.success) {
         return voucherRes;
@@ -128,11 +136,10 @@ class OrderService {
       orderNumber: code,
       tableId: tableId || null,
       customerId: resolvedCustomerId || null,
-      items: orderItems,
+      voucherId: resolvedVoucherId,
       subtotal: subtotalSum,
       discount: discountAmount,
       total: finalAmount,
-      promotionCode: voucherCode ? voucherCode.toUpperCase() : null,
       status: ORDER_STATUS.PENDING,
       note: note || '',
       createdBy: createdById || null,
@@ -142,7 +149,13 @@ class OrderService {
       type: data.type || 'dine_in',
     });
 
-    // 6. Cập nhật trạng thái bàn sang OCCUPIED (Đang có khách) nếu là đơn tại bàn
+    // 6. Tạo các OrderItem liên kết tới order._id
+    for (const itemData of orderItemsToCreate) {
+      itemData.orderId = order._id;
+      await OrderItem.create(itemData);
+    }
+
+    // 7. Cập nhật trạng thái bàn sang OCCUPIED (Đang có khách) nếu là đơn tại bàn
     if (tableId) {
       await Table.findByIdAndUpdate(tableId, { status: TABLE_STATUS.OCCUPIED });
     }
@@ -151,9 +164,10 @@ class OrderService {
     const populatedOrder = await Order.findById(order._id)
       .populate('tableId', 'name zoneId')
       .populate('customerId', 'fullName phone')
-      .populate('createdBy', 'fullName role');
+      .populate('createdBy', 'fullName role')
+      .populate('items');
 
-    // 7. Gửi sự kiện Socket.io real-time thông báo đơn hàng mới
+    // 8. Gửi sự kiện Socket.io real-time thông báo đơn hàng mới
     emitToAll('order_created', populatedOrder);
 
     return {
@@ -179,10 +193,6 @@ class OrderService {
 
     const currentStatus = order.status;
 
-    // Validate quy trình đổi trạng thái:
-    // PENDING (0) -> PREPARING (1) hoặc CANCELLED (3)
-    // PREPARING (1) -> COMPLETED (2) hoặc CANCELLED (3)
-    // COMPLETED (2) hoặc CANCELLED (3) -> Không được chuyển đổi nữa
     if (currentStatus === ORDER_STATUS.COMPLETED) {
       return { status: 400, success: false, message: 'Đơn hàng đã hoàn thành, không thể thay đổi trạng thái' };
     }
@@ -201,7 +211,6 @@ class OrderService {
     await order.save();
 
     // Nếu đơn hàng chuyển sang COMPLETED hoặc CANCELLED, kiểm tra xem còn đơn hàng nào đang hoạt động tại bàn này không
-    // Nếu không còn đơn hàng nào đang xử lý tại bàn, giải phóng bàn (chuyển về AVAILABLE)
     if ((newStatus === ORDER_STATUS.COMPLETED || newStatus === ORDER_STATUS.CANCELLED) && order.tableId) {
       const activeOrdersAtTable = await Order.findOne({
         tableId: order.tableId,
@@ -217,7 +226,8 @@ class OrderService {
       .populate('tableId', 'name zoneId')
       .populate('customerId', 'fullName phone')
       .populate('createdBy', 'fullName role')
-      .populate('updatedBy', 'fullName role');
+      .populate('updatedBy', 'fullName role')
+      .populate('items');
 
     // Gửi sự kiện Socket.io real-time
     emitToAll('order_status_updated', populatedOrder);
@@ -271,7 +281,8 @@ class OrderService {
       .populate('tableId', 'name zoneId')
       .populate('customerId', 'fullName phone')
       .populate('createdBy', 'fullName role')
-      .populate('updatedBy', 'fullName role');
+      .populate('updatedBy', 'fullName role')
+      .populate('items');
 
     // Gửi sự kiện Socket.io real-time
     emitToAll('order_status_updated', populatedOrder);
@@ -292,7 +303,9 @@ class OrderService {
       .populate('tableId')
       .populate('customerId', 'fullName phone email')
       .populate('createdBy', 'fullName role')
-      .populate('updatedBy', 'fullName role');
+      .populate('updatedBy', 'fullName role')
+      .populate('items')
+      .populate('voucherId');
 
     if (!order || order.isActive === 0) {
       return { status: 404, success: false, message: 'Không tìm thấy đơn hàng' };
@@ -335,6 +348,8 @@ class OrderService {
       .populate('tableId', 'name')
       .populate('customerId', 'fullName phone')
       .populate('createdBy', 'fullName role')
+      .populate('items')
+      .populate('voucherId')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parseInt(limit));

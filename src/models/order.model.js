@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const { orderItemSchema } = require('./orderItem.model');
 const { ORDER_STATUS, IS_ACTIVE } = require('../enums');
 
 const orderSchema = new mongoose.Schema(
@@ -25,7 +24,11 @@ const orderSchema = new mongoose.Schema(
       ref: 'Customer',
       required: false,
     },
-    items: [orderItemSchema],
+    voucherId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Voucher',
+      required: false,
+    },
     subtotal: {
       type: Number,
       required: true,
@@ -43,12 +46,6 @@ const orderSchema = new mongoose.Schema(
       required: true,
       min: 0,
       default: 0,
-    },
-    promotionCode: {
-      type: String,
-      trim: true,
-      uppercase: true,
-      required: false,
     },
     isUrgent: {
       type: Boolean,
@@ -95,8 +92,17 @@ const orderSchema = new mongoose.Schema(
   {
     timestamps: true,
     collection: 'orders',
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
+
+// Virtual populate for order items
+orderSchema.virtual('items', {
+  ref: 'OrderItem',
+  localField: '_id',
+  foreignField: 'orderId',
+});
 
 orderSchema.index({ status: 1 });
 orderSchema.index({ tableId: 1 });
