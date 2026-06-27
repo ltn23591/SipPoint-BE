@@ -6,15 +6,25 @@ const exceljs = require('exceljs');
 
 class ReportService {
   static async getDashboardData() {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const dateFilter = {
+      createdAt: { $gte: startOfDay, $lte: endOfDay }
+    };
+
     const totalRevenueResult = await Order.aggregate([
-      { $match: { isPaid: true, status: 'COMPLETED' } },
+      { $match: { isPaid: true, status: 'COMPLETED', ...dateFilter } },
       { $group: { _id: null, total: { $sum: '$total' } } }
     ]);
     const totalRevenue = totalRevenueResult[0]?.total || 0;
 
-    const totalOrders = await Order.countDocuments();
-    const totalCustomers = await Customer.countDocuments();
-    const recentOrders = await Order.find()
+    const totalOrders = await Order.countDocuments(dateFilter);
+    const totalCustomers = await Customer.countDocuments(dateFilter);
+    const recentOrders = await Order.find(dateFilter)
       .populate('customerId tableId')
       .populate('items')
       .sort({ createdAt: -1 })
