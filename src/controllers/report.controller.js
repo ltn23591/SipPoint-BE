@@ -62,3 +62,11 @@ exports.exportCustomers = async (req, res, next) => {
     next(error);
   }
 };
+
+exports.exportShifts = async (req, res, next) => {
+  try {
+    await ReportService.exportShifts(req.body, res);
+  } catch (error) {
+    next(error);
+  }
+};

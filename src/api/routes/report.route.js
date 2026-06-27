@@ -13,5 +13,6 @@ router.get('/top-products', protect, authorize(ROLE.ADMIN), ReportController.top
 router.post('/export/revenue', protect, authorize(ROLE.ADMIN), ReportController.exportRevenue);
 router.post('/export/orders', protect, authorize(ROLE.ADMIN), ReportController.exportOrders);
 router.post('/export/customers', protect, authorize(ROLE.ADMIN), ReportController.exportCustomers);
+router.post('/export/shifts', protect, authorize(ROLE.ADMIN), ReportController.exportShifts);
 
 module.exports = router;

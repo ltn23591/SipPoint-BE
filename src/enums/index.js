@@ -57,6 +57,17 @@ const ORDER_TYPE = {
     DELIVERY: "delivery",
 };
 
+const PAYMENT_METHOD = {
+    CASH: "CASH",
+    TRANSFER: "TRANSFER",
+    CARD: "CARD",
+};
+
+const SHIFT_STATUS = {
+    OPEN: "OPEN",
+    CLOSED: "CLOSED",
+};
+
 module.exports = {
     ROLE,
     USER_STATUS,
@@ -66,5 +77,7 @@ module.exports = {
     VARIANT_TYPE,
     TABLE_STATUS,
     ORDER_STATUS,
-    ORDER_TYPE
+    ORDER_TYPE,
+    PAYMENT_METHOD,
+    SHIFT_STATUS
 };
