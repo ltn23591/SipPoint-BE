@@ -3335,11 +3335,57 @@ paths:
       responses:
         200:
           description: Danh sách shift
-  
-  /api/v1/shifts/create:
+  /api/v1/shifts/open:
     post:
-      summary: Tạo mới shift
+      summary: Mở ca làm việc mới
       tags: [Shift]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - employeeId
+              properties:
+                employeeId:
+                  type: string
+                  description: ID nhân viên
+                startingCash:
+                  type: number
+                  description: Tiền mặt đầu ca
+      responses:
+        201:
+          description: Mở ca thành công
+  
+  /api/v1/shifts/{id}/detail:
+    get:
+      summary: Lấy chi tiết một ca làm việc
+      tags: [Shift]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của ca làm việc
+      responses:
+        200:
+          description: Chi tiết ca làm việc
+        404:
+          description: Không tìm thấy
+  
+  /api/v1/shifts/{id}/close:
+    put:
+      summary: Đóng ca làm việc
+      tags: [Shift]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của ca làm việc
       requestBody:
         required: true
         content:
@@ -3347,69 +3393,18 @@ paths:
             schema:
               type: object
               properties:
-                name:
+                actualEndingCash:
+                  type: number
+                  description: Tiền mặt thực tế khi đóng ca
+                note:
                   type: string
-      responses:
-        201:
-          description: Tạo thành công
-  
-  /api/v1/shifts/{id}/detail:
-    get:
-      summary: Lấy chi tiết một shift
-      tags: [Shift]
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID của shift
+                  description: Ghi chú nếu có sai sót
       responses:
         200:
-          description: Chi tiết shift
+          description: Đóng ca thành công
         404:
           description: Không tìm thấy
-  
-  /api/v1/shifts/{id}/update:
-    put:
-      summary: Cập nhật shift
-      tags: [Shift]
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID của shift
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        200:
-          description: Cập nhật thành công
-        404:
-          description: Không tìm thấy
-  
-  /api/v1/shifts/{id}/delete:
-    delete:
-      summary: Xóa shift
-      tags: [Shift]
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID của shift
-      responses:
-        200:
-          description: Xóa thành công
-        404:
-          description: Không tìm thấy
-
+          
 tags:
   - name: Product
     description: API Quản lý Sản Phẩm (Món ăn / Đồ uống)
@@ -3971,7 +3966,30 @@ components:
       properties:
         _id:
           type: string
-        name:
+        employeeId:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        startingCash:
+          type: number
+        actualEndingCash:
+          type: number
+        systemEndingCash:
+          type: number
+        totalRevenue:
+          type: number
+        totalOrders:
+          type: number
+        status:
+          type: string
+          enum:
+            - OPEN
+            - CLOSED
+        note:
           type: string
         createdAt:
           type: string
