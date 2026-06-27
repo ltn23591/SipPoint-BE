@@ -1,4 +1,5 @@
 const Order = require('../models/order.model');
+const { OrderItem } = require('../models/orderItem.model');
 const Customer = require('../models/customer.model');
 const Product = require('../models/product.model');
 const exceljs = require('exceljs');
@@ -15,6 +16,7 @@ class ReportService {
     const totalCustomers = await Customer.countDocuments();
     const recentOrders = await Order.find()
       .populate('customerId tableId')
+      .populate('items')
       .sort({ createdAt: -1 })
       .limit(5);
 
@@ -52,22 +54,28 @@ class ReportService {
 
   static async getTopProducts(query) {
     const { startDate, endDate, limit = 5 } = query;
-    const filter = { status: 'COMPLETED' };
+
+    // Lọc theo khoảng thời gian trên bảng orders
+    const orderFilter = { status: 'COMPLETED' };
     if (startDate || endDate) {
-      filter.createdAt = {};
-      if (startDate) filter.createdAt.$gte = new Date(startDate);
-      if (endDate) filter.createdAt.$lte = new Date(endDate);
+      orderFilter.createdAt = {};
+      if (startDate) orderFilter.createdAt.$gte = new Date(startDate);
+      if (endDate) orderFilter.createdAt.$lte = new Date(endDate);
     }
 
-    const topProducts = await Order.aggregate([
-      { $match: filter },
-      { $unwind: '$items' },
+    // Lấy danh sách orderId từ orders đã COMPLETED
+    const completedOrders = await Order.find(orderFilter).select('_id');
+    const orderIds = completedOrders.map(o => o._id);
+
+    // Aggregate từ collection orderitems
+    const topProducts = await OrderItem.aggregate([
+      { $match: { orderId: { $in: orderIds } } },
       {
         $group: {
-          _id: '$items.productId',
-          name: { $first: '$items.name' },
-          qty: { $sum: '$items.quantity' },
-          revenue: { $sum: { $multiply: ['$items.price', '$items.quantity'] } }
+          _id: '$productId',
+          name: { $first: '$name' },
+          qty: { $sum: '$qty' },
+          revenue: { $sum: '$subtotal' }
         }
       },
       { $sort: { qty: -1 } },
@@ -137,7 +145,7 @@ class ReportService {
   }
 
   static async exportCustomers(query, res) {
-    const customers = await Customer.find({}).sort({ createdAt: -1 });
+    const customers = await Customer.find({}).populate('tierId').sort({ createdAt: -1 });
     const workbook = new exceljs.Workbook();
     const worksheet = workbook.addWorksheet('Customers Report');
 
@@ -145,12 +153,21 @@ class ReportService {
       { header: 'ID', key: 'customerId', width: 15 },
       { header: 'Họ tên', key: 'fullName', width: 25 },
       { header: 'SĐT', key: 'phone', width: 15 },
-      { header: 'Hạng', key: 'tier', width: 15 },
+      { header: 'Hạng thành viên', key: 'tierName', width: 20 },
       { header: 'Điểm tích lũy', key: 'currentPoints', width: 15 },
       { header: 'Tổng chi tiêu', key: 'totalSpent', width: 15 },
     ];
 
-    customers.forEach(customer => worksheet.addRow(customer));
+    customers.forEach(customer => {
+      worksheet.addRow({
+        customerId: customer.customerId,
+        fullName: customer.fullName,
+        phone: customer.phone,
+        tierName: customer.tierId ? customer.tierId.name : 'Chưa phân hạng',
+        currentPoints: customer.currentPoints,
+        totalSpent: customer.totalSpent,
+      });
+    });
 
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.setHeader('Content-Disposition', 'attachment; filename=customers.xlsx');

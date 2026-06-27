@@ -8,7 +8,7 @@ const exportEmployeesToExcel = async (employees, res) => {
     { header: 'ID', key: '_id', width: 25 },
     { header: 'Họ và tên', key: 'name', width: 30 },
     { header: 'Email', key: 'email', width: 30 },
-    { header: 'Quyền (Role)', key: 'role', width: 15 },
+    { header: 'Quyền (Role)', key: 'roleName', width: 15 },
     { header: 'Trạng thái', key: 'status', width: 15 },
     { header: 'Ngày tạo', key: 'createdAt', width: 25 },
   ];
@@ -18,7 +18,7 @@ const exportEmployeesToExcel = async (employees, res) => {
       _id: employee._id.toString(),
       name: employee.name,
       email: employee.email,
-      role: employee.role,
+      roleName: employee.roleId ? employee.roleId.name : 'Chưa phân quyền',
       status: employee.status,
       createdAt: employee.createdAt,
     });

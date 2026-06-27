@@ -164,7 +164,7 @@ class OrderService {
     const populatedOrder = await Order.findById(order._id)
       .populate('tableId', 'name zoneId')
       .populate('customerId', 'fullName phone')
-      .populate('createdBy', 'fullName role')
+      .populate('createdBy', 'name email')
       .populate('items');
 
     // 8. Gửi sự kiện Socket.io real-time thông báo đơn hàng mới
@@ -225,8 +225,8 @@ class OrderService {
     const populatedOrder = await Order.findById(order._id)
       .populate('tableId', 'name zoneId')
       .populate('customerId', 'fullName phone')
-      .populate('createdBy', 'fullName role')
-      .populate('updatedBy', 'fullName role')
+      .populate('createdBy', 'name email')
+      .populate('updatedBy', 'name email')
       .populate('items');
 
     // Gửi sự kiện Socket.io real-time
@@ -280,8 +280,8 @@ class OrderService {
     const populatedOrder = await Order.findById(order._id)
       .populate('tableId', 'name zoneId')
       .populate('customerId', 'fullName phone')
-      .populate('createdBy', 'fullName role')
-      .populate('updatedBy', 'fullName role')
+      .populate('createdBy', 'name email')
+      .populate('updatedBy', 'name email')
       .populate('items');
 
     // Gửi sự kiện Socket.io real-time
@@ -302,8 +302,8 @@ class OrderService {
     const order = await Order.findById(orderId)
       .populate('tableId')
       .populate('customerId', 'fullName phone email')
-      .populate('createdBy', 'fullName role')
-      .populate('updatedBy', 'fullName role')
+      .populate('createdBy', 'name email')
+      .populate('updatedBy', 'name email')
       .populate('items')
       .populate('voucherId');
 
@@ -347,7 +347,7 @@ class OrderService {
     const orders = await Order.find(filter)
       .populate('tableId', 'name')
       .populate('customerId', 'fullName phone')
-      .populate('createdBy', 'fullName role')
+      .populate('createdBy', 'name email')
       .populate('items')
       .populate('voucherId')
       .sort({ createdAt: -1 })
