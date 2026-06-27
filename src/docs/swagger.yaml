@@ -3328,6 +3328,88 @@ paths:
         2. Nhấp chọn nút **Try it out** ở góc phải của API.
         3. Chọn file tải lên trong phần **Request Body**.
         4. Nhấp **Execute** để gửi yêu cầu.
+  /api/v1/shifts/search:
+    get:
+      summary: Lấy danh sách shift
+      tags: [Shift]
+      responses:
+        200:
+          description: Danh sách shift
+  
+  /api/v1/shifts/create:
+    post:
+      summary: Tạo mới shift
+      tags: [Shift]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        201:
+          description: Tạo thành công
+  
+  /api/v1/shifts/{id}/detail:
+    get:
+      summary: Lấy chi tiết một shift
+      tags: [Shift]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của shift
+      responses:
+        200:
+          description: Chi tiết shift
+        404:
+          description: Không tìm thấy
+  
+  /api/v1/shifts/{id}/update:
+    put:
+      summary: Cập nhật shift
+      tags: [Shift]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của shift
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        200:
+          description: Cập nhật thành công
+        404:
+          description: Không tìm thấy
+  
+  /api/v1/shifts/{id}/delete:
+    delete:
+      summary: Xóa shift
+      tags: [Shift]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của shift
+      responses:
+        200:
+          description: Xóa thành công
+        404:
+          description: Không tìm thấy
+
 tags:
   - name: Product
     description: API Quản lý Sản Phẩm (Món ăn / Đồ uống)
@@ -3351,6 +3433,9 @@ tags:
     description: API Quản lý Khu vực (Bàn ăn)
   - name: Table
     description: API Quản lý Bàn và sinh mã QR Code
+  - name: Shift
+    description: API quản lý shift
+
 components:
   securitySchemes:
     bearerAuth:
@@ -3873,3 +3958,16 @@ components:
           type: string
         ipAddress:
           type: string
+    Shift:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time

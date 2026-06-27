@@ -174,6 +174,55 @@ class ReportService {
     await workbook.xlsx.write(res);
     res.end();
   }
+
+  static async exportShifts(query, res) {
+    const Shift = require('../models/shift.model');
+    const filter = {};
+    if (query.startDate || query.endDate) {
+      filter.createdAt = {};
+      if (query.startDate) filter.createdAt.$gte = new Date(query.startDate);
+      if (query.endDate) filter.createdAt.$lte = new Date(query.endDate);
+    }
+
+    const shifts = await Shift.find(filter).populate('employeeId', 'name email role').sort({ createdAt: -1 });
+    const workbook = new exceljs.Workbook();
+    const worksheet = workbook.addWorksheet('Shifts Report');
+
+    worksheet.columns = [
+      { header: 'ID Ca', key: '_id', width: 25 },
+      { header: 'Nhân viên', key: 'employeeName', width: 25 },
+      { header: 'Bắt đầu', key: 'startTime', width: 25 },
+      { header: 'Kết thúc', key: 'endTime', width: 25 },
+      { header: 'Tiền mặt đầu ca', key: 'startingCash', width: 20 },
+      { header: 'Tiền mặt thực tế (kết ca)', key: 'actualEndingCash', width: 25 },
+      { header: 'Hệ thống tính (kết ca)', key: 'systemEndingCash', width: 25 },
+      { header: 'Tổng doanh thu', key: 'totalRevenue', width: 20 },
+      { header: 'Tổng đơn', key: 'totalOrders', width: 15 },
+      { header: 'Trạng thái', key: 'status', width: 15 },
+      { header: 'Ghi chú', key: 'note', width: 30 },
+    ];
+
+    shifts.forEach(shift => {
+      worksheet.addRow({
+        _id: shift._id.toString(),
+        employeeName: shift.employeeId ? shift.employeeId.name : 'N/A',
+        startTime: shift.startTime ? shift.startTime.toLocaleString() : '',
+        endTime: shift.endTime ? shift.endTime.toLocaleString() : '',
+        startingCash: shift.startingCash,
+        actualEndingCash: shift.actualEndingCash,
+        systemEndingCash: shift.systemEndingCash,
+        totalRevenue: shift.totalRevenue,
+        totalOrders: shift.totalOrders,
+        status: shift.status,
+        note: shift.note,
+      });
+    });
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=shifts.xlsx');
+    await workbook.xlsx.write(res);
+    res.end();
+  }
 }
 
 module.exports = ReportService;
