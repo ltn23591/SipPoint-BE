@@ -1609,6 +1609,37 @@ paths:
         3. Điền giá trị cho tham số trong URL path (id).
         4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
         5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
+  /api/v1/store/config:
+    get:
+      summary: Lấy cấu hình cửa hàng
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Không yêu cầu Token đăng nhập.
+        - Trả về cấu hình duy nhất của cửa hàng (tên, địa chỉ, hotline, phương thức thanh toán...).
+      tags:
+        - Store
+      responses:
+        "200":
+          description: Lấy cấu hình thành công
+    put:
+      summary: Cập nhật cấu hình cửa hàng
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Yêu cầu Token quyền Admin.
+        - Truyền các trường cần cập nhật vào Request Body.
+      tags:
+        - Store
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Store"
+      responses:
+        "200":
+          description: Cập nhật cấu hình thành công
   /api/v1/order/{id}/status:
     patch:
       summary: Cập nhật trạng thái đơn hàng (Alias)
