@@ -12,6 +12,7 @@ router.get('/', ProductController.getAll);
 router.get('/:id', ProductController.getById);
 
 // Admin-only: Chỉ Admin mới được tạo, sửa, xóa sản phẩm
+router.post('/import', protect, authorize(ROLE.ADMIN), upload.any(), ProductController.importExcel);
 router.post('/', protect, authorize(ROLE.ADMIN), upload.any(), ProductController.create);
 router.put('/:id', protect, authorize(ROLE.ADMIN), upload.any(), ProductController.update);
 router.delete('/:id', protect, authorize(ROLE.ADMIN), ProductController.remove);

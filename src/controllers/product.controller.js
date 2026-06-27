@@ -1,6 +1,8 @@
 const Product = require('../models/product.model');
 const ProductVariant = require('../models/productVariant.model');
+const Category = require('../models/category.model');
 const cloudinary = require('../config/cloudinary');
+const exceljs = require('exceljs');
 
 // funcion for list product
 exports.getAll = async (req, res) => {
@@ -217,5 +219,93 @@ exports.remove = async (req, res) => {
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: error.message || 'Lỗi server hệ thống!' });
+  }
+};
+
+// function for importing products from Excel
+exports.importExcel = async (req, res) => {
+  try {
+    const file = req.files && req.files.length > 0 ? req.files[0] : null;
+    if (!file) {
+      return res.json({ success: false, message: 'Vui lòng tải lên file Excel' });
+    }
+
+    const workbook = new exceljs.Workbook();
+    if (file.path) {
+      await workbook.xlsx.readFile(file.path);
+    } else if (file.buffer) {
+      await workbook.xlsx.load(file.buffer);
+    } else {
+      return res.json({ success: false, message: 'Định dạng file không được hỗ trợ' });
+    }
+
+    const worksheet = workbook.worksheets[0];
+    const productsToInsert = [];
+    const errors = [];
+    const categoriesCache = {};
+
+    // Lấy tất cả danh mục trước để tra cứu nhanh, tránh query async trong vòng lặp đồng bộ
+    const categories = await Category.find({});
+    categories.forEach(cat => {
+      categoriesCache[cat.name.toLowerCase().trim()] = cat._id;
+    });
+
+    worksheet.eachRow((row, rowNumber) => {
+      // Bỏ qua dòng tiêu đề
+      if (rowNumber === 1) return;
+
+      const name = row.getCell(1).value;
+      const description = row.getCell(2).value;
+      const price = row.getCell(3).value;
+      const categoryName = row.getCell(4).value;
+      let imageUrl = row.getCell(5).value;
+      const stock = row.getCell(6).value;
+
+      if (!name || price == null || !categoryName) {
+        errors.push({ row: rowNumber, message: 'Thiếu thông tin bắt buộc (Tên, Giá hoặc Tên Danh Mục)' });
+        return;
+      }
+
+      // Xử lý imageUrl nếu excel format dưới dạng link
+      if (imageUrl && typeof imageUrl === 'object') {
+        imageUrl = imageUrl.hyperlink || imageUrl.text;
+      }
+
+      const catNameStr = categoryName.toString().toLowerCase().trim();
+      const categoryId = categoriesCache[catNameStr];
+
+      if (!categoryId) {
+        errors.push({ row: rowNumber, message: `Không tìm thấy danh mục: ${categoryName}` });
+        return;
+      }
+
+      productsToInsert.push({
+        name: name.toString().trim(),
+        description: description ? description.toString().trim() : '',
+        price: Number(price),
+        category: categoryId,
+        image: imageUrl ? imageUrl.toString().trim() : '',
+        images: imageUrl ? [imageUrl.toString().trim()] : [],
+        stock: Number(stock) || 0,
+        isActive: 'active'
+      });
+    });
+
+    if (productsToInsert.length > 0) {
+      await Product.insertMany(productsToInsert);
+    }
+
+    res.json({
+      success: true,
+      message: `Đã import xong. Thành công: ${productsToInsert.length}, Lỗi: ${errors.length}`,
+      data: {
+        successCount: productsToInsert.length,
+        errorCount: errors.length,
+        errors
+      }
+    });
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: error.message || 'Lỗi xử lý file Excel' });
   }
 };
