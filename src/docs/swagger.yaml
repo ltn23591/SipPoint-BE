@@ -3231,7 +3231,7 @@ paths:
   
   /api/v1/shifts/create:
     post:
-      summary: Tạo mới shift
+      summary: Mở ca làm việc mới
       tags: [Shift]
       requestBody:
         required: true
@@ -3255,8 +3255,42 @@ paths:
   /api/v1/shifts/{id}/detail:
     get:
       summary: Lấy chi tiết một ca làm việc
+      tags: [Shift]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của ca làm việc
+      responses:
+        200:
+          description: Chi tiết ca làm việc
+        404:
+          description: Không tìm thấy
+  
+  /api/v1/shifts/{id}/close:
+    put:
+      summary: Đóng ca làm việc
+      tags: [Shift]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của ca làm việc
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
               properties:
-                name:
+                actualEndingCash:
+                  type: number
+                  description: Tiền mặt thực tế khi đóng ca
+                note:
                   type: string
       responses:
         201:
@@ -3283,9 +3317,10 @@ paths:
     put:
       summary: Đóng ca làm việc
           description: ID của shift
+                  description: Ghi chú nếu có sai sót
       responses:
         200:
-          description: Chi tiết shift
+          description: Đóng ca thành công
         404:
           description: Không tìm thấy
   
@@ -3343,6 +3378,7 @@ paths:
         404:
           description: Không tìm thấy
 
+          
 tags:
   - name: Product
     description: API Quản lý Sản Phẩm (Món ăn / Đồ uống)
