@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { IS_ACTIVE } = require('../enums');
+const { IS_ACTIVE, PAYMENT_METHOD } = require('../enums');
 
 const storeSchema = new mongoose.Schema(
   {
@@ -25,6 +25,12 @@ const storeSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    paymentMethods: [
+      {
+        type: String,
+        enum: Object.values(PAYMENT_METHOD),
+      }
+    ],
     isActive: {
       type: String,
       enum: [IS_ACTIVE.FALSE, IS_ACTIVE.TRUE],

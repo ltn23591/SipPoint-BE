@@ -3736,6 +3736,14 @@ components:
           type: string
         description:
           type: string
+        paymentMethods:
+          type: array
+          items:
+            type: string
+            enum:
+              - CASH
+              - TRANSFER
+              - CARD
         isActive:
           type: string
           enum:
