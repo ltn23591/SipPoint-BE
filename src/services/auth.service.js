@@ -1,56 +1,34 @@
-const validator = require('validator');
-const sendEmail = require('../utils/email');
-const logger = require('../config/logger');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const Employee = require('../models/employee.model');
 const Customer = require('../models/customer.model');
 const StaffRole = require('../models/staffRole.model');
 const MembershipTier = require('../models/membershipTier.model');
 const OTP = require('../models/otp.model');
 const { OTP_TYPE, USER_STATUS } = require('../enums');
+const sendEmail = require('../utils/email');
+const logger = require('../config/logger');
+const AppError = require('../utils/AppError');
 
 class AuthService {
-  // Đăng ký cho Khách hàng (Customer) - Có xác thực OTP qua Email
   static async customerRegister(data) {
     const fullName = data.fullName || data.name;
     const { phone, email, password } = data;
 
-    if (!fullName || !fullName.toString().trim()) {
-      return { status: 400, success: false, message: 'Tên khách hàng là bắt buộc' };
-    }
-
-    if (!phone || !phone.toString().trim()) {
-      return { status: 400, success: false, message: 'Số điện thoại là bắt buộc' };
-    }
-
-    if (!email || !validator.isEmail(email)) {
-      return { status: 400, success: false, message: 'Email không hợp lệ' };
-    }
-
     const customerExists = await Customer.findOne({ phone });
-    if (customerExists) {
-      return { status: 400, success: false, message: 'Số điện thoại đã được đăng ký' };
-    }
+    if (customerExists) throw new AppError('Số điện thoại đã được đăng ký', 400);
 
     const emailExists = await Customer.findOne({ email });
-    if (emailExists) {
-      return { status: 400, success: false, message: 'Email đã được sử dụng' };
-    }
-
-    if (!password || password.length < 6) {
-      return { status: 400, success: false, message: 'Mật khẩu phải từ 6 ký tự trở lên' };
-    }
+    if (emailExists) throw new AppError('Email đã được sử dụng', 400);
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Tạo mã số khách hàng 8 chữ số ngẫu nhiên
     const customerId = Math.floor(10000000 + Math.random() * 90000000).toString();
 
-    // Tự động gán hạng thấp nhất của MembershipTier
     let defaultTierId = null;
-    const lowestTier = await MembershipTier.findOne({ status: 'active' }).sort({ minPoints: 1 });
+    const lowestTier = await MembershipTier.findOne({ status: 'active' }).sort({ minPoints: 1 }).lean();
     if (lowestTier) {
       defaultTierId = lowestTier._id;
     }
@@ -63,10 +41,9 @@ class AuthService {
       password: hashedPassword,
       tierId: defaultTierId,
       isActive: true,
-      isVerified: false, // Bắt buộc xác thực trước
+      isVerified: false,
     });
 
-    // Tạo mã OTP xác thực email đăng ký
     const otp = crypto.randomInt(100000, 999999).toString();
     await OTP.create({
       userId: customer._id,
@@ -75,19 +52,18 @@ class AuthService {
       userModel: 'Customer'
     });
 
-    // Gửi email chứa OTP cho khách hàng
     sendEmail({
       email: customer.email,
       subject: 'Mã xác thực Email đăng ký tài khoản Khách hàng',
       template: 'otp',
-      data: { name: customer.fullName, otp: otp }
+      data: { name: customer.fullName, otp }
     }).catch(err => logger.error('Gửi email xác thực khách hàng thất bại', err));
 
-    const populatedCustomer = await Customer.findById(customer._id).populate('tierId');
+    logger.info(`[DEV - BYPASS EMAIL] MÃ OTP ĐĂNG KÝ CỦA KHÁCH HÀNG ${customer.email} LÀ: ${otp}`);
+
+    const populatedCustomer = await Customer.findById(customer._id).populate('tierId').lean();
 
     return {
-      status: 201,
-      success: true,
       message: 'Đăng ký thành công. Vui lòng kiểm tra email để lấy mã xác thực kích hoạt tài khoản.',
       data: {
         _id: populatedCustomer._id,
@@ -96,24 +72,14 @@ class AuthService {
         phone: populatedCustomer.phone,
         email: populatedCustomer.email,
         tierId: populatedCustomer.tierId,
-      },
+      }
     };
   }
 
-  // Xác thực Email qua OTP cho Khách hàng
   static async customerVerifyEmail(email, otp) {
-    if (!email || !otp) {
-      return { status: 400, success: false, message: 'Vui lòng cung cấp email và mã xác thực' };
-    }
-
     const customer = await Customer.findOne({ email }).select('+password');
-    if (!customer) {
-      return { status: 404, success: false, message: 'Tài khoản khách hàng không tồn tại' };
-    }
-
-    if (customer.isVerified) {
-      return { status: 400, success: false, message: 'Tài khoản này đã được xác thực trước đó' };
-    }
+    if (!customer) throw new AppError('Tài khoản khách hàng không tồn tại', 404);
+    if (customer.isVerified) throw new AppError('Tài khoản này đã được xác thực trước đó', 400);
 
     const otpRecord = await OTP.findOne({
       userId: customer._id,
@@ -122,265 +88,161 @@ class AuthService {
       userModel: 'Customer'
     });
 
-    if (!otpRecord) {
-      return { status: 400, success: false, message: 'Mã xác thực không chính xác hoặc đã hết hạn' };
-    }
-
+    if (!otpRecord) throw new AppError('Mã xác thực không chính xác hoặc đã hết hạn', 400);
     await otpRecord.deleteOne();
 
-    // Xác thực thành công
     customer.isVerified = true;
     await customer.save();
 
-    return { status: 200, success: true, message: 'Xác thực tài khoản thành công. Bạn đã được đăng nhập.', user: customer, userType: 'customer' };
+    return { message: 'Xác thực tài khoản thành công. Bạn đã được đăng nhập.', user: customer, userType: 'customer' };
   }
 
-  // Gửi lại mã OTP xác thực cho Khách hàng
   static async customerResendVerifyEmail(email) {
-    if (!email) {
-      return { status: 400, success: false, message: 'Vui lòng cung cấp email' };
-    }
-
     const customer = await Customer.findOne({ email });
-    if (!customer) {
-      return { status: 404, success: false, message: 'Tài khoản khách hàng không tồn tại' };
-    }
-
-    if (customer.isVerified) {
-      return { status: 400, success: false, message: 'Tài khoản này đã được xác thực trước đó' };
-    }
+    if (!customer) throw new AppError('Tài khoản khách hàng không tồn tại', 404);
+    if (customer.isVerified) throw new AppError('Tài khoản này đã được xác thực trước đó', 400);
 
     const otp = crypto.randomInt(100000, 999999).toString();
     await OTP.deleteMany({ userId: customer._id, type: OTP_TYPE.REGISTER, userModel: 'Customer' });
-    await OTP.create({
-      userId: customer._id,
-      code: otp,
-      type: OTP_TYPE.REGISTER,
-      userModel: 'Customer'
-    });
+    await OTP.create({ userId: customer._id, code: otp, type: OTP_TYPE.REGISTER, userModel: 'Customer' });
 
     sendEmail({
       email: customer.email,
       subject: 'Mã xác thực Email của bạn (Gửi lại)',
       template: 'otp',
-      data: { name: customer.fullName, otp: otp }
+      data: { name: customer.fullName, otp }
     }).catch(err => logger.error('Gửi email xác thực khách hàng thất bại (gửi lại)', err));
 
-    return { status: 200, success: true, message: 'Mã xác thực mới đã được gửi vào email của bạn' };
+    logger.info(`[DEV - BYPASS EMAIL] MÃ OTP (GỬI LẠI) CỦA KHÁCH HÀNG ${customer.email} LÀ: ${otp}`);
+
+    return { message: 'Mã xác thực mới đã được gửi vào email của bạn' };
   }
 
-  // Đăng nhập cho Khách hàng (Customer)
   static async customerLogin(loginIdentifier, password) {
-    if (!loginIdentifier || !password) {
-      return { status: 400, success: false, message: 'Vui lòng cung cấp thông tin đăng nhập và mật khẩu' };
-    }
-
-    // Cho phép đăng nhập bằng số điện thoại hoặc email
     const customer = await Customer.findOne({
       $or: [{ phone: loginIdentifier }, { email: loginIdentifier }]
-    }).select('+password');
+    }).select('+password').populate('tierId');
 
-    if (!customer) {
-      return { status: 401, success: false, message: 'Tài khoản không tồn tại hoặc sai thông tin đăng nhập' };
-    }
-
-    if (!customer.isVerified) {
-      return { status: 403, success: false, message: 'Vui lòng xác thực email trước khi đăng nhập' };
-    }
-
-    if (!customer.isActive) {
-      return { status: 403, success: false, message: 'Tài khoản của bạn đang bị khóa' };
-    }
+    if (!customer) throw new AppError('Tài khoản không tồn tại hoặc sai thông tin đăng nhập', 401);
+    if (!customer.isVerified) throw new AppError('Vui lòng xác thực email trước khi đăng nhập', 403);
+    if (!customer.isActive) throw new AppError('Tài khoản của bạn đang bị khóa', 403);
 
     const isMatch = await bcrypt.compare(password, customer.password);
-    if (!isMatch) {
-      return { status: 401, success: false, message: 'Sai mật khẩu' };
-    }
+    if (!isMatch) throw new AppError('Sai thông tin đăng nhập', 401);
 
-    return { status: 200, success: true, message: 'Đăng nhập thành công', user: customer, userType: 'customer' };
+    return { message: 'Đăng nhập thành công', user: customer, userType: 'customer' };
   }
 
-  // Đăng nhập cho Nhân viên (Employee)
   static async employeeLogin(email, password) {
-    if (!email || !password) {
-      return { status: 400, success: false, message: 'Vui lòng cung cấp email và mật khẩu' };
-    }
-
     const employee = await Employee.findOne({ email, isDeleted: false }).select('+password').populate('roleId');
-    if (!employee) {
-      return { status: 401, success: false, message: 'Thông tin đăng nhập không hợp lệ' };
-    }
-
-    if (employee.status === USER_STATUS.BANNED) { // BANNED
-      return { status: 403, success: false, message: 'Tài khoản của bạn đã bị khóa' };
-    }
+    if (!employee) throw new AppError('Thông tin đăng nhập không hợp lệ', 401);
+    if (employee.status === USER_STATUS.BANNED) throw new AppError('Tài khoản của bạn đã bị khóa', 403);
 
     const isMatch = await bcrypt.compare(password, employee.password);
-    if (!isMatch) {
-      return { status: 401, success: false, message: 'Sai thông tin đăng nhập' };
-    }
+    if (!isMatch) throw new AppError('Sai thông tin đăng nhập', 401);
 
     if (employee.isTwoFactorEnabled) {
       const otp = crypto.randomInt(100000, 999999).toString();
-      await OTP.create({
-        userId: employee._id,
-        code: otp,
-        type: OTP_TYPE.TWO_FACTOR,
-        userModel: 'Employee'
-      });
+      await OTP.deleteMany({ userId: employee._id, type: OTP_TYPE.TWO_FACTOR, userModel: 'Employee' });
+      await OTP.create({ userId: employee._id, code: otp, type: OTP_TYPE.TWO_FACTOR, userModel: 'Employee' });
 
       sendEmail({
         email: employee.email,
         subject: 'Mã xác thực OTP Đăng Nhập',
         template: 'otp',
-        data: { name: employee.name, otp: otp }
+        data: { name: employee.name, otp }
       }).catch(err => logger.error('Lỗi gửi OTP qua email', err));
 
+      logger.info(`[DEV - BYPASS EMAIL] MÃ OTP ĐĂNG NHẬP (2FA) CỦA NHÂN VIÊN ${employee.email} LÀ: ${otp}`);
+
       return {
-        status: 200,
-        success: true,
         requires2FA: true,
         email: employee.email,
         message: 'Vui lòng nhập mã OTP đã được gửi vào email của bạn',
       };
     }
 
-    return { status: 200, success: true, message: 'Đăng nhập thành công', user: employee, userType: 'employee' };
+    return { message: 'Đăng nhập thành công', user: employee, userType: 'employee' };
   }
 
   static async enable2FA(employeeId) {
     const employee = await Employee.findById(employeeId);
-    if (!employee) {
-      return { status: 404, success: false, message: 'Không tìm thấy nhân viên' };
-    }
-    
-    if (employee.isTwoFactorEnabled) {
-      return { status: 400, success: false, message: 'Tài khoản đã được bật 2FA từ trước' };
-    }
+    if (!employee) throw new AppError('Không tìm thấy nhân viên', 404);
+    if (employee.isTwoFactorEnabled) throw new AppError('Tài khoản đã được bật 2FA từ trước', 400);
 
     const otp = crypto.randomInt(100000, 999999).toString();
     await OTP.deleteMany({ userId: employee._id, type: OTP_TYPE.TWO_FACTOR, userModel: 'Employee' });
-    await OTP.create({
-      userId: employee._id,
-      code: otp,
-      type: OTP_TYPE.TWO_FACTOR,
-      userModel: 'Employee'
-    });
+    await OTP.create({ userId: employee._id, code: otp, type: OTP_TYPE.TWO_FACTOR, userModel: 'Employee' });
 
     sendEmail({
       email: employee.email,
       subject: 'Mã OTP bật tính năng 2FA',
       template: 'otp',
-      data: { name: employee.name, otp: otp }
+      data: { name: employee.name, otp }
     }).catch(err => logger.error('Lỗi gửi OTP enable 2FA', err));
 
-    return { status: 200, success: true, message: 'Mã OTP đã được gửi vào email của bạn. Vui lòng kiểm tra hộp thư.' };
+    logger.info(`[DEV - BYPASS EMAIL] MÃ OTP BẬT 2FA CỦA NHÂN VIÊN ${employee.email} LÀ: ${otp}`);
+
+    return { message: 'Mã OTP đã được gửi vào email của bạn. Vui lòng kiểm tra hộp thư.' };
   }
 
   static async verifyEnable2FA(employeeId, otp) {
     const employee = await Employee.findById(employeeId);
-    if (!employee) {
-      return { status: 404, success: false, message: 'Không tìm thấy nhân viên' };
-    }
+    if (!employee) throw new AppError('Không tìm thấy nhân viên', 404);
 
-    const otpRecord = await OTP.findOne({
-      userId: employee._id,
-      code: otp,
-      type: OTP_TYPE.TWO_FACTOR,
-      userModel: 'Employee'
-    });
-
-    if (!otpRecord) {
-      return { status: 400, success: false, message: 'Mã OTP không chính xác hoặc đã hết hạn' };
-    }
+    const otpRecord = await OTP.findOne({ userId: employee._id, code: otp, type: OTP_TYPE.TWO_FACTOR, userModel: 'Employee' });
+    if (!otpRecord) throw new AppError('Mã OTP không chính xác hoặc đã hết hạn', 400);
 
     await otpRecord.deleteOne();
-
     employee.isTwoFactorEnabled = true;
     await employee.save({ validateBeforeSave: false });
 
-    return { status: 200, success: true, message: 'Kích hoạt bảo mật 2 lớp thành công' };
+    return { message: 'Kích hoạt bảo mật 2 lớp thành công' };
   }
 
   static async login2FA(email, otp) {
-    if (!email || !otp) {
-      return { status: 400, success: false, message: 'Vui lòng cung cấp email và mã OTP' };
-    }
-
     const employee = await Employee.findOne({ email, isDeleted: false }).select('+password').populate('roleId');
+    if (!employee || !employee.isTwoFactorEnabled) throw new AppError('Tài khoản không tồn tại hoặc chưa bật 2FA', 400);
 
-    if (!employee || !employee.isTwoFactorEnabled) {
-      return { status: 400, success: false, message: 'Tài khoản không tồn tại hoặc chưa bật 2FA' };
-    }
-
-    const otpRecord = await OTP.findOne({
-      userId: employee._id,
-      code: otp,
-      type: OTP_TYPE.TWO_FACTOR,
-      userModel: 'Employee'
-    });
-
-    if (!otpRecord) {
-      return { status: 400, success: false, message: 'Mã OTP không chính xác hoặc đã hết hạn' };
-    }
+    const otpRecord = await OTP.findOne({ userId: employee._id, code: otp, type: OTP_TYPE.TWO_FACTOR, userModel: 'Employee' });
+    if (!otpRecord) throw new AppError('Mã OTP không chính xác hoặc đã hết hạn', 400);
 
     await otpRecord.deleteOne();
-
-    return { status: 200, success: true, message: 'Đăng nhập thành công', user: employee, userType: 'employee' };
+    return { message: 'Đăng nhập thành công', user: employee, userType: 'employee' };
   }
 
   static async disable2FA(employeeId) {
     const employee = await Employee.findById(employeeId);
-    if (!employee) {
-      return { status: 404, success: false, message: 'Không tìm thấy nhân viên' };
-    }
+    if (!employee) throw new AppError('Không tìm thấy nhân viên', 404);
+    
     employee.isTwoFactorEnabled = false;
     await employee.save({ validateBeforeSave: false });
-
     await OTP.deleteMany({ userId: employee._id, type: OTP_TYPE.TWO_FACTOR, userModel: 'Employee' });
 
-    return { status: 200, success: true, message: 'Đã tắt tính năng bảo mật 2 lớp' };
+    return { message: 'Đã tắt tính năng bảo mật 2 lớp' };
   }
 
   static async getMe(id) {
-    let user = await Employee.findById(id).select('-password').populate('roleId');
+    let user = await Employee.findById(id).select('-password').populate('roleId').lean();
     let type = 'employee';
     if (!user) {
-      user = await Customer.findById(id).select('-password').populate('tierId');
+      user = await Customer.findById(id).select('-password').populate('tierId').lean();
       type = 'customer';
     }
-    if (!user) {
-      return { status: 404, success: false, message: `Không tìm thấy thông tin tài khoản với ID: ${id}` };
-    }
-    return { status: 200, success: true, message: 'Lấy thông tin thành công', data: user, type };
+    if (!user) throw new AppError(`Không tìm thấy thông tin tài khoản với ID: ${id}`, 404);
+    
+    return { message: 'Lấy thông tin thành công', data: user, type };
   }
 
-  // Đăng ký cho Nhân viên (Employee) với vai trò mặc định là ADMIN
   static async employeeRegister(data) {
     const name = data.name || data.fullName;
     const { email, password } = data;
 
-    if (!name || !name.toString().trim()) {
-      return { status: 400, success: false, message: 'Họ và tên là bắt buộc' };
-    }
-
-    if (!email || !validator.isEmail(email)) {
-      return { status: 400, success: false, message: 'Email không hợp lệ' };
-    }
-
     const employeeExists = await Employee.findOne({ email, isDeleted: false });
-    if (employeeExists) {
-      return { status: 400, success: false, message: 'Email đã được sử dụng' };
-    }
+    if (employeeExists) throw new AppError('Email đã được sử dụng', 400);
 
-    if (!password || password.length < 6) {
-      return { status: 400, success: false, message: 'Mật khẩu phải từ 6 ký tự trở lên' };
-    }
-
-    // Tìm role admin trong bảng StaffRole
     let adminRole = await StaffRole.findOne({ code: 'admin' });
     if (!adminRole) {
-      // Nếu chưa có role admin, tự tạo mới
       adminRole = await StaffRole.create({ name: 'Admin', code: 'admin', permissions: [], description: 'Quản trị viên hệ thống' });
     }
 
@@ -391,18 +253,96 @@ class AuthService {
       name,
       email,
       password: hashedPassword,
-      roleId: adminRole._id, // Mặc định khi đăng ký tự do là ADMIN
+      roleId: adminRole._id,
     });
 
-    const populatedEmployee = await Employee.findById(employee._id).populate('roleId');
+    const populatedEmployee = await Employee.findById(employee._id).populate('roleId').lean();
 
-    return {
-      status: 201,
-      success: true,
-      message: 'Đăng ký tài khoản Admin thành công',
-      user: populatedEmployee,
-      userType: 'employee'
-    };
+    return { message: 'Đăng ký tài khoản Admin thành công', user: populatedEmployee, userType: 'employee' };
+  }
+
+  static async forgotPassword(email) {
+    const employee = await Employee.findOne({ email, isDeleted: false });
+    if (!employee) throw new AppError('Không tìm thấy tài khoản với email này', 404);
+
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const activationSecret = process.env.ACTIVATION_SECRET || 'activation_secret_123';
+    const activationToken = jwt.sign({ email: employee.email, otp }, activationSecret, { expiresIn: '5m' });
+
+    await sendEmail({
+      email: employee.email,
+      subject: 'Mã xác thực khôi phục mật khẩu',
+      template: 'reset-password',
+      data: { name: employee.name, otp }
+    }).catch(err => logger.error('Lỗi gửi OTP reset password', err));
+
+    logger.info(`[DEV - BYPASS EMAIL] MÃ OTP KHÔI PHỤC MẬT KHẨU CỦA ${employee.email} LÀ: ${otp}`);
+
+    return { activationToken, message: 'Mã OTP khôi phục mật khẩu đã được gửi đến email của bạn.' };
+  }
+
+  static async verifyOtpCode(activation_token, activation_code) {
+    const activationSecret = process.env.ACTIVATION_SECRET || 'activation_secret_123';
+    let decoded;
+    try {
+      decoded = jwt.verify(activation_token, activationSecret);
+    } catch (err) {
+      if (err.name === 'TokenExpiredError') throw new AppError('Mã OTP đã hết hạn', 400);
+      throw new AppError('Mã xác thực không hợp lệ', 400);
+    }
+
+    if (decoded.otp !== activation_code) throw new AppError('Mã OTP không chính xác', 400);
+
+    const employee = await Employee.findOne({ email: decoded.email, isDeleted: false });
+    if (!employee) throw new AppError('Không tìm thấy tài khoản nhân viên', 404);
+
+    const resetToken = crypto.randomBytes(20).toString('hex');
+    employee.resetPasswordToken = resetToken;
+    employee.resetPasswordTokenExpire = Date.now() + 10 * 60 * 1000;
+    await employee.save({ validateBeforeSave: false });
+
+    return { email: employee.email, resetToken, message: 'OTP đã được xác minh thành công' };
+  }
+
+  static async resetPassword(resetToken, newPassword) {
+    const employee = await Employee.findOne({
+      resetPasswordToken: resetToken,
+      resetPasswordTokenExpire: { $gt: Date.now() }
+    }).select('+password');
+
+    if (!employee) throw new AppError('Reset token không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.', 400);
+
+    const isSame = await bcrypt.compare(newPassword, employee.password);
+    if (isSame) throw new AppError('Mật khẩu mới không được trùng với mật khẩu cũ', 400);
+
+    const salt = await bcrypt.genSalt(10);
+    employee.password = await bcrypt.hash(newPassword, salt);
+
+    employee.resetPasswordToken = undefined;
+    employee.resetPasswordTokenExpire = undefined;
+    employee.loginAttempts = 0;
+    employee.lockUntil = undefined;
+    
+    await employee.save({ validateBeforeSave: false });
+
+    return { message: 'Mật khẩu đã được đặt lại thành công' };
+  }
+
+  static async changePassword(userId, currentPassword, newPassword) {
+    let user = await Employee.findById(userId).select('+password');
+    if (!user) {
+      user = await Customer.findById(userId).select('+password');
+    }
+    if (!user) throw new AppError('Không tìm thấy tài khoản người dùng', 404);
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) throw new AppError('Mật khẩu hiện tại không chính xác', 400);
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+    await user.save({ validateBeforeSave: false });
+
+    return { message: 'Đổi mật khẩu thành công' };
   }
 }
 
