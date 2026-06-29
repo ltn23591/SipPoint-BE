@@ -1609,6 +1609,37 @@ paths:
         3. Điền giá trị cho tham số trong URL path (id).
         4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
         5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
+  /api/v1/store/config:
+    get:
+      summary: Lấy cấu hình cửa hàng
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Không yêu cầu Token đăng nhập.
+        - Trả về cấu hình duy nhất của cửa hàng (tên, địa chỉ, hotline, phương thức thanh toán...).
+      tags:
+        - Store
+      responses:
+        "200":
+          description: Lấy cấu hình thành công
+    put:
+      summary: Cập nhật cấu hình cửa hàng
+      description: |
+        ### Cách kiểm thử (How to test):
+        - Yêu cầu Token quyền Admin.
+        - Truyền các trường cần cập nhật vào Request Body.
+      tags:
+        - Store
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Store"
+      responses:
+        "200":
+          description: Cập nhật cấu hình thành công
   /api/v1/order/{id}/status:
     patch:
       summary: Cập nhật trạng thái đơn hàng (Alias)
@@ -1652,147 +1683,6 @@ paths:
         3. Điền giá trị cho tham số trong URL path (id).
         4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
         5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
-  /api/v1/store/all:
-    get:
-      summary: Lấy tất cả cửa hàng/chi nhánh
-      description: |
-        ### Cách kiểm thử (How to test):
-        - Không yêu cầu Token đăng nhập.
-        - Nhấp **Try it out** -> **Execute** để lấy toàn bộ danh sách cửa hàng/chi nhánh trong hệ thống.
-      tags:
-        - Store
-      responses:
-        "200":
-          description: Lấy danh sách thành công
-  /api/v1/store/search:
-    post:
-      summary: Tìm kiếm cửa hàng có phân trang
-      description: |
-        ### Cách kiểm thử (How to test):
-        - Không yêu cầu Token đăng nhập.
-        - Nhấp **Try it out**.
-        - Truyền Request Body có dạng:
-          ```json
-          {
-            "search": "Cửa hàng A",
-            "page": 1,
-            "pageSize": 10
-          }
-          ```
-        - Nhấp **Execute** để xem danh sách kết quả kèm phân trang.
-      tags:
-        - Store
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                search:
-                  type: string
-                page:
-                  type: number
-                pageSize:
-                  type: number
-      responses:
-        "200":
-          description: Tìm kiếm thành công
-  /api/v1/store/create:
-    post:
-      summary: Tạo cửa hàng mới
-      description: |
-        ### Cách kiểm thử (How to test):
-        1. **Bắt buộc** phải đăng nhập tài khoản Admin bằng API `/api/v1/auth/login` để lấy token.
-        2. Nhấp nút **Authorize** ở trên cùng và dán token vào.
-        3. Nhấp **Try it out** ở API này, điền đầy đủ dữ liệu trong Request Body (tên cửa hàng là duy nhất).
-        4. Nhấp **Execute** để thực hiện tạo mới.
-      tags:
-        - Store
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Store"
-      responses:
-        "201":
-          description: Tạo thành công
-  /api/v1/store/update:
-    put:
-      summary: Cập nhật thông tin cửa hàng
-      description: |
-        ### Cách kiểm thử (How to test):
-        1. Yêu cầu đăng nhập tài khoản Admin (nhận Bearer token).
-        2. Nhấp **Try it out**.
-        3. Trong Request Body, bắt buộc phải bổ sung thuộc tính `id` hoặc `_id` của cửa hàng cần sửa đổi, đi kèm các thông tin mới:
-          ```json
-          {
-            "id": "mã_id_của_cửa_hàng",
-            "name": "Tên cửa hàng mới cập nhật",
-            "address": "Địa chỉ mới"
-          }
-          ```
-        4. Nhấp **Execute** để hoàn tất cập nhật.
-      tags:
-        - Store
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Store"
-      responses:
-        "200":
-          description: Cập nhật thành công
-  /api/v1/store/delete/{id}:
-    delete:
-      summary: Xóa cửa hàng
-      description: |
-        ### Cách kiểm thử (How to test):
-        1. Yêu cầu quyền Admin (cần Token đăng nhập).
-        2. Nhấp **Try it out**.
-        3. Điền giá trị `id` của cửa hàng cần xóa vào tham số đường dẫn (Path parameter).
-        4. Nhấp **Execute** để thực hiện xóa khỏi cơ sở dữ liệu.
-      tags:
-        - Store
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID của cửa hàng cần xóa
-      responses:
-        "200":
-          description: Xóa thành công
-  /api/v1/store/details/{id}:
-    get:
-      summary: Lấy chi tiết cửa hàng
-      description: |
-        ### Cách kiểm thử (How to test):
-        - Không yêu cầu Token đăng nhập.
-        - Nhấp **Try it out**.
-        - Điền `id` của cửa hàng vào tham số đường dẫn.
-        - Nhấp **Execute** để xem chi tiết thông tin cửa hàng.
-      tags:
-        - Store
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID của cửa hàng cần xem chi tiết
-      responses:
-        "200":
-          description: Thành công
   /api/v1/staff/role/all:
     get:
       summary: Lấy tất cả vai trò nhân viên
@@ -3335,11 +3225,57 @@ paths:
       responses:
         200:
           description: Danh sách shift
-  
-  /api/v1/shifts/create:
+  /api/v1/shifts/open:
     post:
-      summary: Tạo mới shift
+      summary: Mở ca làm việc mới
       tags: [Shift]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - employeeId
+              properties:
+                employeeId:
+                  type: string
+                  description: ID nhân viên
+                startingCash:
+                  type: number
+                  description: Tiền mặt đầu ca
+      responses:
+        201:
+          description: Mở ca thành công
+  
+  /api/v1/shifts/{id}/detail:
+    get:
+      summary: Lấy chi tiết một ca làm việc
+      tags: [Shift]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của ca làm việc
+      responses:
+        200:
+          description: Chi tiết ca làm việc
+        404:
+          description: Không tìm thấy
+  
+  /api/v1/shifts/{id}/close:
+    put:
+      summary: Đóng ca làm việc
+      tags: [Shift]
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của ca làm việc
       requestBody:
         required: true
         content:
@@ -3347,69 +3283,18 @@ paths:
             schema:
               type: object
               properties:
-                name:
+                actualEndingCash:
+                  type: number
+                  description: Tiền mặt thực tế khi đóng ca
+                note:
                   type: string
-      responses:
-        201:
-          description: Tạo thành công
-  
-  /api/v1/shifts/{id}/detail:
-    get:
-      summary: Lấy chi tiết một shift
-      tags: [Shift]
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID của shift
+                  description: Ghi chú nếu có sai sót
       responses:
         200:
-          description: Chi tiết shift
+          description: Đóng ca thành công
         404:
           description: Không tìm thấy
-  
-  /api/v1/shifts/{id}/update:
-    put:
-      summary: Cập nhật shift
-      tags: [Shift]
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID của shift
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        200:
-          description: Cập nhật thành công
-        404:
-          description: Không tìm thấy
-  
-  /api/v1/shifts/{id}/delete:
-    delete:
-      summary: Xóa shift
-      tags: [Shift]
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID của shift
-      responses:
-        200:
-          description: Xóa thành công
-        404:
-          description: Không tìm thấy
-
+          
 tags:
   - name: Product
     description: API Quản lý Sản Phẩm (Món ăn / Đồ uống)
@@ -3971,7 +3856,30 @@ components:
       properties:
         _id:
           type: string
-        name:
+        employeeId:
+          type: string
+        startTime:
+          type: string
+          format: date-time
+        endTime:
+          type: string
+          format: date-time
+        startingCash:
+          type: number
+        actualEndingCash:
+          type: number
+        systemEndingCash:
+          type: number
+        totalRevenue:
+          type: number
+        totalOrders:
+          type: number
+        status:
+          type: string
+          enum:
+            - OPEN
+            - CLOSED
+        note:
           type: string
         createdAt:
           type: string

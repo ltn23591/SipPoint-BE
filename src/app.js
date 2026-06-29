@@ -48,10 +48,9 @@ app.get('/', (req, res) => {
 app.use('/api/v1', apiRoutes);
 
 // 5. Route không tồn tại (404)
+const AppError = require('./utils/AppError');
 app.use((req, res, next) => {
-  const error = new Error(`Không tìm thấy đường dẫn: ${req.originalUrl}`);
-  res.status(404);
-  next(error);
+  next(new AppError(`Không tìm thấy đường dẫn: ${req.originalUrl}`, 404));
 });
 
 // 6. Xử lý lỗi toàn cục
