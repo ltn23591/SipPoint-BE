@@ -1,5 +1,5 @@
 const OrderService = require('../services/order.service');
-
+const { ORDER_STATUS, ROLE } = require('../enums');
 class OrderController {
   static async getAll(req, res) {
     try {
@@ -32,41 +32,23 @@ class OrderController {
 
   static async updateStatus(req, res) {
     try {
-      const { status, id, orderId } = req.body;
+      const { status, id, orderId, reason } = req.body;
       const targetId = req.params.id || id || orderId;
       const updatedById = req.user ? req.user._id : null;
-      const result = await OrderService.updateOrderStatus(targetId, status, updatedById);
-      res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+      const userRole = req.user && req.user.roleId ? req.user.roleId.code : (req.user ? req.user.role : null);
+      
+     
 
-  static async cancel(req, res) {
-    try {
-      const { reason } = req.body;
-      const updatedById = req.user ? req.user._id : null;
-      const result = await OrderService.cancelOrder(req.params.id, reason, updatedById);
-      res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
-
-  static async confirm(req, res) {
-    try {
-      const updatedById = req.user ? req.user._id : null;
-      const result = await OrderService.confirmOrder(req.params.id, updatedById);
-      res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
-
-  static async complete(req, res) {
-    try {
-      const updatedById = req.user ? req.user._id : null;
-      const result = await OrderService.completeOrder(req.params.id, updatedById);
+      let result;
+      if (status === ORDER_STATUS.CANCELLED) {
+        // Chỉ admin và cashier mới được quyền huỷ đơn
+        if (userRole !== ROLE.ADMIN && userRole !== ROLE.CASHIER) {
+          return res.status(403).json({ success: false, message: 'Bạn không có quyền hủy đơn hàng' });
+        }
+        result = await OrderService.cancelOrder(targetId, reason, updatedById);
+      } else {
+        result = await OrderService.updateOrderStatus(targetId, status, updatedById);
+      }
       res.status(result.status).json(result);
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
