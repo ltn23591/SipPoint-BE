@@ -6,11 +6,16 @@ const logger = require('../config/logger');
 let transporterConfig;
 if (process.env.SMTP_HOST === 'smtp.gmail.com') {
   transporterConfig = {
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true, // true for 465, false for other ports
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
+    tls: {
+      rejectUnauthorized: false // Bỏ qua lỗi SSL trên một số môi trường cloud như Render
+    }
   };
 } else {
   transporterConfig = {
