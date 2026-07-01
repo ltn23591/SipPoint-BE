@@ -17,10 +17,30 @@ class AuthService {
     const { phone, email, password } = data;
 
     const customerExists = await Customer.findOne({ phone });
-    if (customerExists) throw new AppError('Số điện thoại đã được đăng ký', 400);
+    if (customerExists) {
+      if (customerExists.isVerified) {
+        throw new AppError('Số điện thoại đã được đăng ký', 400);
+      } else {
+        const otpExists = await OTP.findOne({ userId: customerExists._id, type: OTP_TYPE.REGISTER });
+        if (otpExists) {
+          throw new AppError('Tài khoản đang chờ xác thực, vui lòng kiểm tra mã OTP đã được gửi', 400);
+        }
+        await Customer.findByIdAndDelete(customerExists._id);
+      }
+    }
 
     const emailExists = await Customer.findOne({ email });
-    if (emailExists) throw new AppError('Email đã được sử dụng', 400);
+    if (emailExists) {
+      if (emailExists.isVerified) {
+        throw new AppError('Email đã được sử dụng', 400);
+      } else {
+        const otpExists = await OTP.findOne({ userId: emailExists._id, type: OTP_TYPE.REGISTER });
+        if (otpExists) {
+          throw new AppError('Tài khoản đang chờ xác thực, vui lòng kiểm tra mã OTP đã được gửi', 400);
+        }
+        await Customer.findByIdAndDelete(emailExists._id);
+      }
+    }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
