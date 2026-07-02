@@ -19,9 +19,27 @@ class CustomerController {
     }
   }
 
+  static async getMyPointHistory(req, res) {
+    try {
+      const result = await CustomerService.getMyPointHistory(req.user.id);
+      res.status(result.status).json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
   static async create(req, res) {
     try {
       const result = await CustomerService.createCustomer(req.body);
+      res.status(result.status).json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  static async updateMyProfile(req, res) {
+    try {
+      const result = await CustomerService.updateMyProfile(req.user.id, req.body);
       res.status(result.status).json(result);
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });

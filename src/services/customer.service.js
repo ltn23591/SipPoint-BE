@@ -65,6 +65,20 @@ class CustomerService {
     };
   }
 
+  // Khách hàng tự lấy lịch sử điểm của mình
+  static async getMyPointHistory(customerId) {
+    const pointHistories = await PointHistory.find({ customerId })
+      .sort({ createdAt: -1 })
+      .limit(20);
+
+    return {
+      status: 200,
+      success: true,
+      message: 'Lấy lịch sử điểm thành công',
+      data: pointHistories,
+    };
+  }
+
   // Thêm mới khách hàng
   static async createCustomer(data) {
     const existing = await Customer.findOne({ phone: data.phone });
@@ -102,6 +116,29 @@ class CustomerService {
     }
 
     return { status: 200, success: true, message: 'Cập nhật thành công', data: updatedCustomer };
+  }
+
+  // Khách hàng tự cập nhật thông tin cá nhân
+  static async updateMyProfile(id, data) {
+    const { fullName, phone, email, dateOfBirth, avatar } = data;
+    const updateData = {};
+    if (fullName !== undefined) updateData.fullName = fullName;
+    if (phone !== undefined) updateData.phone = phone;
+    if (email !== undefined) updateData.email = email;
+    if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth;
+    if (avatar !== undefined) updateData.avatar = avatar;
+
+    const updatedCustomer = await Customer.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    ).select('-password').populate('tierId');
+
+    if (!updatedCustomer) {
+      return { status: 404, success: false, message: 'Không tìm thấy khách hàng' };
+    }
+
+    return { status: 200, success: true, message: 'Cập nhật thông tin thành công', data: updatedCustomer };
   }
 
   // Cộng / Trừ điểm khách hàng

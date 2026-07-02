@@ -9,6 +9,13 @@ const router = express.Router();
 // Tất cả các routes quản lý khách hàng yêu cầu đăng nhập và có vai trò phù hợp
 router.get('/', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.getAll);
 router.post('/', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.create);
+
+// Khách hàng lấy lịch sử điểm
+router.get('/me/point-history', protect, CustomerController.getMyPointHistory);
+
+// Khách hàng cập nhật thông tin cá nhân
+router.put('/me', protect, CustomerController.updateMyProfile);
+
 router.get('/:id', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.getById);
 router.put('/:id', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.update);
 router.post('/:id/points', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.adjustPoints);
