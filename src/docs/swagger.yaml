@@ -1609,6 +1609,155 @@ paths:
         3. Điền giá trị cho tham số trong URL path (id).
         4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
         5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
+  /api/v1/cart:
+    get:
+      summary: Lấy thông tin giỏ hàng của Khách hàng hiện tại
+      tags:
+        - Cart
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Lấy giỏ hàng thành công
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Đăng nhập bằng tài khoản Khách hàng và dán Token vào nút **Authorize** màu xanh ở góc trên bên phải.
+        2. Nhấp **Try it out** -> **Execute**.
+  /api/v1/cart/add:
+    post:
+      summary: Thêm sản phẩm vào giỏ hàng
+      tags:
+        - Cart
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+              properties:
+                productId:
+                  type: string
+                  description: ID sản phẩm cần thêm
+                qty:
+                  type: integer
+                  minimum: 1
+                  default: 1
+                  description: Số lượng cần thêm
+                variants:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - variantId
+                      - name
+                    properties:
+                      variantId:
+                        type: string
+                      name:
+                        type: string
+                      priceAdjustment:
+                        type: number
+                  description: Các tùy chọn biến thể (size, topping...)
+                note:
+                  type: string
+                  description: Ghi chú cho món ăn
+      responses:
+        "200":
+          description: Thêm vào giỏ hàng thành công
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**: Đăng nhập bằng tài khoản Khách hàng và dán Token.
+        2. Điền thông tin sản phẩm và click **Execute**.
+  /api/v1/cart/qty:
+    put:
+      summary: Cập nhật số lượng của một sản phẩm trong giỏ hàng
+      tags:
+        - Cart
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+                - qty
+              properties:
+                productId:
+                  type: string
+                qty:
+                  type: integer
+                  description: Số lượng mới (nếu <= 0 sẽ tự động xóa khỏi giỏ hàng)
+                variants:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - variantId
+                    properties:
+                      variantId:
+                        type: string
+      responses:
+        "200":
+          description: Cập nhật số lượng thành công
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**.
+        2. Truyền `productId`, `variants` (để định dạng đúng sản phẩm cần sửa) và số lượng `qty` mới rồi bấm **Execute**.
+  /api/v1/cart/remove:
+    post:
+      summary: Xóa sản phẩm khỏi giỏ hàng
+      tags:
+        - Cart
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+              properties:
+                productId:
+                  type: string
+                variants:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - variantId
+                    properties:
+                      variantId:
+                        type: string
+      responses:
+        "200":
+          description: Xóa sản phẩm thành công
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**.
+        2. Bấm **Execute** để xóa sản phẩm được chỉ định.
+  /api/v1/cart/clear:
+    delete:
+      summary: Xóa toàn bộ giỏ hàng
+      tags:
+        - Cart
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Xóa toàn bộ giỏ hàng thành công
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token**.
+        2. Bấm **Execute** để dọn dẹp giỏ hàng.
   /api/v1/store/config:
     get:
       summary: Lấy cấu hình cửa hàng
