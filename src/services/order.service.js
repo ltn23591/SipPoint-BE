@@ -6,7 +6,7 @@ const Table = require('../models/table.model');
 const Voucher = require('../models/voucher.model');
 const Customer = require('../models/customer.model');
 const VoucherService = require('./voucher.service');
-const { ORDER_STATUS, TABLE_STATUS } = require('../enums');
+const { ORDER_STATUS, TABLE_STATUS, IS_ACTIVE } = require('../enums');
 const { emitToAll } = require('./socket.service');
 const mongoose = require('mongoose');
 
@@ -187,7 +187,7 @@ class OrderService {
     }
 
     const order = await Order.findById(orderId);
-    if (!order || order.isActive === 0) {
+    if (!order || order.isActive === IS_ACTIVE.FALSE) {
       return { status: 404, success: false, message: 'Không tìm thấy đơn hàng' };
     }
 
@@ -249,7 +249,7 @@ class OrderService {
     }
 
     const order = await Order.findById(orderId);
-    if (!order || order.isActive === 0) {
+    if (!order || order.isActive === IS_ACTIVE.FALSE) {
       return { status: 404, success: false, message: 'Không tìm thấy đơn hàng' };
     }
 
@@ -307,7 +307,7 @@ class OrderService {
       .populate('items')
       .populate('voucherId');
 
-    if (!order || order.isActive === 0) {
+    if (!order || order.isActive === IS_ACTIVE.FALSE) {
       return { status: 404, success: false, message: 'Không tìm thấy đơn hàng' };
     }
 
@@ -319,7 +319,7 @@ class OrderService {
    */
   static async getAllOrders(query) {
     const { status, tableId, customerId, page = 1, limit = 10, startDate, endDate } = query;
-    const filter = { isActive: 1 };
+    const filter = { isActive: IS_ACTIVE.TRUE };
 
     if (status !== undefined && status !== '') {
       filter.status = status;
