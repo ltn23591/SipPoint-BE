@@ -16,6 +16,9 @@ router.get('/me/point-history', protect, CustomerController.getMyPointHistory);
 // Khách hàng cập nhật thông tin cá nhân
 router.put('/me', protect, CustomerController.updateMyProfile);
 
+// Khách hàng lấy danh sách voucher
+router.get('/me/vouchers', protect, CustomerController.getMyVouchers);
+
 router.get('/:id', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.getById);
 router.put('/:id', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.update);
 router.post('/:id/points', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.adjustPoints);

@@ -46,6 +46,15 @@ class CustomerController {
     }
   }
 
+  static async getMyVouchers(req, res) {
+    try {
+      const result = await CustomerService.getMyVouchers(req.user.id);
+      res.status(result.status).json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
   static async update(req, res) {
     try {
       const result = await CustomerService.updateCustomer(req.params.id, req.body);

@@ -141,6 +141,20 @@ class CustomerService {
     return { status: 200, success: true, message: 'Cập nhật thông tin thành công', data: updatedCustomer };
   }
 
+  // Lấy danh sách voucher của khách hàng
+  static async getMyVouchers(customerId) {
+    const vouchers = await CustomerVoucher.find({ customerId })
+      .populate('voucherId')
+      .sort({ isUsed: 1, expiryDate: 1 });
+
+    return {
+      status: 200,
+      success: true,
+      message: 'Lấy danh sách voucher thành công',
+      data: vouchers,
+    };
+  }
+
   // Cộng / Trừ điểm khách hàng
   static async adjustPoints(id, pointsChange, title, description, transactionType) {
     const customer = await Customer.findById(id);
