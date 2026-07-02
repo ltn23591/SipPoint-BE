@@ -22,6 +22,7 @@ router.get('/me/vouchers', protect, CustomerController.getMyVouchers);
 // Khách hàng lấy danh sách đơn hàng
 router.get('/me/orders', protect, CustomerController.getMyOrders);
 router.get('/me/orders/:orderId', protect, CustomerController.getMyOrderById);
+router.post('/me/orders', protect, CustomerController.createMyOrder);
 
 router.get('/:id', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.getById);
 router.put('/:id', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.update);

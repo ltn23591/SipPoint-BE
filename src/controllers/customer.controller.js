@@ -87,6 +87,20 @@ class CustomerController {
     }
   }
 
+  static async createMyOrder(req, res) {
+    try {
+      const OrderService = require('../services/order.service');
+      const orderData = {
+        ...req.body,
+        customerId: req.user.id
+      };
+      const result = await OrderService.createOrder(orderData, null);
+      res.status(result.status).json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
   static async adjustPoints(req, res) {
     try {
       const { pointsChange, title, description, transactionType } = req.body;
