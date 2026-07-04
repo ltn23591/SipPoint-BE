@@ -1,4 +1,5 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { OpenAI } = require('openai');
 const mongoose = require('mongoose');
 const Product = require('../models/product.model');
 const ChatSession = require('../models/chatSession.model');
@@ -8,20 +9,51 @@ const CustomerVoucher = require('../models/customerVoucher.model');
 const Order = require('../models/order.model');
 const { OrderItem } = require('../models/orderItem.model');
 
-// Sử dụng biến môi trường
+// Sử dụng biến môi trường Gemini
 const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
   console.warn('GEMINI_API_KEY chưa được cấu hình. Vui lòng kiểm tra .env');
 }
-// Debug: Log API key (không log full key, chỉ 10 ký tự đầu)
 if (apiKey) {
   console.log('[AI Service] API Key loaded:', apiKey.substring(0, 10) + '...');
 }
 const genAI = new GoogleGenerativeAI(apiKey);
 
+// Sử dụng biến môi trường Gemini dự phòng
+const apiKeyBackup = process.env.GEMINI_API_KEY_BACKUP;
+let genAIBackup = null;
+if (apiKeyBackup) {
+  console.log('[AI Service] API Key Backup loaded:', apiKeyBackup.substring(0, 10) + '...');
+  genAIBackup = new GoogleGenerativeAI(apiKeyBackup);
+} else {
+  console.warn('GEMINI_API_KEY_BACKUP chưa được cấu hình. Chỉ sử dụng 1 khóa Gemini chính.');
+}
+
+// Sử dụng biến môi trường OpenAI làm dự phòng
+const openaiApiKey = process.env.OPENAI_API_KEY;
+let openai = null;
+if (openaiApiKey) {
+  console.log('[AI Service] OpenAI API Key loaded:', openaiApiKey.substring(0, 10) + '...');
+  openai = new OpenAI({ apiKey: openaiApiKey });
+} else {
+  console.warn('OPENAI_API_KEY chưa được cấu hình. Chế độ dự phòng OpenAI sẽ không khả dụng nếu Gemini hết token.');
+}
+
 class AIService {
-  static async chatWithProducts(userMessage, sessionId) {
+  static async chatWithProducts(userMessage, sessionId, cart) {
     try {
+      let cartInfoText = '';
+      if (cart && Array.isArray(cart) && cart.length > 0) {
+        cartInfoText = `
+GIỎ HÀNG HIỆN TẠI CỦA KHÁCH HÀNG (Lấy từ Local Storage của Trình duyệt):
+${cart.map(item => `- **${item.name}** | Số lượng: ${item.qty || 1} | Đơn giá: ${item.price ? item.price.toLocaleString('vi-VN') + ' VNĐ' : 'Chưa rõ'}`).join('\n')}
+
+HƯỚNG DẪN RIÊNG VỀ GIỎ HÀNG:
+- Khách hàng đã thêm các sản phẩm trên vào giỏ hàng của họ.
+- Bạn có thể tham khảo giỏ hàng này để gợi ý thêm topping, nâng size cho món trong giỏ, hoặc đề xuất các món nước/đồ ăn kèm hợp vị để up-sell.
+`;
+      }
+
       // 1. Lấy dữ liệu sản phẩm, khuyến mãi và thông tin khách hàng từ DB song song
       const isObjectId = mongoose.Types.ObjectId.isValid(sessionId);
       
@@ -119,6 +151,7 @@ HƯỚNG DẪN RIÊNG CHO KHÁCH HÀNG NÀY:
 Bạn là một nhân viên tư vấn bán hàng (AI Assistant) vô cùng nhiệt tình, chuyên nghiệp, ấm áp và thân thiện tại cửa hàng đồ uống "SipPoint".
 Nhiệm vụ của bạn là lắng nghe, hỗ trợ khách hàng và tư vấn các món nước uống cũng như các chương trình khuyến mãi phù hợp nhất dựa trên danh sách dữ liệu thực tế từ hệ thống.
 ${customerInfoText}
+${cartInfoText}
 HÃY TUÂN THỦ CÁC NGUYÊN TẮC SAU:
 1. XƯNG HÔ: Lịch sự, gần gũi, sử dụng các từ ngữ thân thiện như "Dạ", "ạ", xưng "SipPoint" hoặc "Em" và gọi khách hàng là "Anh/Chị" hoặc "Bạn". (Chào bằng tên riêng nếu có thông tin khách hàng ở trên).
 2. TƯ VẤN SẢN PHẨM: Chỉ giới thiệu và tư vấn các sản phẩm có mặt trong DANH SÁCH SẢN PHẨM dưới đây. Tuyệt đối KHÔNG tự bịa ra sản phẩm mới. Nếu khách hỏi món nước không có trong danh sách, hãy khéo léo xin lỗi và gợi ý một món nước tương tự hoặc nổi bật của quán.
@@ -157,33 +190,56 @@ DANH SÁCH VOUCHER KHUYẾN MÃI ĐANG HOẠT ĐỘNG:
 ${voucherCatalog}
       `;
 
-      // Khởi tạo model
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-3.5-flash',
-        systemInstruction: systemInstruction,
-      });
-
       // 3. Lấy hoặc tạo mới Session trong DB
       let chatSession = await ChatSession.findOne({ sessionId });
       if (!chatSession) {
         chatSession = new ChatSession({ sessionId, messages: [] });
       }
 
-      // 4. Bắt đầu chat với lịch sử từ DB
-      // Lưu ý: Lịch sử DB đã lưu theo chuẩn {role: 'user'/'model', parts: [{text: '...'}]}
-      const chat = model.startChat({
-        history: chatSession.messages.map((msg) => ({
-          role: msg.role,
-          parts: msg.parts.map((p) => ({ text: p.text })),
-        })),
-      });
+      // 4. Gửi tin nhắn mới với cơ chế Gemini chính -> Gemini phụ
+      let text;
+      try {
+        const model = genAI.getGenerativeModel({
+          model: 'gemini-3.5-flash',
+          systemInstruction: systemInstruction,
+        });
+        const chat = model.startChat({
+          history: chatSession.messages.map((msg) => ({
+            role: msg.role,
+            parts: msg.parts.map((p) => ({ text: p.text })),
+          })),
+        });
+        const result = await chat.sendMessage(userMessage);
+        const response = await result.response;
+        text = response.text();
+      } catch (geminiError) {
+        console.warn('[AI Service] Lỗi Gemini chính, thử chuyển sang Gemini dự phòng:', geminiError.message);
+        if (genAIBackup) {
+          try {
+            const modelBackup = genAIBackup.getGenerativeModel({
+              model: 'gemini-3.5-flash',
+              systemInstruction: systemInstruction,
+            });
+            const chatBackup = modelBackup.startChat({
+              history: chatSession.messages.map((msg) => ({
+                role: msg.role,
+                parts: msg.parts.map((p) => ({ text: p.text })),
+              })),
+            });
+            const resultBackup = await chatBackup.sendMessage(userMessage);
+            const responseBackup = await resultBackup.response;
+            text = responseBackup.text();
+          } catch (geminiBackupError) {
+            console.warn('[AI Service] Lỗi cả Gemini dự phòng, chuyển sang OpenAI:', geminiBackupError.message);
+            throw geminiBackupError;
+          }
+        } else {
+          console.warn('[AI Service] Không có cấu hình Gemini dự phòng, chuyển sang OpenAI');
+          throw geminiError;
+        }
+      }
 
-      // 5. Gửi tin nhắn mới
-      const result = await chat.sendMessage(userMessage);
-      const response = await result.response;
-      const text = response.text();
-
-      // 6. Lưu tin nhắn của User và AI vào DB
+      // 5. Lưu tin nhắn của User và AI vào DB
       chatSession.messages.push({
         role: 'user',
         parts: [{ text: userMessage }],
@@ -197,8 +253,146 @@ ${voucherCatalog}
 
       return text;
     } catch (error) {
-      console.error('Lỗi Gemini AI:', error);
-      throw new Error(`Lỗi từ Google Gemini: ${error.message}`);
+      console.warn('[AI Service] Lỗi Gemini AI, thử chuyển sang OpenAI:', error.message);
+      if (!openaiApiKey) {
+        console.error('[AI Service] Không thể chuyển sang OpenAI: Chưa cấu hình OPENAI_API_KEY trong .env');
+        throw new Error(`Lỗi Gemini AI: ${error.message}. Hơn nữa, OPENAI_API_KEY chưa được cấu hình làm dự phòng.`);
+      }
+
+      try {
+        if (!openai) {
+          openai = new OpenAI({ apiKey: openaiApiKey });
+        }
+
+        // 1. Tái lập lịch sử cuộc trò chuyện theo định dạng OpenAI
+        const isObjectId = mongoose.Types.ObjectId.isValid(sessionId);
+        const [products, vouchers, customer] = await Promise.all([
+          Product.find({ isActive: 'active', isDeleted: false }).populate('category', 'name').lean(),
+          Voucher.find({ isActive: 'active', endDate: { $gt: new Date() } }).lean(),
+          isObjectId 
+            ? Customer.findById(sessionId).lean() 
+            : Customer.findOne({ $or: [{ customerId: sessionId }, { phone: sessionId }, { email: sessionId }] }).lean(),
+        ]);
+
+        let customerVouchers = [];
+        if (customer) {
+          customerVouchers = await CustomerVoucher.find({
+            customerId: customer._id,
+            isUsed: false,
+            expiryDate: { $gt: new Date() },
+          })
+            .populate('voucherId')
+            .lean();
+        }
+
+        let productCatalog = 'Hiện tại cửa hàng đang cập nhật sản phẩm. Vui lòng quay lại sau.';
+        if (products && products.length) {
+          productCatalog = products
+            .map((p) => {
+              const price = typeof p.price === 'number' ? p.price.toLocaleString('vi-VN') + ' VNĐ' : 'Liên hệ';
+              const category = p.category && p.category.name ? p.category.name : 'Chung';
+              const stock = typeof p.stock === 'number' && p.stock > 0 ? `Còn ${p.stock} sản phẩm` : 'Hết hàng';
+              return `- ${p.name} | Category: ${category} | Giá: ${price} | ${stock}`;
+            })
+            .join('\n');
+        }
+
+        let voucherCatalog = 'Hiện tại cửa hàng không có mã giảm giá nào đang diễn ra.';
+        if (vouchers && vouchers.length) {
+          voucherCatalog = vouchers
+            .map((v) => {
+              const discountStr = v.discountType === 0 ? `${v.discountValue}%` : `${v.discountValue.toLocaleString('vi-VN')} VNĐ`;
+              const minOrder = v.minOrderValue > 0 ? `Đơn tối thiểu: ${v.minOrderValue.toLocaleString('vi-VN')} VNĐ` : 'Mọi đơn hàng';
+              const maxDiscount = v.discountType === 0 && v.maxDiscountLimit ? ` (Giảm tối đa: ${v.maxDiscountLimit.toLocaleString('vi-VN')} VNĐ)` : '';
+              return `- Mã: **${v.code}** | ${v.title} (${v.description || ''}) | Giảm: ${discountStr}${maxDiscount} | ${minOrder}`;
+            })
+            .join('\n');
+        }
+
+        let customerInfoText = '';
+        if (customer) {
+          let personalVouchersText = 'Hiện tại khách hàng không có voucher cá nhân nào chưa dùng trong ví.';
+          if (customerVouchers && customerVouchers.length) {
+            personalVouchersText = customerVouchers
+              .map((cv) => {
+                const code = cv.voucherId ? cv.voucherId.code : 'VOUCHER';
+                const expStr = new Date(cv.expiryDate).toLocaleDateString('vi-VN');
+                return `- Mã cá nhân: **${code}** | ${cv.title} | Hạn dùng: ${expStr}`;
+              })
+              .join('\n');
+          }
+
+          customerInfoText = `
+THÔNG TIN KHÁCH HÀNG ĐANG TRÒ CHUYỆN:
+- Tên đầy đủ: ${customer.fullName}
+- Số điện thoại: ${customer.phone}
+- Hạng thành viên: ${customer.tier}
+- Điểm tích lũy hiện có (SipPoints): ${customer.currentPoints} điểm
+- Tổng chi tiêu tích lũy: ${customer.totalSpent.toLocaleString('vi-VN')} VNĐ
+
+VÍ VOUCHER SỞ HỮU CỦA KHÁCH HÀNG:
+${personalVouchersText}
+
+HƯỚNG DẪN RIÊNG CHO KHÁCH HÀNG NÀY:
+- Hãy chào khách hàng bằng tên riêng (${customer.fullName}) một cách lịch sự, thân mật (Ví dụ: "Dạ, SipPoint xin chào anh/chị ${customer.fullName} ạ!").
+- Khi khách hàng hỏi về điểm số, hạng thành viên, hoặc tổng chi tiêu, hãy trả lời chính xác số liệu trên của họ.
+- Nếu khách hỏi về các voucher cá nhân họ đang sở hữu (ví voucher riêng), hãy đọc chính xác danh sách VÍ VOUCHER SỞ HỮU ở trên. Nhắc nhở họ sử dụng trước hạn dùng.
+`;
+        }
+
+        const systemInstruction = `
+Bạn là một nhân viên tư vấn bán hàng (AI Assistant) vô cùng nhiệt tình, chuyên nghiệp, ấm áp và thân thiện tại cửa hàng đồ uống "SipPoint".
+Nhiệm vụ của bạn là lắng nghe, hỗ trợ khách hàng và tư vấn các món nước uống cũng như các chương trình khuyến mãi phù hợp nhất dựa trên danh sách dữ liệu thực tế từ hệ thống.
+${customerInfoText}
+${cartInfoText}
+HÃY TUÂN THỦ CÁC NGUYÊN TẮC SAU:
+1. XƯNG HÔ: Lịch sự, gần gũi, sử dụng các từ ngữ thân thiện như "Dạ", "ạ", xưng "SipPoint" hoặc "Em" và gọi khách hàng là "Anh/Chị" hoặc "Bạn". (Chào bằng tên riêng nếu có thông tin khách hàng ở trên).
+2. TƯ VẤN SẢN PHẨM: Chỉ giới thiệu và tư vấn các sản phẩm có mặt trong DANH SÁCH SẢN PHẨM dưới đây. Tuyệt đối KHÔNG tự bịa ra sản phẩm mới. Nếu khách hỏi món nước không có trong danh sách, hãy khéo léo xin lỗi và gợi ý một món nước tương tự hoặc nổi bật của quán.
+3. CHI TIẾT SẢN PHẨM: Khi khách hỏi về món nước nào đó, hãy giới thiệu tên món, giá cả (luôn dùng VNĐ kèm dấu phân cách hàng ngàn, ví dụ: 30.000 VNĐ) và tình trạng còn hàng hay hết hàng.
+4. GỢI Ý ĐI KÈM (UP-SELL/CROSS-SELL):
+   - Nếu khách chọn đồ uống, hãy chủ động gợi ý thêm các tùy chọn về size hoặc topping phù hợp (ví dụ: trân châu, thạch...) nếu sản phẩm đó hỗ trợ.
+   - Thân thiện gợi ý khách hàng tích điểm thành viên (SipPoint) để nhận các ưu đãi hoặc đổi voucher hấp dẫn.
+5. VOUCHER & KHUYẾN MÃI: Khi khách hỏi về khuyến mãi, giảm giá, hoặc ưu đãi chung, hãy giới thiệu các mã voucher đang hoạt động từ danh sách dưới đây. Giải thích rõ điều kiện sử dụng (như đơn tối thiểu, mức giảm tối đa) và hướng dẫn khách copy mã để áp dụng khi thanh toán. Nếu khách hỏi về voucher cá nhân trong ví, hãy kiểm tra danh sách ví voucher riêng ở trên và báo cho khách.
+6. TRÌNH BÀY: Định dạng câu trả lời gọn gàng bằng Markdown (dùng chữ in đậm cho tên đồ uống, mã voucher, sử dụng dấu gạch đầu dòng rõ ràng để khách hàng dễ đọc).
+
+DANH SÁCH SẢN PHẨM HIỆN CÓ CỦA SIPPOINT:
+${productCatalog}
+
+DANH SÁCH VOUCHER KHUYẾN MÃI ĐANG HOẠT ĐỘNG:
+${voucherCatalog}
+`;
+
+        let chatSession = await ChatSession.findOne({ sessionId });
+        if (!chatSession) {
+          chatSession = new ChatSession({ sessionId, messages: [] });
+        }
+
+        const messagesForOpenAI = [{ role: 'system', content: systemInstruction }];
+        chatSession.messages.forEach((msg) => {
+          messagesForOpenAI.push({
+            role: msg.role === 'model' ? 'assistant' : 'user',
+            content: msg.parts.map((p) => p.text).join('\n'),
+          });
+        });
+        messagesForOpenAI.push({ role: 'user', content: userMessage });
+
+        const completion = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: messagesForOpenAI,
+        });
+
+        const reply = completion.choices[0].message.content;
+
+        // Lưu lịch sử
+        chatSession.messages.push({ role: 'user', parts: [{ text: userMessage }] });
+        chatSession.messages.push({ role: 'model', parts: [{ text: reply }] });
+        await chatSession.save();
+
+        return reply;
+      } catch (openaiError) {
+        console.error('[AI Service] Lỗi cả OpenAI fallback:', openaiError);
+        throw new Error(`Cả Gemini AI và OpenAI dự phòng đều gặp lỗi. Chi tiết lỗi OpenAI: ${openaiError.message}`);
+      }
     }
   }
 
@@ -269,14 +463,35 @@ ${promptData}
 Dựa trên dữ liệu trên, hãy phân tích và đề xuất món nước nào sẽ được mua nhiều nhất, đồng thời dự báo xu hướng bán hàng tiếp theo.
 `;
 
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-3.5-flash',
-        systemInstruction: systemInstruction,
-      });
-
-      const result = await model.generateContent(userContent);
-      const response = await result.response;
-      const analysisText = response.text();
+      let analysisText;
+      try {
+        const model = genAI.getGenerativeModel({
+          model: 'gemini-3.5-flash',
+          systemInstruction: systemInstruction,
+        });
+        const result = await model.generateContent(userContent);
+        const response = await result.response;
+        analysisText = response.text();
+      } catch (geminiError) {
+        console.warn('[AI Service] Lỗi Gemini chính trong recommendTopProduct, thử chuyển sang Gemini dự phòng:', geminiError.message);
+        if (genAIBackup) {
+          try {
+            const modelBackup = genAIBackup.getGenerativeModel({
+              model: 'gemini-3.5-flash',
+              systemInstruction: systemInstruction,
+            });
+            const resultBackup = await modelBackup.generateContent(userContent);
+            const responseBackup = await resultBackup.response;
+            analysisText = responseBackup.text();
+          } catch (geminiBackupError) {
+            console.warn('[AI Service] Lỗi cả Gemini dự phòng trong recommendTopProduct, chuyển sang OpenAI:', geminiBackupError.message);
+            throw geminiBackupError;
+          }
+        } else {
+          console.warn('[AI Service] Không có Gemini dự phòng trong recommendTopProduct, chuyển sang OpenAI');
+          throw geminiError;
+        }
+      }
 
       return {
         success: true,
@@ -284,8 +499,37 @@ Dựa trên dữ liệu trên, hãy phân tích và đề xuất món nước n�
         salesStats: productSalesData
       };
     } catch (error) {
-      console.error('Lỗi khi đề xuất sản phẩm bán chạy:', error);
-      throw new Error(`Lỗi Gemini AI: ${error.message}`);
+      console.warn('[AI Service] Lỗi Gemini AI trong recommendTopProduct, chuyển sang OpenAI:', error.message);
+      if (!openaiApiKey) {
+        console.error('[AI Service] Không thể chuyển sang OpenAI: Chưa cấu hình OPENAI_API_KEY trong .env');
+        throw new Error(`Lỗi Gemini AI: ${error.message}. Hơn nữa, OPENAI_API_KEY chưa được cấu hình làm dự phòng.`);
+      }
+
+      try {
+        if (!openai) {
+          openai = new OpenAI({ apiKey: openaiApiKey });
+        }
+
+        const completion = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemInstruction },
+            { role: 'user', content: userContent }
+          ],
+        });
+
+        const reply = completion.choices[0].message.content;
+
+        return {
+          success: true,
+          recommendation: reply,
+          salesStats: productSalesData,
+          fallback: 'openai'
+        };
+      } catch (openaiError) {
+        console.error('[AI Service] Lỗi cả OpenAI fallback trong recommendTopProduct:', openaiError);
+        throw new Error(`Cả Gemini AI và OpenAI dự phòng đều gặp lỗi. Chi tiết lỗi OpenAI: ${openaiError.message}`);
+      }
     }
   }
 }

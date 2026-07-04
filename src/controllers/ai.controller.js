@@ -2,7 +2,7 @@ const AIService = require('../services/ai.service');
 
 exports.chatWithProducts = async (req, res, next) => {
   try {
-    const { message, sessionId } = req.body;
+    const { message, sessionId, cart } = req.body;
 
     if (!message) {
       return res.status(400).json({
@@ -18,7 +18,7 @@ exports.chatWithProducts = async (req, res, next) => {
       });
     }
 
-    const aiResponse = await AIService.chatWithProducts(message, sessionId);
+    const aiResponse = await AIService.chatWithProducts(message, sessionId, cart);
 
     res.status(200).json({
       success: true,
