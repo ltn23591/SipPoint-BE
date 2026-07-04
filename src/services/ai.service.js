@@ -24,8 +24,8 @@ class AIService {
       const isObjectId = mongoose.Types.ObjectId.isValid(sessionId);
       
       const [products, vouchers, customer] = await Promise.all([
-        Product.find({ isActive: 1 }).populate('category', 'name').lean(),
-        Voucher.find({ isActive: 1, endDate: { $gt: new Date() } }).lean(),
+        Product.find({ isActive: 'active', isDeleted: false }).populate('category', 'name').lean(),
+        Voucher.find({ isActive: 'active', endDate: { $gt: new Date() } }).lean(),
         isObjectId 
           ? Customer.findById(sessionId).lean() 
           : Customer.findOne({ $or: [{ customerId: sessionId }, { phone: sessionId }, { email: sessionId }] }).lean(),
@@ -157,7 +157,7 @@ ${voucherCatalog}
 
       // Khởi tạo model
       const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
+        model: 'gemini-3.5-flash',
         systemInstruction: systemInstruction,
       });
 
