@@ -4,15 +4,20 @@ const sendTokenResponse = (user, status, res, message = 'Thành công', userType
   // Lấy role code từ roleId (nếu đã populate) hoặc fallback
   const roleCode = user.roleId && user.roleId.code ? user.roleId.code : (userType === 'customer' ? 'customer' : 'unknown');
 
+  // Cấu hình thời gian hết hạn phiên linh hoạt theo đối tượng người dùng
+  const isCustomer = userType === 'customer';
+  const expiresIn = isCustomer ? '30d' : '1d';
+  const cookieMaxAge = isCustomer 
+    ? 30 * 24 * 60 * 60 * 1000 // 30 ngày
+    : 1 * 24 * 60 * 60 * 1000; // 1 ngày
+
   // Tạo token
   const token = jwt.sign({ id: user._id, role: roleCode, type: userType }, process.env.JWT_SECRET || 'secret123', {
-    expiresIn: '30d',
+    expiresIn,
   });
 
   const options = {
-    expires: new Date(
-      Date.now() + 30 * 24 * 60 * 60 * 1000 // 30 ngày
-    ),
+    expires: new Date(Date.now() + cookieMaxAge),
     httpOnly: true,
   };
 

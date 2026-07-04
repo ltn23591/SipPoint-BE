@@ -286,8 +286,18 @@ class AuthService {
     if (!employee) throw new AppError('Không tìm thấy tài khoản với email này', 404);
 
     const otp = crypto.randomInt(100000, 999999).toString();
+    
+    // Lưu OTP vào database để đối chiếu thay vì đưa vào JWT
+    await OTP.deleteMany({ userId: employee._id, type: OTP_TYPE.RESET_PASSWORD, userModel: 'Employee' });
+    await OTP.create({
+      userId: employee._id,
+      code: otp,
+      type: OTP_TYPE.RESET_PASSWORD,
+      userModel: 'Employee'
+    });
+
     const activationSecret = process.env.ACTIVATION_SECRET || 'activation_secret_123';
-    const activationToken = jwt.sign({ email: employee.email, otp }, activationSecret, { expiresIn: '5m' });
+    const activationToken = jwt.sign({ email: employee.email }, activationSecret, { expiresIn: '5m' });
 
     await sendEmail({
       email: employee.email,
@@ -311,10 +321,19 @@ class AuthService {
       throw new AppError('Mã xác thực không hợp lệ', 400);
     }
 
-    if (decoded.otp !== activation_code) throw new AppError('Mã OTP không chính xác', 400);
-
     const employee = await Employee.findOne({ email: decoded.email, isDeleted: false });
     if (!employee) throw new AppError('Không tìm thấy tài khoản nhân viên', 404);
+
+    // Đối chiếu OTP trong database
+    const otpRecord = await OTP.findOne({
+      userId: employee._id,
+      code: activation_code,
+      type: OTP_TYPE.RESET_PASSWORD,
+      userModel: 'Employee'
+    });
+
+    if (!otpRecord) throw new AppError('Mã OTP không chính xác hoặc đã hết hạn', 400);
+    await otpRecord.deleteOne();
 
     const resetToken = crypto.randomBytes(20).toString('hex');
     employee.resetPasswordToken = resetToken;

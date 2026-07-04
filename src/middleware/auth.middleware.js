@@ -43,6 +43,27 @@ exports.protect = async (req, res, next) => {
             return next(new Error('Phiên đăng nhập đã hết hạn hoặc tài khoản không tồn tại, vui lòng đăng nhập lại.'));
         }
 
+        // Kiểm tra trạng thái tài khoản
+        if (decoded.type === 'customer') {
+            if (!user.isActive) {
+                res.status(403);
+                return next(new Error('Tài khoản của bạn đang bị khóa'));
+            }
+            if (!user.isVerified) {
+                res.status(403);
+                return next(new Error('Vui lòng xác thực tài khoản trước khi truy cập'));
+            }
+        } else {
+            if (user.isDeleted) {
+                res.status(401);
+                return next(new Error('Tài khoản không tồn tại hoặc đã bị xóa'));
+            }
+            if (user.status === 'banned') {
+                res.status(403);
+                return next(new Error('Tài khoản của bạn đang bị khóa'));
+            }
+        }
+
         req.user = user;
         next();
     } catch {
