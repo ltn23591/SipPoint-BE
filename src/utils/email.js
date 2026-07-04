@@ -9,6 +9,7 @@ if (process.env.SMTP_HOST === 'smtp.gmail.com') {
     host: 'smtp.gmail.com',
     port: 465,
     secure: true, // true for 465, false for other ports
+    family: 4, // Bắt buộc sử dụng IPv4 vì Render thường không hỗ trợ định tuyến IPv6 (Fix lỗi ENETUNREACH)
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
@@ -21,6 +22,7 @@ if (process.env.SMTP_HOST === 'smtp.gmail.com') {
   transporterConfig = {
     host: process.env.SMTP_HOST || 'smtp.ethereal.email',
     port: process.env.SMTP_PORT || 587,
+    family: 4, // Bắt buộc sử dụng IPv4
     auth: {
       user: process.env.SMTP_USER || 'test@example.com',
       pass: process.env.SMTP_PASS || 'password',
