@@ -1170,6 +1170,42 @@ paths:
                     type: string
                     example: 'Lỗi từ Google Gemini: API key not valid...'
 
+  /api/v1/ai/recommend-top-product:
+    get:
+      summary: AI đề xuất nước uống được mua nhiều nhất dựa trên dữ liệu thực tế
+      tags: [AI]
+      responses:
+        200:
+          description: Đề xuất thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  recommendation:
+                    type: string
+                    description: Nội dung phân tích và đề xuất bằng Markdown từ AI
+                  salesStats:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        category:
+                          type: string
+                        price:
+                          type: number
+                        qtySold:
+                          type: number
+                        revenue:
+                          type: number
+                        stock:
+                          type: number
+
   /api/v1/zones:
     get:
       summary: Lấy danh sách khu vực
@@ -2531,102 +2567,22 @@ paths:
       responses:
         "200":
           description: Thành công
-  /api/v1/feedback/search:
-    post:
-      summary: Tìm kiếm đánh giá & phản hồi
-      description: |
-        ### Cách kiểm thử (How to test):
-        - Cần Token đăng nhập.
-        - Nhấp **Try it out**.
-        - Gửi Request Body lọc (Ví dụ: `{"rating": 5}`).
-        - Nhấp **Execute** để xem danh sách bình luận/đánh giá.
-      tags:
-        - Feedback
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        "200":
-          description: Thành công
-  /api/v1/feedback/detail/{id}:
+  /api/v1/feedback:
     get:
-      summary: Chi tiết đánh giá
-      description: |
-        ### Cách kiểm thử (How to test):
-        - Yêu cầu Token đăng nhập.
-        - Nhấp **Try it out**.
-        - Điền `id` phản hồi đánh giá vào Path parameter.
-        - Nhấp **Execute**.
+      summary: AI đề xuất nước uống được mua nhiều nhất (API thay thế cho api đánh giá)
       tags:
         - Feedback
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID của phản hồi đánh giá
       responses:
         "200":
           description: Thành công
-  /api/v1/feedback/update:
-    put:
-      summary: Cập nhật hoặc phản hồi đánh giá
-      description: |
-        ### Cách kiểm thử (How to test):
-        1. Yêu cầu đăng nhập. Nhân viên có thể sử dụng API này để trả lời đánh giá của khách hàng.
-        2. Nhấp **Try it out**.
-        3. Điền Request Body chứa ID đánh giá và nội dung phản hồi:
-          ```json
-          {
-            "id": "id_đánh_giá",
-            "reply": "Cảm ơn bạn đã phản hồi, chúng tôi sẽ cải thiện chất lượng phục vụ!",
-            "status": "approved"
-          }
-          ```
-        4. Nhấp **Execute**.
+  /api/v1/feedback/recommend-top-product:
+    get:
+      summary: AI đề xuất nước uống được mua nhiều nhất
       tags:
         - Feedback
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Feedback"
       responses:
         "200":
           description: Thành công
-  /api/v1/feedback/export:
-    post:
-      summary: Xuất danh sách đánh giá ra Excel
-      description: |
-        ### Cách kiểm thử (How to test):
-        - Yêu cầu Token đăng nhập.
-        - Nhấp **Try it out**.
-        - Điền tham số lọc nếu có trong Request Body (hoặc gửi `{}` để xuất toàn bộ).
-        - Nhấp **Execute**. Kết quả trả về sẽ là một File Excel nhị phân dạng Blob.
-      tags:
-        - Feedback
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        "200":
-          description: File Excel dạng Blob
   /api/v1/activity-log/search:
     post:
       summary: Tìm kiếm nhật ký hoạt động (Admin)

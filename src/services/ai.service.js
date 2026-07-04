@@ -5,6 +5,8 @@ const ChatSession = require('../models/chatSession.model');
 const Voucher = require('../models/voucher.model');
 const Customer = require('../models/customer.model');
 const CustomerVoucher = require('../models/customerVoucher.model');
+const Order = require('../models/order.model');
+const { OrderItem } = require('../models/orderItem.model');
 
 // Sử dụng biến môi trường
 const apiKey = process.env.GEMINI_API_KEY;
@@ -197,6 +199,93 @@ ${voucherCatalog}
     } catch (error) {
       console.error('Lỗi Gemini AI:', error);
       throw new Error(`Lỗi từ Google Gemini: ${error.message}`);
+    }
+  }
+
+  static async recommendTopProduct() {
+    try {
+     
+
+      // 1. Lấy tất cả sản phẩm đang hoạt động
+      const products = await Product.find({ isActive: 'active', isDeleted: false }).populate('category', 'name').lean();
+
+      // 2. Thống kê số lượng bán ra của từng sản phẩm từ các đơn hàng hoàn thành
+      const completedOrders = await Order.find({ status: 'completed' }).select('_id');
+      const orderIds = completedOrders.map(o => o._id);
+
+      const salesStats = await OrderItem.aggregate([
+        { $match: { orderId: { $in: orderIds } } },
+        {
+          $group: {
+            _id: '$productId',
+            qty: { $sum: '$qty' },
+            revenue: { $sum: '$subtotal' }
+          }
+        }
+      ]);
+
+      // Map statistics to products
+      const statsMap = new Map(salesStats.map(item => [item._id.toString(), item]));
+      
+      const productSalesData = products.map(p => {
+        const stats = statsMap.get(p._id.toString()) || { qty: 0, revenue: 0 };
+        return {
+          name: p.name,
+          category: p.category ? p.category.name : 'Khác',
+          price: p.price,
+          qtySold: stats.qty,
+          revenue: stats.revenue,
+          stock: p.stock
+        };
+      });
+
+      // Sắp xếp theo số lượng bán giảm dần
+      productSalesData.sort((a, b) => b.qtySold - a.qtySold);
+
+      // 3. Chuẩn bị prompt gửi tới Gemini AI
+      const promptData = productSalesData.map(p => 
+        `- **${p.name}** (${p.category}) - Giá: ${p.price ? p.price.toLocaleString('vi-VN') : 0} VNĐ - Đã bán: ${p.qtySold} ly - Doanh thu: ${p.revenue ? p.revenue.toLocaleString('vi-VN') : 0} VNĐ - Tồn kho: ${p.stock}`
+      ).join('\n');
+
+      const systemInstruction = `
+Bạn là một chuyên gia phân tích dữ liệu bán hàng và tư vấn chiến lược kinh doanh của chuỗi cửa hàng đồ uống "SipPoint".
+Nhiệm vụ của bạn là phân tích dữ liệu bán hàng thực tế từ hệ thống và đưa ra đề xuất/dự đoán xem món nước nào sẽ được mua nhiều nhất trong thời gian tới (Sản phẩm bán chạy nhất / Best-seller).
+
+HÃY TUÂN THỦ NGUYÊN TẮC QUAN TRỌNG:
+- Tuyệt đối KHÔNG sử dụng đánh giá sao (star rating), số sao, hay điểm đánh giá trung bình trong báo cáo này.
+- Đề xuất của bạn phải dựa hoàn toàn vào số liệu số lượng đã bán thực tế (số lượng ly bán được) và doanh thu, cùng với xu hướng/hương vị của đồ uống.
+
+Hãy thực hiện phân tích theo các khía cạnh sau:
+1. Đề xuất rõ ràng món nước nào sẽ được mua nhiều nhất dựa trên số lượng đã bán thực tế.
+2. Giải thích lý do vì sao món đó được ưa chuộng (về hương vị, giá cả, xu hướng, hoặc tính tiện lợi).
+3. Đưa ra các gợi ý chiến lược cho quán để thúc đẩy doanh số hơn nữa (ví dụ: khuyến mãi đi kèm, combo, hay tối ưu hóa tồn kho).
+4. Trình bày kết quả phân tích bằng tiếng Việt một cách chuyên nghiệp, rõ ràng, sử dụng định dạng Markdown đẹp mắt với các tiêu đề, danh sách, và chữ in đậm.
+`;
+
+      const userContent = `
+Dưới đây là danh sách sản phẩm và số liệu bán hàng thực tế của SipPoint:
+${promptData}
+
+Dựa trên dữ liệu trên, hãy phân tích và đề xuất món nước nào sẽ được mua nhiều nhất, đồng thời dự báo xu hướng bán hàng tiếp theo.
+`;
+
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-3.5-flash',
+        systemInstruction: systemInstruction,
+      });
+
+      const result = await model.generateContent(userContent);
+      const response = await result.response;
+      const analysisText = response.text();
+
+      return {
+        success: true,
+        recommendation: analysisText,
+        salesStats: productSalesData
+      };
+    } catch (error) {
+      console.error('Lỗi khi đề xuất sản phẩm bán chạy:', error);
+      throw new Error(`Lỗi Gemini AI: ${error.message}`);
     }
   }
 }
