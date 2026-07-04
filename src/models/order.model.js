@@ -61,7 +61,7 @@ const orderSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['dine_in', 'takeaway', 'delivery'],
+      enum: ['dine_in', 'takeaway', 'delivery', 'counter'],
       default: 'dine_in',
     },
     status: {

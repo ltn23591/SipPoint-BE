@@ -55,6 +55,7 @@ const ORDER_TYPE = {
     DINE_IN: "dine_in",
     TAKEAWAY: "takeaway",
     DELIVERY: "delivery",
+    COUNTER: "counter",
 };
 
 const PAYMENT_METHOD = {
