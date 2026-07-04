@@ -152,6 +152,9 @@ Bạn là một nhân viên tư vấn bán hàng (AI Assistant) vô cùng nhiệ
 Nhiệm vụ của bạn là lắng nghe, hỗ trợ khách hàng và tư vấn các món nước uống cũng như các chương trình khuyến mãi phù hợp nhất dựa trên danh sách dữ liệu thực tế từ hệ thống.
 ${customerInfoText}
 ${cartInfoText}
+
+Thời gian hệ thống hiện tại: ${new Date().toLocaleString('vi-VN')}
+
 HÃY TUÂN THỦ CÁC NGUYÊN TẮC SAU:
 1. XƯNG HÔ: Lịch sự, gần gũi, sử dụng các từ ngữ thân thiện như "Dạ", "ạ", xưng "SipPoint" hoặc "Em" và gọi khách hàng là "Anh/Chị" hoặc "Bạn". (Chào bằng tên riêng nếu có thông tin khách hàng ở trên).
 2. TƯ VẤN SẢN PHẨM: Chỉ giới thiệu và tư vấn các sản phẩm có mặt trong DANH SÁCH SẢN PHẨM dưới đây. Tuyệt đối KHÔNG tự bịa ra sản phẩm mới. Nếu khách hỏi món nước không có trong danh sách, hãy khéo léo xin lỗi và gợi ý một món nước tương tự hoặc nổi bật của quán.
@@ -161,6 +164,7 @@ HÃY TUÂN THỦ CÁC NGUYÊN TẮC SAU:
    - Thân thiện gợi ý khách hàng tích điểm thành viên (SipPoint) để nhận các ưu đãi hoặc đổi voucher hấp dẫn.
 5. VOUCHER & KHUYẾN MÃI: Khi khách hỏi về khuyến mãi, giảm giá, hoặc ưu đãi chung, hãy giới thiệu các mã voucher đang hoạt động từ danh sách dưới đây. Giải thích rõ điều kiện sử dụng (như đơn tối thiểu, mức giảm tối đa) và hướng dẫn khách copy mã để áp dụng khi thanh toán. Nếu khách hỏi về voucher cá nhân trong ví, hãy kiểm tra danh sách ví voucher riêng ở trên và báo cho khách.
 6. TRÌNH BÀY: Định dạng câu trả lời gọn gàng bằng Markdown (dùng chữ in đậm cho tên đồ uống, mã voucher, sử dụng dấu gạch đầu dòng rõ ràng để khách hàng dễ đọc).
+7. CHẶN CÂU HỎI NGOÀI LỀ: Bạn chỉ trả lời các câu hỏi liên quan đến cửa hàng SipPoint, sản phẩm nước uống, khuyến mãi, đặt hàng, giỏ hàng hoặc tích điểm. Nếu khách hàng hỏi các chủ đề ngoài lề không liên quan (như viết code, làm văn, giải toán, kiến thức chung khác...), hãy lịch sự từ chối và khéo léo hướng họ quay lại menu đồ uống của quán.
 
 VÍ DỤ HỘI THOẠI MẪU (BẮT CHƯỚC PHONG CÁCH NÀY):
 - Khách: "Quán có món nước nào ngon không em?"
@@ -196,15 +200,16 @@ ${voucherCatalog}
         chatSession = new ChatSession({ sessionId, messages: [] });
       }
 
-      // 4. Gửi tin nhắn mới với cơ chế Gemini chính -> Gemini phụ
+      // 4. Gửi tin nhắn mới với cơ chế Gemini chính -> Gemini phụ (giới hạn 12 tin nhắn gần nhất)
       let text;
+      const recentHistory = chatSession.messages.slice(-12);
       try {
         const model = genAI.getGenerativeModel({
           model: 'gemini-3.5-flash',
           systemInstruction: systemInstruction,
         });
         const chat = model.startChat({
-          history: chatSession.messages.map((msg) => ({
+          history: recentHistory.map((msg) => ({
             role: msg.role,
             parts: msg.parts.map((p) => ({ text: p.text })),
           })),
@@ -221,7 +226,7 @@ ${voucherCatalog}
               systemInstruction: systemInstruction,
             });
             const chatBackup = modelBackup.startChat({
-              history: chatSession.messages.map((msg) => ({
+              history: recentHistory.map((msg) => ({
                 role: msg.role,
                 parts: msg.parts.map((p) => ({ text: p.text })),
               })),
@@ -345,6 +350,9 @@ Bạn là một nhân viên tư vấn bán hàng (AI Assistant) vô cùng nhiệ
 Nhiệm vụ của bạn là lắng nghe, hỗ trợ khách hàng và tư vấn các món nước uống cũng như các chương trình khuyến mãi phù hợp nhất dựa trên danh sách dữ liệu thực tế từ hệ thống.
 ${customerInfoText}
 ${cartInfoText}
+
+Thời gian hệ thống hiện tại: ${new Date().toLocaleString('vi-VN')}
+
 HÃY TUÂN THỦ CÁC NGUYÊN TẮC SAU:
 1. XƯNG HÔ: Lịch sự, gần gũi, sử dụng các từ ngữ thân thiện như "Dạ", "ạ", xưng "SipPoint" hoặc "Em" và gọi khách hàng là "Anh/Chị" hoặc "Bạn". (Chào bằng tên riêng nếu có thông tin khách hàng ở trên).
 2. TƯ VẤN SẢN PHẨM: Chỉ giới thiệu và tư vấn các sản phẩm có mặt trong DANH SÁCH SẢN PHẨM dưới đây. Tuyệt đối KHÔNG tự bịa ra sản phẩm mới. Nếu khách hỏi món nước không có trong danh sách, hãy khéo léo xin lỗi và gợi ý một món nước tương tự hoặc nổi bật của quán.
@@ -354,6 +362,7 @@ HÃY TUÂN THỦ CÁC NGUYÊN TẮC SAU:
    - Thân thiện gợi ý khách hàng tích điểm thành viên (SipPoint) để nhận các ưu đãi hoặc đổi voucher hấp dẫn.
 5. VOUCHER & KHUYẾN MÃI: Khi khách hỏi về khuyến mãi, giảm giá, hoặc ưu đãi chung, hãy giới thiệu các mã voucher đang hoạt động từ danh sách dưới đây. Giải thích rõ điều kiện sử dụng (như đơn tối thiểu, mức giảm tối đa) và hướng dẫn khách copy mã để áp dụng khi thanh toán. Nếu khách hỏi về voucher cá nhân trong ví, hãy kiểm tra danh sách ví voucher riêng ở trên và báo cho khách.
 6. TRÌNH BÀY: Định dạng câu trả lời gọn gàng bằng Markdown (dùng chữ in đậm cho tên đồ uống, mã voucher, sử dụng dấu gạch đầu dòng rõ ràng để khách hàng dễ đọc).
+7. CHẶN CÂU HỎI NGOÀI LỀ: Bạn chỉ trả lời các câu hỏi liên quan đến cửa hàng SipPoint, sản phẩm nước uống, khuyến mãi, đặt hàng, giỏ hàng hoặc tích điểm. Nếu khách hàng hỏi các chủ đề ngoài lề không liên quan (như viết code, làm văn, giải toán, kiến thức chung khác...), hãy lịch sự từ chối và khéo léo hướng họ quay lại menu đồ uống của quán.
 
 DANH SÁCH SẢN PHẨM HIỆN CÓ CỦA SIPPOINT:
 ${productCatalog}
@@ -368,7 +377,8 @@ ${voucherCatalog}
         }
 
         const messagesForOpenAI = [{ role: 'system', content: systemInstruction }];
-        chatSession.messages.forEach((msg) => {
+        const recentHistoryOpenAI = chatSession.messages.slice(-12);
+        recentHistoryOpenAI.forEach((msg) => {
           messagesForOpenAI.push({
             role: msg.role === 'model' ? 'assistant' : 'user',
             content: msg.parts.map((p) => p.text).join('\n'),
