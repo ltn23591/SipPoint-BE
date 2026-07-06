@@ -39,6 +39,21 @@ const customerSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    // Điểm tích trong chu kỳ hạng hiện tại (12 tháng) - dùng để xét thăng/duy trì hạng.
+    // Chỉ giao dịch ORDER cộng và REFUND trừ; đổi điểm lấy quà (REWARD) không ảnh hưởng.
+    cyclePoints: {
+      type: Number,
+      default: 0,
+    },
+    tierAchievedAt: {
+      type: Date,
+    },
+    tierExpiresAt: {
+      type: Date,
+    },
+    lastVisitAt: {
+      type: Date,
+    },
     totalSpent: {
       type: Number,
       default: 0,

@@ -54,6 +54,16 @@ class OrderController {
       res.status(500).json({ success: false, message: error.message });
     }
   }
+
+  static async refund(req, res) {
+    try {
+      const updatedById = req.user ? req.user._id : null;
+      const result = await OrderService.refundOrder(req.params.id, req.body.reason, updatedById);
+      res.status(result.status).json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
 }
 
 module.exports = OrderController;

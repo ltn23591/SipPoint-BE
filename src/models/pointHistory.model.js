@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { POINT_TRANSACTION_TYPE } = require('../enums');
 
 const pointHistorySchema = new mongoose.Schema(
   {
@@ -6,6 +7,11 @@ const pointHistorySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Customer',
       required: true,
+    },
+    orderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Order',
+      required: false,
     },
     title: {
       type: String,
@@ -22,7 +28,7 @@ const pointHistorySchema = new mongoose.Schema(
     },
     transactionType: {
       type: String,
-      enum: ['ORDER', 'REWARD', 'BIRTHDAY_GIFT', 'ADJUSTMENT'],
+      enum: Object.values(POINT_TRANSACTION_TYPE),
       required: true,
     },
   },

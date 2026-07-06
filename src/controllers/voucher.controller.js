@@ -58,6 +58,28 @@ class VoucherController {
       res.status(500).json({ success: false, message: error.message });
     }
   }
+
+  static async getRedeemable(req, res) {
+    try {
+      const result = await VoucherService.getRedeemableVouchers();
+      res.status(result.status).json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  static async redeem(req, res) {
+    try {
+      // Chỉ tài khoản khách hàng mới được đổi điểm (nhân viên có roleId)
+      if (!req.user || req.user.roleId) {
+        return res.status(403).json({ success: false, message: 'Chỉ khách hàng mới có thể đổi điểm lấy voucher' });
+      }
+      const result = await VoucherService.redeemVoucherByPoints(req.user._id, req.params.id);
+      res.status(result.status).json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
 }
 
 module.exports = VoucherController;

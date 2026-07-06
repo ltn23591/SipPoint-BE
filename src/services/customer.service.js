@@ -2,6 +2,7 @@ const Customer = require('../models/customer.model');
 const PointHistory = require('../models/pointHistory.model');
 const CustomerVoucher = require('../models/customerVoucher.model');
 const MembershipTier = require('../models/membershipTier.model');
+const { POINT_TRANSACTION_TYPE, TIER_CYCLE_MONTHS } = require('../enums');
 
 class CustomerService {
   // Lấy danh sách khách hàng (có phân trang và lọc)
@@ -156,7 +157,10 @@ class CustomerService {
   }
 
   // Cộng / Trừ điểm khách hàng
-  static async adjustPoints(id, pointsChange, title, description, transactionType) {
+  // opts.spentChange: delta totalSpent tường minh (đơn hàng truyền order.total, đổi quà truyền 0, refund truyền -order.total)
+  // opts.affectsCycle: true với giao dịch ORDER/REFUND - cộng/trừ cyclePoints và xét thăng hạng cuốn chiếu
+  // opts.orderId: gắn giao dịch điểm với đơn hàng
+  static async adjustPoints(id, pointsChange, title, description, transactionType, opts = {}) {
     const customer = await Customer.findById(id);
     if (!customer) {
       return { status: 404, success: false, message: 'Không tìm thấy khách hàng' };
@@ -176,21 +180,17 @@ class CustomerService {
     }
 
     customer.currentPoints += change;
-    if (change > 0) {
+
+    if (opts.spentChange !== undefined) {
+      customer.totalSpent = Math.max(0, customer.totalSpent + Number(opts.spentChange));
+    } else if (change > 0 && transactionType === POINT_TRANSACTION_TYPE.ADJUSTMENT) {
+      // Giữ hành vi cũ cho endpoint admin điều chỉnh điểm thủ công
       customer.totalSpent += change * 1000; // Giả sử 1 điểm = 1000đ chi tiêu
     }
 
-    // Tự động thăng hạng dựa trên điểm tích lũy (MembershipTier)
-    const tiers = await MembershipTier.find({ status: 'active' }).sort({ minPoints: -1 });
-
-    if (tiers.length > 0) {
-      const matchedTier = tiers.find((t) => customer.currentPoints >= t.minPoints);
-      if (matchedTier) {
-        customer.tierId = matchedTier._id;
-      } else {
-        // Nếu không đủ điểm cho bất kỳ hạng nào, lấy hạng thấp nhất
-        customer.tierId = tiers[tiers.length - 1]._id;
-      }
+    if (opts.affectsCycle) {
+      customer.cyclePoints = Math.max(0, customer.cyclePoints + change);
+      await CustomerService.applyTierProgress(customer);
     }
 
     await customer.save();
@@ -202,11 +202,93 @@ class CustomerService {
       description,
       pointsChange: change,
       transactionType,
+      orderId: opts.orderId || undefined,
     });
 
     const updatedCustomer = await Customer.findById(customer._id).populate('tierId');
 
     return { status: 200, success: true, message: 'Điều chỉnh điểm thành công', data: updatedCustomer };
+  }
+
+  // Xét thăng hạng theo cơ chế cuốn chiếu: cyclePoints chạm ngưỡng tier cao hơn
+  // => lên hạng ngay, khởi động đồng hồ 12 tháng mới và reset cyclePoints.
+  // Không tự hạ hạng ở đây - hạ hạng chỉ xảy ra khi hết chu kỳ (processTierExpirations).
+  // Lưu ý: hàm này chỉ mutate customer, KHÔNG save - caller chịu trách nhiệm save.
+  static async applyTierProgress(customer) {
+    const tiers = await MembershipTier.find({ status: 'active' }).sort({ minPoints: 1 });
+    if (tiers.length === 0) return;
+
+    // Khởi tạo chu kỳ cho khách chưa có (dữ liệu cũ trước khi có cơ chế cuốn chiếu)
+    if (!customer.tierExpiresAt) {
+      customer.tierAchievedAt = new Date();
+      customer.tierExpiresAt = CustomerService.addMonths(new Date(), TIER_CYCLE_MONTHS);
+    }
+    if (!customer.tierId) {
+      customer.tierId = tiers[0]._id;
+    }
+
+    const currentTier = tiers.find((t) => t._id.equals(customer.tierId));
+    const currentMin = currentTier ? currentTier.minPoints : 0;
+
+    // Tier cao hơn tier hiện tại mà cyclePoints đã chạm ngưỡng (lấy cao nhất)
+    const promoted = [...tiers]
+      .reverse()
+      .find((t) => t.minPoints > currentMin && customer.cyclePoints >= t.minPoints);
+
+    if (promoted) {
+      customer.tierId = promoted._id;
+      customer.tierAchievedAt = new Date();
+      customer.tierExpiresAt = CustomerService.addMonths(new Date(), TIER_CYCLE_MONTHS);
+      customer.cyclePoints = 0;
+    }
+  }
+
+  // Chạy bởi cron 00:00 hằng ngày: xử lý các khách đã hết chu kỳ 12 tháng.
+  // Đủ điểm duy trì (cyclePoints >= minPoints của tier hiện tại) => giữ hạng, reset chu kỳ.
+  // Không đủ => hạ về tier cao nhất có minPoints <= cyclePoints, reset chu kỳ.
+  static async processTierExpirations() {
+    const now = new Date();
+    const tiers = await MembershipTier.find({ status: 'active' }).sort({ minPoints: 1 });
+    if (tiers.length === 0) return { processed: 0 };
+
+    const expiredCustomers = await Customer.find({ tierExpiresAt: { $lt: now } });
+    let processed = 0;
+
+    for (const customer of expiredCustomers) {
+      const currentTier = tiers.find((t) => t._id.equals(customer.tierId));
+      const currentMin = currentTier ? currentTier.minPoints : 0;
+      const retained = customer.cyclePoints >= currentMin;
+
+      if (!retained) {
+        // Hạ về tier cao nhất tương ứng số điểm tích được trong chu kỳ
+        const matched = [...tiers].reverse().find((t) => customer.cyclePoints >= t.minPoints) || tiers[0];
+        if (!matched._id.equals(customer.tierId)) {
+          const oldTierName = currentTier ? currentTier.name : 'N/A';
+          customer.tierId = matched._id;
+          await PointHistory.create({
+            customerId: customer._id,
+            title: 'Điều chỉnh hạng thành viên',
+            description: `Hết chu kỳ ${TIER_CYCLE_MONTHS} tháng, không đủ điểm duy trì hạng ${oldTierName}. Chuyển về hạng ${matched.name}.`,
+            pointsChange: 0,
+            transactionType: POINT_TRANSACTION_TYPE.ADJUSTMENT,
+          });
+        }
+      }
+
+      customer.tierAchievedAt = now;
+      customer.tierExpiresAt = CustomerService.addMonths(now, TIER_CYCLE_MONTHS);
+      customer.cyclePoints = 0;
+      await customer.save();
+      processed += 1;
+    }
+
+    return { processed };
+  }
+
+  static addMonths(date, months) {
+    const result = new Date(date);
+    result.setMonth(result.getMonth() + months);
+    return result;
   }
 }
 
