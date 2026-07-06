@@ -49,6 +49,35 @@ const ORDER_STATUS = {
     READY: "READY",
     COMPLETED: "COMPLETED",
     CANCELLED: "CANCELLED",
+    REFUNDED: "REFUNDED", // Đơn đã hoàn thành nhưng bị hoàn trả (trừ lại điểm tích lũy)
+};
+
+const POINT_TRANSACTION_TYPE = {
+    ORDER: "ORDER",             // Tích điểm từ đơn hàng hoàn thành
+    REWARD: "REWARD",           // Đổi điểm lấy quà / voucher
+    BIRTHDAY_GIFT: "BIRTHDAY_GIFT",
+    ADJUSTMENT: "ADJUSTMENT",   // Admin điều chỉnh thủ công
+    REFUND: "REFUND",           // Trừ điểm do hoàn trả đơn hàng
+};
+
+// Quy đổi điểm tích lũy: 1 điểm cho mỗi POINTS_RATE VND trên tổng hóa đơn
+const POINTS_RATE = 10000;
+
+// Chu kỳ duy trì hạng thành viên (tháng) - cơ chế reset cuốn chiếu
+const TIER_CYCLE_MONTHS = 12;
+
+// Nguồn phát voucher vào ví khách hàng
+const CUSTOMER_VOUCHER_SOURCE = {
+    POINTS_REDEEM: "POINTS_REDEEM", // Khách đổi điểm lấy voucher
+    CAMPAIGN: "CAMPAIGN",           // Campaign phát tự động
+    ADMIN: "ADMIN",                 // Admin phát thủ công
+};
+
+const CAMPAIGN_STATUS = {
+    DRAFT: "DRAFT",
+    ACTIVE: "ACTIVE",
+    FINISHED: "FINISHED",
+    CANCELLED: "CANCELLED",
 };
 
 const ORDER_TYPE = {
@@ -78,6 +107,11 @@ module.exports = {
     VARIANT_TYPE,
     TABLE_STATUS,
     ORDER_STATUS,
+    POINT_TRANSACTION_TYPE,
+    POINTS_RATE,
+    TIER_CYCLE_MONTHS,
+    CUSTOMER_VOUCHER_SOURCE,
+    CAMPAIGN_STATUS,
     ORDER_TYPE,
     PAYMENT_METHOD,
     SHIFT_STATUS

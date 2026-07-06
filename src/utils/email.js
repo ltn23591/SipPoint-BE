@@ -5,10 +5,12 @@ const logger = require('../config/logger');
 
 let transporterConfig;
 if (process.env.SMTP_HOST === 'smtp.gmail.com') {
+  const smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
   transporterConfig = {
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, // true for 465, false for other ports
+    port: smtpPort,
+    secure: smtpPort === 465, // true cho 465 (SSL), false cho 587 (TLS/STARTTLS)
+    family: 4, // Bắt buộc sử dụng IPv4 vì Render thường không hỗ trợ định tuyến IPv6 (Fix lỗi ENETUNREACH)
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
@@ -20,7 +22,8 @@ if (process.env.SMTP_HOST === 'smtp.gmail.com') {
 } else {
   transporterConfig = {
     host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-    port: process.env.SMTP_PORT || 587,
+    port: parseInt(process.env.SMTP_PORT || '587', 10),
+    family: 4, // Bắt buộc sử dụng IPv4
     auth: {
       user: process.env.SMTP_USER || 'test@example.com',
       pass: process.env.SMTP_PASS || 'password',

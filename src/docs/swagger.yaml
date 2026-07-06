@@ -1103,6 +1103,144 @@ paths:
         4. Kiểm tra hoặc nhập dữ liệu đầu vào phù hợp trong phần **Request Body**.
         5. Nhấp **Execute** để gửi yêu cầu và nhận kết quả trả về phía dưới.
 
+  /api/v1/customers/me:
+    put:
+      summary: Khách hàng tự cập nhật thông tin cá nhân
+      tags:
+        - Customer
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullName:
+                  type: string
+                phone:
+                  type: string
+                email:
+                  type: string
+                dateOfBirth:
+                  type: string
+                  format: date
+                  example: "1995-07-15"
+                avatar:
+                  type: string
+      responses:
+        "200":
+          description: Cập nhật thông tin thành công
+      description: Yêu cầu đăng nhập bằng **tài khoản khách hàng** (token từ /api/v1/auth/customer/login).
+  /api/v1/customers/me/point-history:
+    get:
+      summary: Khách hàng xem lịch sử điểm của mình (20 giao dịch gần nhất)
+      tags:
+        - Customer
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Lấy lịch sử điểm thành công - gồm các giao dịch ORDER, REWARD, BIRTHDAY_GIFT, ADJUSTMENT, REFUND
+      description: Yêu cầu đăng nhập bằng **tài khoản khách hàng**.
+  /api/v1/customers/me/vouchers:
+    get:
+      summary: Khách hàng xem ví voucher của mình
+      tags:
+        - Customer
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Danh sách voucher trong ví (kèm thông tin voucher gốc) - sắp xếp voucher chưa dùng và gần hết hạn lên trước
+      description: |-
+        Yêu cầu đăng nhập bằng **tài khoản khách hàng**.
+        Voucher vào ví từ 3 nguồn: đổi điểm (POST /api/v1/vouchers/{id}/redeem), chiến dịch phát tự động (Campaign), hoặc admin phát tay.
+        Dùng `_id` của bản ghi ví (customerVoucherId) để áp dụng khi đặt đơn.
+  /api/v1/customers/me/orders:
+    get:
+      summary: Khách hàng xem danh sách đơn hàng của mình (tối đa 50 đơn gần nhất)
+      tags:
+        - Customer
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Lấy danh sách đơn hàng thành công
+      description: Yêu cầu đăng nhập bằng **tài khoản khách hàng**.
+    post:
+      summary: Khách hàng tự đặt đơn hàng
+      tags:
+        - Customer
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - items
+              properties:
+                tableId:
+                  type: string
+                  description: ID của bàn (nếu ngồi tại bàn)
+                voucherCode:
+                  type: string
+                  description: Mã giảm giá public (không dùng chung với customerVoucherId)
+                customerVoucherId:
+                  type: string
+                  description: ID voucher trong ví của chính khách hàng (không dùng chung với voucherCode)
+                note:
+                  type: string
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - productId
+                      - qty
+                    properties:
+                      productId:
+                        type: string
+                      qty:
+                        type: integer
+                        minimum: 1
+                      note:
+                        type: string
+                      variants:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            variantId:
+                              type: string
+      responses:
+        "201":
+          description: Đặt đơn hàng thành công - customerId tự gán theo tài khoản đang đăng nhập
+      description: Yêu cầu đăng nhập bằng **tài khoản khách hàng**. Hệ thống tự gán customerId theo token, không cần truyền.
+  /api/v1/customers/me/orders/{orderId}:
+    get:
+      summary: Khách hàng xem chi tiết một đơn hàng của mình
+      tags:
+        - Customer
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Lấy chi tiết đơn hàng thành công
+        "403":
+          description: Đơn hàng không thuộc về tài khoản đang đăng nhập
+      description: Yêu cầu đăng nhập bằng **tài khoản khách hàng**.
+
   /api/v1/ai/chat:
     post:
       summary: Chat với AI Bot dựa trên danh sách sản phẩm
@@ -1556,7 +1694,7 @@ paths:
           name: status
           schema:
             type: string
-          description: "Trạng thái đơn: PENDING, CONFIRMED, PREPARING, READY, COMPLETED, CANCELLED"
+          description: "Trạng thái đơn: PENDING, CONFIRMED, PREPARING, READY, COMPLETED, CANCELLED, REFUNDED"
         - in: query
           name: tableId
           schema:
@@ -1606,9 +1744,12 @@ paths:
                 customerId:
                   type: string
                   description: ID của khách hàng (nếu có thẻ thành viên)
-                promotionCode:
+                voucherCode:
                   type: string
-                  description: Mã giảm giá áp dụng (nếu có)
+                  description: Mã giảm giá public áp dụng (nếu có, không dùng chung với customerVoucherId)
+                customerVoucherId:
+                  type: string
+                  description: ID voucher trong ví khách hàng - từ campaign hoặc đổi điểm (yêu cầu customerId, không dùng chung với voucherCode)
                 note:
                   type: string
                   description: Ghi chú cho toàn bộ đơn hàng
@@ -2984,6 +3125,610 @@ paths:
       responses:
         "201":
           description: Tạo thành công
+  /api/v1/orders/{id}/refund:
+    post:
+      summary: Hoàn trả đơn hàng đã hoàn thành (trừ lại điểm tích lũy)
+      tags:
+        - Order
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID đơn hàng (phải ở trạng thái COMPLETED)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - reason
+              properties:
+                reason:
+                  type: string
+                  description: Lý do hoàn trả đơn hàng
+                  example: Khách phản ánh đồ uống bị lỗi
+      responses:
+        "200":
+          description: Hoàn trả thành công - đơn chuyển sang REFUNDED, điểm đã tích từ đơn bị trừ lại (có thể hạ hạng), voucher đã dùng được hoàn lại
+        "400":
+          description: Đơn hàng chưa hoàn thành, đã hoàn trả trước đó, hoặc thiếu lý do
+      description: |-
+        Chỉ áp dụng cho đơn hàng ở trạng thái **COMPLETED** (quyền Admin/Thu ngân).
+        Hệ thống tự động: chuyển trạng thái sang REFUNDED, trừ lại số điểm đã cộng khi hoàn thành đơn
+        (nếu khách đã tiêu bớt điểm thì trừ tối đa bằng số dư), trừ điểm chu kỳ xét hạng,
+        và hoàn lại voucher đã sử dụng cho đơn.
+  /api/v1/vouchers/search:
+    get:
+      summary: Lấy danh sách tất cả voucher
+      tags:
+        - Voucher
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Lấy danh sách voucher thành công
+  /api/v1/vouchers/create:
+    post:
+      summary: Tạo voucher mới
+      tags:
+        - Voucher
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+                - title
+                - discountType
+                - discountValue
+                - endDate
+                - usageLimit
+              properties:
+                code:
+                  type: string
+                  description: Mã voucher (tự động chuyển chữ hoa, duy nhất)
+                  example: SINHNHAT30
+                title:
+                  type: string
+                  example: Giảm 30.000đ mừng sinh nhật
+                description:
+                  type: string
+                discountType:
+                  type: string
+                  enum:
+                    - PERCENT
+                    - FIXED
+                discountValue:
+                  type: number
+                  example: 30000
+                minOrderValue:
+                  type: number
+                  description: Giá trị đơn hàng tối thiểu để áp dụng
+                  example: 100000
+                maxDiscountLimit:
+                  type: number
+                  description: Mức giảm tối đa (dùng cho loại PERCENT)
+                startDate:
+                  type: string
+                  format: date-time
+                endDate:
+                  type: string
+                  format: date-time
+                usageLimit:
+                  type: number
+                  description: Tổng số lượng phát hành tối đa
+                  example: 100
+                pointsCost:
+                  type: number
+                  description: Số điểm cần để đổi voucher này (> 0 = cho phép khách đổi điểm lấy voucher)
+                  example: 20
+                perCustomerLimit:
+                  type: number
+                  description: Giới hạn số lần một khách được dùng/đổi voucher này (0 = không giới hạn)
+                  example: 1
+      responses:
+        "201":
+          description: Tạo voucher thành công
+  /api/v1/vouchers/{id}/detail:
+    get:
+      summary: Lấy chi tiết voucher
+      tags:
+        - Voucher
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Lấy chi tiết voucher thành công
+  /api/v1/vouchers/{id}/update:
+    put:
+      summary: Cập nhật voucher
+      tags:
+        - Voucher
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Các trường cần cập nhật (giống body tạo voucher)
+      responses:
+        "200":
+          description: Cập nhật voucher thành công
+  /api/v1/vouchers/{id}/delete:
+    delete:
+      summary: Xóa voucher
+      tags:
+        - Voucher
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Xóa voucher thành công
+  /api/v1/vouchers/validate:
+    post:
+      summary: Kiểm tra mã voucher và tính số tiền giảm
+      tags:
+        - Voucher
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+                - orderValue
+              properties:
+                code:
+                  type: string
+                  example: SINHNHAT30
+                orderValue:
+                  type: number
+                  example: 150000
+      responses:
+        "200":
+          description: Mã hợp lệ - trả về discountAmount và finalAmount
+        "400":
+          description: Mã hết hạn, hết lượt, hoặc chưa đạt đơn tối thiểu
+  /api/v1/vouchers/redeemable:
+    get:
+      summary: Danh sách voucher có thể đổi bằng điểm
+      tags:
+        - Voucher
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Danh sách voucher đang hoạt động, còn hạn, còn lượt phát và có pointsCost > 0
+  /api/v1/vouchers/{id}/redeem:
+    post:
+      summary: Khách hàng đổi điểm lấy voucher (phát vào ví)
+      tags:
+        - Voucher
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID voucher muốn đổi
+      responses:
+        "201":
+          description: Đổi thành công - voucher được thêm vào ví, trả về số điểm còn lại
+        "400":
+          description: Không đủ điểm, voucher hết lượt phát, hoặc đã đạt giới hạn đổi
+        "403":
+          description: Tài khoản nhân viên không được đổi điểm
+      description: |-
+        Yêu cầu đăng nhập bằng **tài khoản khách hàng**. Hệ thống trừ pointsCost điểm khỏi số dư
+        (KHÔNG ảnh hưởng điểm xét hạng) và phát voucher vào ví (GET /api/v1/customers/me/vouchers).
+  /api/v1/customer-segments/preview:
+    post:
+      summary: Xem trước số lượng khách hàng thỏa mãn bộ tiêu chí
+      tags:
+        - CustomerSegment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                criteria:
+                  $ref: "#/components/schemas/SegmentCriteria"
+      responses:
+        "200":
+          description: Trả về số lượng (count) và 10 khách hàng mẫu (sample)
+        "400":
+          description: Chưa thiết lập tiêu chí lọc nào
+  /api/v1/customer-segments:
+    get:
+      summary: Lấy danh sách nhóm khách hàng (phân trang)
+      tags:
+        - CustomerSegment
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Tìm theo tên nhóm
+      responses:
+        "200":
+          description: Lấy danh sách nhóm khách hàng thành công
+    post:
+      summary: Tạo nhóm khách hàng mới (materialize thành viên ngay)
+      tags:
+        - CustomerSegment
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - criteria
+              properties:
+                name:
+                  type: string
+                  example: Khách VIP có sinh nhật tháng 7
+                description:
+                  type: string
+                criteria:
+                  $ref: "#/components/schemas/SegmentCriteria"
+      responses:
+        "201":
+          description: Tạo nhóm thành công - memberIds đã được đồng bộ
+        "400":
+          description: Tên nhóm trùng hoặc chưa có tiêu chí lọc
+  /api/v1/customer-segments/{id}:
+    get:
+      summary: Lấy chi tiết nhóm khách hàng
+      tags:
+        - CustomerSegment
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Lấy chi tiết nhóm thành công
+    put:
+      summary: Cập nhật nhóm khách hàng (tự đồng bộ lại nếu đổi tiêu chí)
+      tags:
+        - CustomerSegment
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                isActive:
+                  type: string
+                  enum:
+                    - active
+                    - inactive
+                criteria:
+                  $ref: "#/components/schemas/SegmentCriteria"
+      responses:
+        "200":
+          description: Cập nhật nhóm thành công
+    delete:
+      summary: Xóa nhóm khách hàng
+      tags:
+        - CustomerSegment
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Xóa nhóm thành công
+        "400":
+          description: Nhóm đang được chiến dịch ACTIVE sử dụng, không thể xóa
+  /api/v1/customer-segments/{id}/sync:
+    post:
+      summary: Đồng bộ lại danh sách thành viên của nhóm ngay lập tức
+      tags:
+        - CustomerSegment
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Đồng bộ thành công - trả về memberCount và lastSyncedAt
+      description: Hệ thống cũng tự đồng bộ toàn bộ nhóm lúc 00:00 hằng ngày (cron).
+  /api/v1/customer-segments/{id}/members:
+    get:
+      summary: Danh sách thành viên của nhóm (phân trang)
+      tags:
+        - CustomerSegment
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Lấy danh sách thành viên thành công
+  /api/v1/campaigns:
+    get:
+      summary: Lấy danh sách chiến dịch khuyến mãi (phân trang)
+      tags:
+        - Campaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - DRAFT
+              - ACTIVE
+              - FINISHED
+              - CANCELLED
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Tìm theo tên chiến dịch
+      responses:
+        "200":
+          description: Lấy danh sách chiến dịch thành công
+    post:
+      summary: Tạo chiến dịch khuyến mãi mới (trạng thái nháp)
+      tags:
+        - Campaign
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - segmentIds
+                - voucherId
+                - endDate
+              properties:
+                name:
+                  type: string
+                  example: Chiến dịch Tri ân Sinh nhật Tháng 7
+                description:
+                  type: string
+                segmentIds:
+                  type: array
+                  description: Danh sách ID nhóm khách hàng mục tiêu
+                  items:
+                    type: string
+                voucherId:
+                  type: string
+                  description: ID voucher sẽ phát vào ví khách hàng
+                conditions:
+                  type: object
+                  description: Điều kiện bổ sung kiểm tra khi khách dùng voucher
+                  properties:
+                    minOrderValue:
+                      type: number
+                      description: Ghi đè đơn tối thiểu của voucher
+                      example: 100000
+                    timeWindow:
+                      type: object
+                      description: Khung giờ vàng được áp dụng (giờ VN, 0-23)
+                      properties:
+                        startHour:
+                          type: integer
+                          example: 14
+                        endHour:
+                          type: integer
+                          example: 16
+                startDate:
+                  type: string
+                  format: date-time
+                endDate:
+                  type: string
+                  format: date-time
+      responses:
+        "201":
+          description: Tạo chiến dịch thành công (DRAFT)
+        "400":
+          description: Tên trùng, thiếu nhóm mục tiêu, hoặc ngày không hợp lệ
+  /api/v1/campaigns/{id}:
+    get:
+      summary: Lấy chi tiết chiến dịch
+      tags:
+        - Campaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Lấy chi tiết chiến dịch thành công
+    put:
+      summary: Cập nhật chiến dịch (chỉ khi ở trạng thái nháp)
+      tags:
+        - Campaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Các trường cần cập nhật (giống body tạo chiến dịch)
+      responses:
+        "200":
+          description: Cập nhật chiến dịch thành công
+        "400":
+          description: Chiến dịch không ở trạng thái DRAFT
+    delete:
+      summary: Xóa chiến dịch (chỉ khi ở trạng thái nháp)
+      tags:
+        - Campaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Xóa chiến dịch thành công
+        "400":
+          description: Chiến dịch không ở trạng thái DRAFT
+  /api/v1/campaigns/{id}/activate:
+    post:
+      summary: Kích hoạt chiến dịch - phát voucher vào ví toàn bộ thành viên nhóm mục tiêu
+      tags:
+        - Campaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Kích hoạt thành công - trả về số voucher đã phát
+        "400":
+          description: Chiến dịch không ở trạng thái DRAFT, đã quá hạn, nhóm không có thành viên, hoặc kho voucher không đủ phát
+      description: |-
+        Hệ thống gom thành viên (union) từ các nhóm mục tiêu, kiểm tra kho voucher đủ phát,
+        rồi phát voucher vào ví từng khách (mỗi khách tối đa 1 voucher/chiến dịch).
+        Khách dùng voucher khi đặt đơn bằng cách truyền `customerVoucherId` vào body POST /api/v1/orders.
+  /api/v1/campaigns/{id}/deactivate:
+    post:
+      summary: Hủy chiến dịch đang chạy - thu hồi voucher chưa sử dụng
+      tags:
+        - Campaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Hủy thành công - trả về số voucher đã thu hồi
+        "400":
+          description: Chiến dịch không ở trạng thái ACTIVE
 tags:
   - name: Product
     description: API Quản lý Sản Phẩm (Món ăn / Đồ uống)
@@ -3011,6 +3756,12 @@ tags:
     description: API quản lý shift
   - name: AI
     description: API Chat với AI Bot - Hỗ trợ tư vấn sản phẩm dựa trên Google Gemini
+  - name: Voucher
+    description: API Quản lý Voucher & Đổi điểm lấy voucher
+  - name: CustomerSegment
+    description: API Quản lý Nhóm khách hàng mục tiêu (Segmentation) - Cần quyền Admin
+  - name: Campaign
+    description: API Quản lý Chiến dịch khuyến mãi - Phát voucher vào ví theo nhóm khách hàng (Cần quyền Admin)
 
 components:
   securitySchemes:
@@ -3019,6 +3770,31 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    SegmentCriteria:
+      type: object
+      description: Bộ tiêu chí lọc nhóm khách hàng (kết hợp AND giữa các tiêu chí có giá trị, phải có ít nhất 1)
+      properties:
+        tierIds:
+          type: array
+          description: Thuộc một trong các hạng thành viên
+          items:
+            type: string
+        birthdayMonth:
+          type: integer
+          minimum: 1
+          maximum: 12
+          description: Tháng sinh nhật
+          example: 7
+        minPoints:
+          type: number
+          description: Số dư điểm tối thiểu
+        minDaysSinceLastVisit:
+          type: integer
+          description: Chưa ghé quán ít nhất X ngày
+          example: 30
+        maxDaysSinceLastVisit:
+          type: integer
+          description: Có ghé quán trong vòng X ngày gần đây
     User:
       type: object
       required:

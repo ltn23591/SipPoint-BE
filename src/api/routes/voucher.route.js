@@ -6,7 +6,9 @@ const router = express.Router();
 
 router.post('/validate', VoucherController.validate);
 
-// Các API quản lý voucher yêu cầu đăng nhập
+router.get('/redeemable', protect, VoucherController.getRedeemable);
+router.post('/:id/redeem', protect, VoucherController.redeem);
+
 router.get('/search', protect, VoucherController.getAll);
 router.post('/create', protect, VoucherController.create);
 router.get('/:id/detail', protect, VoucherController.getById);

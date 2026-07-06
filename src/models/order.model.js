@@ -29,6 +29,12 @@ const orderSchema = new mongoose.Schema(
       ref: 'Voucher',
       required: false,
     },
+    // Voucher trong ví khách hàng được sử dụng cho đơn này (nếu có)
+    customerVoucherId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CustomerVoucher',
+      required: false,
+    },
     subtotal: {
       type: Number,
       required: true,
@@ -45,6 +51,11 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 0,
+      default: 0,
+    },
+    // Số điểm đã cộng cho khách khi đơn COMPLETED (mốc idempotency cho refund)
+    pointsAwarded: {
+      type: Number,
       default: 0,
     },
     isUrgent: {

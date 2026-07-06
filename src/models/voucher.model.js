@@ -61,6 +61,24 @@ const voucherSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    // Số lượng đã phát vào ví khách hàng (qua đổi điểm hoặc campaign) - tách khỏi usedCount
+    issuedCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    // Số điểm cần để đổi voucher này (> 0 nghĩa là cho phép đổi điểm lấy voucher)
+    pointsCost: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    // Giới hạn số lần một khách hàng được dùng/đổi voucher này (0 = không giới hạn)
+    perCustomerLimit: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     isActive: {
       type: String,
       enum: ['active', 'inactive'],
