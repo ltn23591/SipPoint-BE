@@ -11,6 +11,8 @@ Dự án này là một Boilerplate Backend mạnh mẽ dựa trên Express.js, 
 - **Upload File:** Hỗ trợ API upload hình ảnh cục bộ và trực tiếp lên Cloudinary (sử dụng `multer` và `cloudinary`).
 - **Quản lý Khách hàng & Loyalty:** Xử lý hồ sơ, thẻ thành viên, xếp hạng hạng thẻ (Đồng, Bạc, Vàng, Kim Cương), tích lũy điểm thưởng và quản lý voucher.
 - **Đơn hàng & Vận hành Real-time:** Đặt đơn, quản lý chi tiết món (`OrderItem`), cập nhật trạng thái đơn hàng (`Chờ xác nhận → Đang pha chế → Hoàn thành → Đã hủy`) tự động cập nhật giải phóng/đóng bàn ăn, đẩy dữ liệu real-time qua Socket.io (`order_created`, `order_status_updated`).
+- **Thanh toán Trực tuyến:** Tích hợp thanh toán tự động qua cổng SePay Checkout, tự động nhận Webhook IPN xử lý đơn hàng.
+- **Tối ưu Hiệu năng:** Tích hợp `compression` nén băng thông JSON và tối ưu truy vấn MongoDB siêu tốc bằng `.lean()`.
 - **Cấu hình Cửa hàng:** Quản lý các thông tin cơ bản và các phương thức thanh toán.
 - **Đa ngôn ngữ (i18n):** Hỗ trợ trả về ngôn ngữ động dựa trên header `Accept-Language` (vi/en).
 - **Kiến trúc Chuẩn (Pattern):** Áp dụng triệt để mô hình Controller-Service. Controller chỉ nhận/trả Request/Response, Service xử lý toàn bộ nghiệp vụ (Business Logic), giúp code dễ bảo trì và mở rộng.
