@@ -1,179 +1,100 @@
-# Node.js Express Base API (MERN Backend)
+# SipPoint-BE (Backend API)
 
-Dự án này là một Boilerplate Backend mạnh mẽ dựa trên Express.js, cung cấp sẵn các tính năng cấp doanh nghiệp (enterprise-level) cần thiết cho bất kỳ dự án nào.
+SipPoint-BE là hệ thống Backend mạnh mẽ được xây dựng bằng Node.js & Express.js dành riêng cho dự án quản lý chuỗi cửa hàng F&B (SipPoint). Hệ thống cung cấp API cho cả trang quản trị (Portal) lẫn trang đặt hàng của khách (Landing Page).
 
-## 🚀 Tính năng nổi bật
-- **Bảo mật & Xác thực (Auth):** Tích hợp JWT, lưu trữ an toàn bằng HttpOnly Cookies. Hỗ trợ luồng xác thực tài khoản đăng ký mới qua Email OTP.
-- **Mã hóa:** Mã hóa mật khẩu an toàn với `bcrypt`.
-- **Validation:** Ràng buộc và xác thực dữ liệu đầu vào với `express-validator`.
-- **Logging:** Hệ thống ghi log chuyên nghiệp ra file với `winston` (thư mục `logs/`).
-- **Gửi Email:** Hỗ trợ gửi email HTML sử dụng `nodemailer` và template engine `ejs`.
-- **Upload File:** Hỗ trợ API upload hình ảnh cục bộ và trực tiếp lên Cloudinary (sử dụng `multer` và `cloudinary`).
-- **Quản lý Khách hàng & Loyalty:** Xử lý hồ sơ, thẻ thành viên, xếp hạng hạng thẻ (Đồng, Bạc, Vàng, Kim Cương), tích lũy điểm thưởng và quản lý voucher.
-- **Đơn hàng & Vận hành Real-time:** Đặt đơn, quản lý chi tiết món (`OrderItem`), cập nhật trạng thái đơn hàng (`Chờ xác nhận → Đang pha chế → Hoàn thành → Đã hủy`) tự động cập nhật giải phóng/đóng bàn ăn, đẩy dữ liệu real-time qua Socket.io (`order_created`, `order_status_updated`).
-- **Thanh toán Trực tuyến:** Tích hợp thanh toán tự động qua cổng SePay Checkout, tự động nhận Webhook IPN xử lý đơn hàng.
-- **Tối ưu Hiệu năng:** Tích hợp `compression` nén băng thông JSON và tối ưu truy vấn MongoDB siêu tốc bằng `.lean()`.
-- **Cấu hình Cửa hàng:** Quản lý các thông tin cơ bản và các phương thức thanh toán.
-- **Đa ngôn ngữ (i18n):** Hỗ trợ trả về ngôn ngữ động dựa trên header `Accept-Language` (vi/en).
-- **Kiến trúc Chuẩn (Pattern):** Áp dụng triệt để mô hình Controller-Service. Controller chỉ nhận/trả Request/Response, Service xử lý toàn bộ nghiệp vụ (Business Logic), giúp code dễ bảo trì và mở rộng.
-- **Quản lý linh hoạt:** Toàn bộ thông báo (Messages), Error Codes được tách riêng vào thư mục `constants/` giúp dễ dàng bảo trì và hỗ trợ i18n tốt hơn.
-- **Tiện ích:** 
-  - Tự động dọn dẹp mã thừa và fix lỗi với ESLint (Auto Fix on Save) theo chuẩn Node.js.
-  - Xuất danh sách dữ liệu ra file Excel với `exceljs`.
-  - Tạo mã QR Code tự động với `qrcode`.
-- **Bảo mật 2 lớp (2FA/OTP):** Tích hợp xác thực 2 bước (gửi mã OTP qua email) giúp tăng cường bảo mật cho quá trình đăng nhập.
-- **API Documentation:** Tích hợp sẵn giao diện Swagger UI tuyệt đẹp tại `/api-docs`. Tài liệu (Swagger Specs) được quản lý tập trung bằng file YAML (trong thư mục `src/docs/`), giúp mã nguồn (Routes/Models) luôn sạch sẽ.
+## 🚀 Các Modules & Tính năng chính
 
-## 📁 Cấu trúc thư mục
+Sau quá trình phát triển, dự án đã hoàn thiện các module nghiệp vụ phức tạp:
+
+### 1. Quản lý Sản phẩm (Catalog Management)
+- Quản lý **Sản phẩm (Product)**, **Danh mục (Category)**.
+- Hỗ trợ **Sản phẩm nhiều biến thể (Product Variants)** (Size M, L, Topping...).
+- Quản lý **Giá bán theo cấu hình (Product Price)** linh hoạt.
+
+### 2. Quản lý Bán hàng & Vận hành (Order & Table)
+- Quản lý **Khu vực (Zone)** và **Bàn ăn (Table)** với trạng thái real-time (Trống, Đang phục vụ, Đã đặt).
+- Quản lý **Giỏ hàng (Cart)** và **Đơn hàng (Order/OrderItem)** hỗ trợ ăn tại chỗ và mang đi.
+- **Socket.io Real-time:** Bắn sự kiện tức thì khi có đơn hàng mới (`order_created`) hoặc trạng thái đơn hàng thay đổi (`order_status_updated`) tới thu ngân và bếp.
+
+### 3. CRM & Loyalty (Khách hàng thân thiết)
+- Hồ sơ **Khách hàng (Customer)** với hệ thống **Phân khúc (Customer Segment)** tự động.
+- Hệ thống **Hạng thành viên (Membership Tier/Program)** (Đồng, Bạc, Vàng...).
+- Tích lũy điểm thưởng và lịch sử điểm **(Point History)**.
+- Hệ thống **Mã giảm giá (Voucher / CustomerVoucher)**, **Chiến dịch Marketing (Campaign)** và **Chương trình khuyến mãi (Promotion Program)**.
+
+### 4. Quản lý Nhân sự (HR & Store)
+- Quản lý **Nhân viên (Employee)**, **Vai trò/Phân quyền (Staff Role)**.
+- Quản lý **Ca làm việc (Shift)** của nhân sự.
+- Cấu hình thông tin **Cửa hàng (Store)**.
+
+### 5. Tiện ích & Giao tiếp mở rộng
+- **Thanh toán tự động:** Tích hợp API cổng **SePay Checkout** tự động bắt IPN (Webhook) cập nhật trạng thái đơn hàng thành công, không cần thu ngân can thiệp. (Đã loại bỏ MoMo/VietQR tĩnh).
+- **Hỗ trợ AI:** Tích hợp module **Chat Session** để hỗ trợ tư vấn tự động.
+- **Thông báo & Phản hồi:** Quản lý Notification trong hệ thống và Feedback từ khách hàng.
+- **Activity Log:** Lưu vết mọi thao tác của nhân viên trên hệ thống.
+
+---
+
+## 🛠 Nền tảng kỹ thuật (Technical Stack)
+
+- **Framework:** Express.js (Node.js) + MongoDB (Mongoose).
+- **Bảo mật (Auth):** Xác thực qua JWT (bảo vệ route bằng middleware `auth`), hash mật khẩu bằng `bcrypt`. 
+- **Tối ưu Hiệu năng:** Sử dụng middleware `compression` nén GZIP toàn bộ response và dùng `.lean()` ở mức database giúp truy vấn siêu tốc.
+- **Logging & Error Handling:** Dùng `winston` lưu log ra file, cơ chế chặn lỗi tập trung bằng `errorHandler` middleware.
+- **Upload File:** Hỗ trợ Cloudinary (qua `multer` & `multer-storage-cloudinary`).
+- **Gửi Email:** Tích hợp `nodemailer` với template `EJS` (Dùng cho quên mật khẩu / mã OTP).
+
+---
+
+## 📁 Cấu trúc thư mục (Folder Structure)
 
 ```
-/
-├── locales/          # File từ điển đa ngôn ngữ (en.json, vi.json)
-├── logs/             # Nơi lưu trữ file log của winston
-├── mails/            # Chứa các template email bằng HTML/EJS (welcome.ejs, otp.ejs)
-├── public/uploads/   # Thư mục lưu trữ hình ảnh upload cục bộ
-├── src/
-│   ├── api/          # Các routes API và cấu hình Router
-│   ├── config/       # Cấu hình Swagger, Logger, i18n
-│   ├── constants/    # Quản lý hằng số tập trung (Messages, Error Codes...)
-│   ├── controllers/  # Tiếp nhận Request, gọi Service và trả Response
-│   ├── db/           # Kết nối MongoDB
-│   ├── docs/         # Chứa tài liệu API (Swagger YAML)
-│   ├── enums/        # Định nghĩa các hằng số chung (Role, Status,...)
-│   ├── middleware/   # Middleware (Auth, Upload, Validation, Error Handling)
-│   ├── models/       # Mongoose Schemas
-│   ├── services/     # Chứa logic nghiệp vụ tương tác với Database (Business Logic)
-│   ├── utils/        # Các hàm tiện ích (Gửi email, Xuất Excel, Mã QR, Response helpers...)
-│   ├── app.js        # Cấu hình Express App, Middlewares
-│   └── server.js     # Điểm khởi chạy Server
-└── .env              # Biến môi trường
+src/
+├── api/          # Khai báo các Routes chính (index.js, routes/*.route.js)
+├── config/       # Cấu hình Swagger, Logger, i18n
+├── constants/    # Hằng số, mã lỗi, messages...
+├── controllers/  # Tiếp nhận Request và gọi tầng Service (Controller)
+├── db/           # Kết nối cơ sở dữ liệu MongoDB
+├── docs/         # Swagger YAML (Tài liệu API)
+├── enums/        # Các ENUM chung của hệ thống (Trạng thái đơn, Role...)
+├── middleware/   # Middleware (xác thực token, xử lý lỗi, validate, upload)
+├── models/       # Định nghĩa Mongoose Schemas (Tất cả entities)
+├── services/     # Chứa logic nghiệp vụ cốt lõi (Business Logic Layer)
+├── utils/        # Hàm tiện ích hỗ trợ (Gửi mail, tạo mã QR, Format...)
+├── app.js        # Khởi tạo và thiết lập các Middleware của Express
+└── server.js     # Điểm khởi chạy (Entry point) của Server
 ```
 
-## 🛠 Cài đặt & Chạy dự án
+---
+
+## 💻 Hướng dẫn chạy dự án
 
 **1. Cài đặt các thư viện**
 ```bash
 npm install
 ```
 
-**2. Cấu hình biến môi trường (`.env`)**
-Bạn cần thiết lập các biến sau trong file `.env`:
+**2. Thiết lập biến môi trường (`.env`)**
+Cần có file `.env` với các cấu hình cơ bản:
 ```env
 PORT=5000
-MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/database
-NODE_ENV=development
-JWT_SECRET=your_super_secret_key
-SMTP_HOST=smtp.ethereal.email
-SMTP_PORT=587
-SMTP_USER=test@example.com
-SMTP_PASS=password
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
+MONGO_URI=mongodb+srv://<username>:<password>@cluster/database
+JWT_SECRET=your_secret_key
+# Cấu hình SePay Webhook
+SEPAY_MERCHANT_ID=SP-LIVE-...
+SEPAY_SECRET_KEY=spsk_live_...
+# Và các biến Cloudinary, SMTP khác
 ```
 
-**3. Chạy Server**
+**3. Khởi động Server**
 ```bash
-# Môi trường Development (sử dụng nodemon tự động reload)
+# Môi trường Development (tự động restart khi code thay đổi)
 npm run dev
 
 # Môi trường Production
 npm start
 ```
 
-## ⚡ Code Generator
-
-Tự động sinh **model + service + controller + route** và đăng ký vào `src/api/index.js` chỉ với 1 lệnh.
-
-**Cú pháp:**
-```bash
-# Dùng npm script
-npm run generate <tên-resource>
-
-# Hoặc trực tiếp
-node scripts/generate.js <tên-resource>
-```
-
-**Ví dụ — tạo resource `product`:**
-```bash
-npm run generate product
-```
-
-Kết quả sinh ra:
-```
-Created: src/models/product.model.js
-Created: src/services/product.service.js
-Created: src/controllers/product.controller.js
-Created: src/api/routes/product.route.js
-Updated: src/api/index.js
-Updated: src/docs/swagger.yaml (+paths, +tags, +schemas)
-```
-
-Các endpoint được tạo sẵn:
-```
-GET    /api/v1/products/search        Lấy danh sách
-POST   /api/v1/products/create        Tạo mới
-GET    /api/v1/products/:id/detail    Lấy chi tiết
-PUT    /api/v1/products/:id/update    Cập nhật
-DELETE /api/v1/products/:id/delete    Xóa
-```
-
-> Sau khi generate, chỉ cần chỉnh schema trong `src/models/product.model.js` cho đúng với dữ liệu thực tế. Logic CRUD chạy được ngay mà không cần sửa thêm.
-
----
-
 ## 📖 API Documentation (Swagger)
-Sau khi server chạy, truy cập đường dẫn sau trên trình duyệt để xem và tương tác trực tiếp với API:
-
+Để tra cứu nhanh danh sách API và test trực tiếp, sau khi khởi chạy truy cập vào:
 👉 **[http://localhost:5000/api-docs](http://localhost:5000/api-docs)**
-
----
-
-## 🌿 Quy tắc Đặt tên Nhánh (Branch Naming)
-
-Định dạng chung:
-```
-<tên-thành-viên>/<loại-công-việc>/<ID-task-hoặc-tên-tính-năng>
-```
-
-**Các loại công việc (Type) thường dùng:**
-- `feat`: Phát triển tính năng mới.
-- `fix`: Sửa lỗi (bug).
-- `refactor`: Tái cấu trúc, dọn dẹp code (không đổi logic).
-
-**Ví dụ:**
-```bash
-# Đặt tên theo tên tính năng:
-git checkout -b quochung/feat/add-field
-git checkout -b quochung/fix/update-field
-git checkout -b quochung/refactor/update-field
-
-# Đặt tên theo ID của task/ticket:
-git checkout -b quochung/feat/SP-123
-git checkout -b quochung/fix/SP-123
-```
-
----
-
-## 📝 Quy tắc Commit Message
-
-Định dạng:
-```
-<type>: [Nội dung]
-```
-
-**Các loại commit (Type):**
-- `feat`: Tính năng mới
-- `fix`: Sửa lỗi
-- `refactor`: Tái cấu trúc code
-
-**Ví dụ:**
-```bash
-git commit -m "feat: Thêm API đăng nhập"
-git commit -m "fix: Cập nhật field bị lỗi"
-git commit -m "refactor: Tối ưu logic phân quyền"
-git commit -m "feat: Khởi tạo dự án và cấu hình base"
-```
-
----
-*Phát triển bởi SipPoint Team.*
