@@ -2,11 +2,11 @@ const Category = require('../models/category.model');
 
 class CategoryService {
   static async getAll() {
-    return await Category.find({});
+    return await Category.find({}).lean();
   }
 
   static async getById(id) {
-    return await Category.findById(id);
+    return await Category.findById(id).lean();
   }
 
   static async create(data) {

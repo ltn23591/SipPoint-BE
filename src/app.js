@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
+const compression = require('compression');
 
 dotenv.config();
 
@@ -15,9 +16,10 @@ const i18n = require('./config/i18n');
 
 const app = express();
 
-// 1. Middlewares bảo mật & Logging
+// 1. Middlewares bảo mật & Tối ưu & Logging
 app.use(helmet());
 app.use(cors());
+app.use(compression()); // Nén toàn bộ payload JSON để giảm băng thông
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));

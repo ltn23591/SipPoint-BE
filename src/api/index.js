@@ -25,6 +25,7 @@ const documentRoutes = require('./routes/document.route');
 const reportRoutes = require('./routes/report.route');
 const shiftRoutes = require('./routes/shift.route');
 const aiRoutes = require('./routes/ai.route');
+const paymentRoutes = require('./routes/payment.route');
 
 const router = express.Router();
 
@@ -72,5 +73,6 @@ router.use('/report', reportRoutes);
 router.use('/shifts', shiftRoutes);
 router.use('/shift', shiftRoutes); // Compatibility alias
 router.use('/ai', aiRoutes);
+router.use('/payment', paymentRoutes);
 
 module.exports = router;
