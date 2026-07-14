@@ -7,11 +7,10 @@ const exceljs = require('exceljs');
 // funcion for list product
 exports.getAll = async (req, res) => {
   try {
-    const products = await Product.find({}).populate('category', 'name');
+    const products = await Product.find({}).populate('category', 'name').lean();
     const data = products.map(p => {
-      const obj = p.toObject();
-      obj.status = obj.isActive;
-      return obj;
+      p.status = p.isActive;
+      return p;
     });
     res.json({
       success: true,
@@ -28,15 +27,15 @@ exports.getAll = async (req, res) => {
 // funcion for single product info
 exports.getById = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id).populate('category', 'name');
+    const product = await Product.findById(req.params.id).populate('category', 'name').lean();
     if (!product) {
       return res.json({ success: false, message: 'Không tìm thấy sản phẩm' });
     }
-    const variants = await ProductVariant.find({ product: product._id });
+    const variants = await ProductVariant.find({ product: product._id }).lean();
     res.json({
       success: true,
       data: {
-        ...product.toObject(),
+        ...product,
         status: product.isActive,
         variants,
       },
@@ -185,7 +184,7 @@ exports.update = async (req, res) => {
       }
     } else {
       // Nếu không gửi lên variants mới, lấy các biến thể hiện tại
-      updatedVariants = await ProductVariant.find({ product: req.params.id });
+      updatedVariants = await ProductVariant.find({ product: req.params.id }).lean();
     }
 
     res.json({
@@ -245,7 +244,7 @@ exports.importExcel = async (req, res) => {
     const categoriesCache = {};
 
     // Lấy tất cả danh mục trước để tra cứu nhanh, tránh query async trong vòng lặp đồng bộ
-    const categories = await Category.find({});
+    const categories = await Category.find({}).lean();
     categories.forEach(cat => {
       categoriesCache[cat.name.toLowerCase().trim()] = cat._id;
     });

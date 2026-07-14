@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { ORDER_STATUS, IS_ACTIVE } = require('../enums');
+const { ORDER_STATUS, IS_ACTIVE, PAYMENT_METHOD } = require('../enums');
 
 const orderSchema = new mongoose.Schema(
   {
@@ -66,6 +66,11 @@ const orderSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    paymentMethod: {
+      type: String,
+      enum: Object.values(PAYMENT_METHOD),
+      default: PAYMENT_METHOD.CASH,
+    },
     isPickup: {
       type: Boolean,
       default: false,
@@ -113,6 +118,11 @@ orderSchema.virtual('items', {
   ref: 'OrderItem',
   localField: '_id',
   foreignField: 'orderId',
+});
+
+// Virtual for VietQR payment link
+orderSchema.virtual('paymentQrUrl').get(function () {
+  return `https://img.vietqr.io/image/VCB-1030501667-compact.png?amount=${this.total}&addInfo=${this.code}`;
 });
 
 orderSchema.index({ status: 1 });

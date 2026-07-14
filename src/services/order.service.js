@@ -8,7 +8,7 @@ const CustomerVoucher = require('../models/customerVoucher.model');
 const Customer = require('../models/customer.model');
 const VoucherService = require('./voucher.service');
 const CustomerService = require('./customer.service');
-const { ORDER_STATUS, TABLE_STATUS, IS_ACTIVE, POINT_TRANSACTION_TYPE, POINTS_RATE } = require('../enums');
+const { ORDER_STATUS, TABLE_STATUS, IS_ACTIVE, POINT_TRANSACTION_TYPE, POINTS_RATE, PAYMENT_METHOD } = require('../enums');
 const { emitToAll } = require('./socket.service');
 const mongoose = require('mongoose');
 
@@ -201,6 +201,7 @@ class OrderService {
         createdBy: createdById || null,
         isUrgent: data.isUrgent || false,
         isPaid: data.isPaid || false,
+        paymentMethod: data.paymentMethod || PAYMENT_METHOD.CASH,
         isPickup: data.isPickup || false,
         type: data.type || 'dine_in',
       });
@@ -289,22 +290,25 @@ class OrderService {
     order.updatedBy = updatedById;
 
     // Tích điểm tự động khi đơn hoàn thành: 1 điểm / POINTS_RATE VND
-    if (newStatus === ORDER_STATUS.COMPLETED && order.customerId) {
-      const points = Math.floor(order.total / POINTS_RATE);
-      if (points > 0 && order.pointsAwarded === 0) {
-        const pointRes = await CustomerService.adjustPoints(
-          order.customerId,
-          points,
-          `Đơn hàng ${order.code}`,
-          `Tích điểm từ hóa đơn ${order.total.toLocaleString('vi-VN')}đ`,
-          POINT_TRANSACTION_TYPE.ORDER,
-          { spentChange: order.total, orderId: order._id, affectsCycle: true }
-        );
-        if (pointRes.success) {
-          order.pointsAwarded = points;
+    if (newStatus === ORDER_STATUS.COMPLETED) {
+      order.isPaid = true;
+      if (order.customerId) {
+        const points = Math.floor(order.total / POINTS_RATE);
+        if (points > 0 && order.pointsAwarded === 0) {
+          const pointRes = await CustomerService.adjustPoints(
+            order.customerId,
+            points,
+            `Đơn hàng ${order.code}`,
+            `Tích điểm từ hóa đơn ${order.total.toLocaleString('vi-VN')}đ`,
+            POINT_TRANSACTION_TYPE.ORDER,
+            { spentChange: order.total, orderId: order._id, affectsCycle: true }
+          );
+          if (pointRes.success) {
+            order.pointsAwarded = points;
+          }
         }
+        await Customer.updateOne({ _id: order.customerId }, { lastVisitAt: new Date() });
       }
-      await Customer.updateOne({ _id: order.customerId }, { lastVisitAt: new Date() });
     }
 
     await order.save();
@@ -493,7 +497,8 @@ class OrderService {
       .populate('createdBy', 'name email')
       .populate('updatedBy', 'name email')
       .populate('items')
-      .populate('voucherId');
+      .populate('voucherId')
+      .lean();
 
     if (!order || order.isActive === IS_ACTIVE.FALSE) {
       return { status: 404, success: false, message: 'Không tìm thấy đơn hàng' };
@@ -540,7 +545,8 @@ class OrderService {
       .populate('voucherId')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(parseInt(limit));
+      .limit(parseInt(limit))
+      .lean();
 
     const total = await Order.countDocuments(filter);
 
