@@ -19,7 +19,11 @@ const sendEmail = async (options) => {
       senderName: process.env.FROM_NAME || 'SipPoint'
     };
 
-    const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_EMAIL_URL || 'https://script.google.com/macros/s/AKfycbwtPr-yU4C2fLOAsyKSticy9E8OlVoFpSp8iGRLsIR3q-Ow0lc_028Iw1aFTCtabsQI/exec';
+    const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_EMAIL_URL;
+
+    if (!GOOGLE_SCRIPT_URL) {
+      throw new Error('Thiếu cấu hình GOOGLE_SCRIPT_EMAIL_URL trong biến môi trường (.env)');
+    }
 
     // Gửi request qua Google Apps Script Web App
     const response = await fetch(GOOGLE_SCRIPT_URL, {

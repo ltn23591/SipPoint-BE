@@ -1,10 +1,4 @@
 const http = require('http');
-const dns = require('dns');
-
-// Ưu tiên phân giải IPv4 trước IPv6 toàn cục để giải quyết triệt để lỗi kết nối ENETUNREACH trên Render
-if (dns.setDefaultResultOrder) {
-  dns.setDefaultResultOrder('ipv4first');
-}
 
 const app = require('./app');
 const connectDB = require('./db');

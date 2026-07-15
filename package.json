@@ -31,7 +31,6 @@
     "morgan": "^1.10.0",
     "multer": "^2.1.1",
     "node-cron": "^4.2.1",
-    "nodemailer": "^8.0.7",
     "nodemon": "^3.1.14",
     "openai": "^6.45.0",
     "qrcode": "^1.5.4",
