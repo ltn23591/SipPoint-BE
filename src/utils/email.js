@@ -1,43 +1,7 @@
-const nodemailer = require('nodemailer');
 const ejs = require('ejs');
 const path = require('path');
 const logger = require('../config/logger');
-
-let transporterConfig;
-if (process.env.SMTP_HOST === 'smtp.gmail.com') {
-  const smtpPort = parseInt(process.env.SMTP_PORT || '465', 10);
-  transporterConfig = {
-    host: 'smtp.gmail.com',
-    port: smtpPort,
-    secure: smtpPort === 465, // true cho 465 (SSL), false cho 587 (TLS/STARTTLS)
-    family: 4, // Bắt buộc sử dụng IPv4
-    lookup: (hostname, options, callback) => {
-      // Ép DNS lookup chỉ trả về IPv4 (khắc phục hoàn toàn lỗi ENETUNREACH)
-      require('dns').lookup(hostname, { family: 4 }, (err, address, family) => {
-        callback(err, address, family);
-      });
-    },
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-    tls: {
-      rejectUnauthorized: false
-    }
-  };
-} else {
-  transporterConfig = {
-    host: process.env.SMTP_HOST || 'smtp.ethereal.email',
-    port: parseInt(process.env.SMTP_PORT || '587', 10),
-    family: 4, // Bắt buộc sử dụng IPv4
-    auth: {
-      user: process.env.SMTP_USER || 'test@example.com',
-      pass: process.env.SMTP_PASS || 'password',
-    },
-  };
-}
-
-const transporter = nodemailer.createTransport(transporterConfig);
+// const nodemailer = require('nodemailer'); // Không dùng nữa do lỗi Render chặn SMTP
 
 const sendEmail = async (options) => {
   try {
@@ -48,16 +12,40 @@ const sendEmail = async (options) => {
       html = await ejs.renderFile(templatePath, options.data || {});
     }
 
-    const message = {
-      from: `${process.env.FROM_NAME || 'Admin'} <${process.env.FROM_EMAIL || 'noreply@example.com'}>`,
-      to: options.email,
+    // Cấu hình payload cho Brevo API
+    const payload = {
+      sender: {
+        name: process.env.FROM_NAME || 'Admin',
+        email: process.env.FROM_EMAIL || 'noreply@example.com'
+      },
+      to: [
+        {
+          email: options.email
+        }
+      ],
       subject: options.subject,
-      html: html,
+      htmlContent: html
     };
 
-    const info = await transporter.sendMail(message);
-    logger.info('Email sent: %s', info.messageId);
-    return info;
+    // Gửi request qua HTTP API (port 443) để không bị Render chặn
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': process.env.BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(`Brevo API Error: ${JSON.stringify(data)}`);
+    }
+
+    logger.info('Email sent via Brevo API: %s', data.messageId || 'Success');
+    return data;
   } catch (error) {
     logger.error('Error sending email: ', error);
     throw error;
