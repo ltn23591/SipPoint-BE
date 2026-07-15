@@ -10,13 +10,19 @@ if (process.env.SMTP_HOST === 'smtp.gmail.com') {
     host: 'smtp.gmail.com',
     port: smtpPort,
     secure: smtpPort === 465, // true cho 465 (SSL), false cho 587 (TLS/STARTTLS)
-    family: 4, // Bắt buộc sử dụng IPv4 vì Render thường không hỗ trợ định tuyến IPv6 (Fix lỗi ENETUNREACH)
+    family: 4, // Bắt buộc sử dụng IPv4
+    lookup: (hostname, options, callback) => {
+      // Ép DNS lookup chỉ trả về IPv4 (khắc phục hoàn toàn lỗi ENETUNREACH)
+      require('dns').lookup(hostname, { family: 4 }, (err, address, family) => {
+        callback(err, address, family);
+      });
+    },
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
     tls: {
-      rejectUnauthorized: false // Bỏ qua lỗi SSL trên một số môi trường cloud như Render
+      rejectUnauthorized: false
     }
   };
 } else {
