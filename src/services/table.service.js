@@ -26,7 +26,8 @@ class TableService {
     await table.save();
 
     // 2. Generate QR code using the ID
-    const qrText = `/order?tableId=${table._id}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const qrText = `${frontendUrl}/menu?tableId=${table._id}&zoneId=${table.zoneId}`;
     table.qrCode = await generateQRCode(qrText);
     
     // 3. Save again with QR code
@@ -55,7 +56,8 @@ class TableService {
     
     // Always ensure QR code is present
     if (!table.qrCode) {
-      const qrText = `/order?tableId=${table._id}`;
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const qrText = `${frontendUrl}/menu?tableId=${table._id}&zoneId=${table.zoneId}`;
       table.qrCode = await generateQRCode(qrText);
     }
 
@@ -70,7 +72,8 @@ class TableService {
     const table = await Table.findById(id);
     if (!table) throw new Error('Không tìm thấy bàn');
 
-    const qrText = `/order?tableId=${table._id}`;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const qrText = `${frontendUrl}/menu?tableId=${table._id}&zoneId=${table.zoneId}`;
     table.qrCode = await generateQRCode(qrText);
     return await table.save();
   }
