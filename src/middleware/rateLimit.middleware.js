@@ -12,11 +12,14 @@ const logger = require('../config/logger');
 // ============================================================
 
 // Khởi tạo Redis client
-// Nếu không có REDIS_URL trong .env, mặc định chạy localhost:6379
-const redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+const redisUrl = (process.env.REDIS_URL || 'redis://localhost:6379').trim();
+const redisClient = new Redis(redisUrl, {
+  family: 0,
+  connectTimeout: 10000
+});
 
 redisClient.on('error', (err) => {
-  logger.error(`[Redis] Lỗi kết nối Redis (Rate Limit): ${err.message}`);
+  logger.error(`[Redis] Lỗi kết nối Redis (Rate Limit):`, err);
 });
 
 redisClient.on('connect', () => {
@@ -27,7 +30,7 @@ redisClient.on('connect', () => {
  * Hàm tạo Rate Limiter dùng Redis
  */
 const createRateLimiter = (options) => {
-  return rateLimit({
+  const config = {
     // Sử dụng Redis Store
     store: new RedisStore({
       sendCommand: (...args) => redisClient.call(...args),
@@ -39,15 +42,19 @@ const createRateLimiter = (options) => {
       success: false,
       message: options.message || 'Thao tác quá nhiều. Vui lòng thử lại sau.'
     },
-    // Nếu có keyGenerator custom thì dùng, không thì lấy theo req.ip
-    keyGenerator: options.keyGenerator || ((req) => req.ip || 'unknown'),
     standardHeaders: true, // Trả về `RateLimit-*` headers chuẩn RFC
     legacyHeaders: false, // Bỏ `X-RateLimit-*` headers cũ
     handler: (req, res, next, opts) => {
       logger.warn(`[Rate Limit] Blocked ${req.ip} - Vượt quá ${opts.max} requests`);
       res.status(opts.statusCode).json(opts.message);
     }
-  });
+  };
+
+  if (options.keyGenerator) {
+    config.keyGenerator = options.keyGenerator;
+  }
+
+  return rateLimit(config);
 };
 
 // ============================================================
