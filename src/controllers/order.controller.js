@@ -1,3 +1,4 @@
+const catchAsync = require('../utils/catchAsync');
 const OrderService = require('../services/order.service');
 const { ORDER_STATUS, ROLE } = require('../enums');
 class OrderController {

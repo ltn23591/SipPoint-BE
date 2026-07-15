@@ -1,72 +1,45 @@
+const catchAsync = require('../utils/catchAsync');
 const ReportService = require('../services/report.service');
 
-exports.dashboard = async (req, res, next) => {
-  try {
-    const data = await ReportService.getDashboardData();
+exports.dashboard = catchAsync(async (req, res, next) => {
+  const data = await ReportService.getDashboardData();
     res.status(200).json({
       success: true,
       data,
       message: 'Lấy dữ liệu dashboard thành công'
     });
-  } catch (error) {
-    next(error);
-  }
-};
+});;
 
-exports.revenue = async (req, res, next) => {
-  try {
-    const data = await ReportService.getRevenueReport(req.query);
+exports.revenue = catchAsync(async (req, res, next) => {
+  const data = await ReportService.getRevenueReport(req.query);
     res.status(200).json({
       success: true,
       data,
       message: 'Lấy báo cáo doanh thu thành công'
     });
-  } catch (error) {
-    next(error);
-  }
-};
+});;
 
-exports.topProducts = async (req, res, next) => {
-  try {
-    const data = await ReportService.getTopProducts(req.query);
+exports.topProducts = catchAsync(async (req, res, next) => {
+  const data = await ReportService.getTopProducts(req.query);
     res.status(200).json({
       success: true,
       data,
       message: 'Lấy báo cáo sản phẩm bán chạy thành công'
     });
-  } catch (error) {
-    next(error);
-  }
-};
+});;
 
-exports.exportRevenue = async (req, res, next) => {
-  try {
-    await ReportService.exportRevenue(req.body, res);
-  } catch (error) {
-    next(error);
-  }
-};
+exports.exportRevenue = catchAsync(async (req, res, next) => {
+  await ReportService.exportRevenue(req.body, res);
+});;
 
-exports.exportOrders = async (req, res, next) => {
-  try {
-    await ReportService.exportOrders(req.body, res);
-  } catch (error) {
-    next(error);
-  }
-};
+exports.exportOrders = catchAsync(async (req, res, next) => {
+  await ReportService.exportOrders(req.body, res);
+});;
 
-exports.exportCustomers = async (req, res, next) => {
-  try {
-    await ReportService.exportCustomers(req.body, res);
-  } catch (error) {
-    next(error);
-  }
-};
+exports.exportCustomers = catchAsync(async (req, res, next) => {
+  await ReportService.exportCustomers(req.body, res);
+});;
 
-exports.exportShifts = async (req, res, next) => {
-  try {
-    await ReportService.exportShifts(req.body, res);
-  } catch (error) {
-    next(error);
-  }
-};
+exports.exportShifts = catchAsync(async (req, res, next) => {
+  await ReportService.exportShifts(req.body, res);
+});;

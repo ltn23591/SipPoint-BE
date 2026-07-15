@@ -296,7 +296,7 @@ class AuthService {
       userModel: 'Employee'
     });
 
-    const activationSecret = process.env.ACTIVATION_SECRET || 'activation_secret_123';
+    const activationSecret = process.env.ACTIVATION_SECRET;
     const activationToken = jwt.sign({ email: employee.email }, activationSecret, { expiresIn: '5m' });
 
     await sendEmail({
@@ -312,7 +312,7 @@ class AuthService {
   }
 
   static async verifyOtpCode(activation_token, activation_code) {
-    const activationSecret = process.env.ACTIVATION_SECRET || 'activation_secret_123';
+    const activationSecret = process.env.ACTIVATION_SECRET;
     let decoded;
     try {
       decoded = jwt.verify(activation_token, activationSecret);

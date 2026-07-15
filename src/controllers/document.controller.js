@@ -1,11 +1,11 @@
+const AppError = require('../utils/AppError');
+const catchAsync = require('../utils/catchAsync');
 const DocumentService = require('../services/document.service');
 
-exports.uploadFile = async (req, res, next) => {
-  try {
-    const file = req.file;
+exports.uploadFile = catchAsync(async (req, res, next) => {
+  const file = req.file;
     if (!file) {
-      res.status(400);
-      throw new Error('Vui lòng tải lên một file');
+      return next(new AppError('Vui lòng tải lên một file', 400));
     }
     const data = await DocumentService.uploadSingle(file.buffer, req.body.folder);
     res.status(200).json({
@@ -13,17 +13,12 @@ exports.uploadFile = async (req, res, next) => {
       data,
       message: 'Upload file thành công'
     });
-  } catch (error) {
-    next(error);
-  }
-};
+});;
 
-exports.uploadMultipleFile = async (req, res, next) => {
-  try {
-    const files = req.files;
+exports.uploadMultipleFile = catchAsync(async (req, res, next) => {
+  const files = req.files;
     if (!files || files.length === 0) {
-      res.status(400);
-      throw new Error('Vui lòng tải lên ít nhất một file');
+      return next(new AppError('Vui lòng tải lên ít nhất một file', 400));
     }
     const data = await DocumentService.uploadMultiple(files, req.body.folder);
     res.status(200).json({
@@ -31,17 +26,12 @@ exports.uploadMultipleFile = async (req, res, next) => {
       data,
       message: 'Upload nhiều file thành công'
     });
-  } catch (error) {
-    next(error);
-  }
-};
+});;
 
-exports.deleteFile = async (req, res, next) => {
-  try {
-    const publicId = req.body.publicId || req.body.public_id || req.query.publicId || req.query.public_id;
+exports.deleteFile = catchAsync(async (req, res, next) => {
+  const publicId = req.body.publicId || req.body.public_id || req.query.publicId || req.query.public_id;
     if (!publicId) {
-      res.status(400);
-      throw new Error('Thiếu publicId của file cần xóa');
+      return next(new AppError('Thiếu publicId của file cần xóa', 400));
     }
     const result = await DocumentService.deleteFile(publicId);
     res.status(200).json({
@@ -49,7 +39,4 @@ exports.deleteFile = async (req, res, next) => {
       data: result,
       message: 'Xóa file thành công'
     });
-  } catch (error) {
-    next(error);
-  }
-};
+});;

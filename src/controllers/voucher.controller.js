@@ -1,3 +1,4 @@
+const catchAsync = require('../utils/catchAsync');
 const VoucherService = require('../services/voucher.service');
 
 class VoucherController {

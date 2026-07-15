@@ -1,109 +1,245 @@
 const Product = require('../models/product.model');
+const ProductVariant = require('../models/productVariant.model');
+const Category = require('../models/category.model');
+const cloudinary = require('../config/cloudinary');
+const exceljs = require('exceljs');
 
 class ProductService {
   /**
-   * Lấy danh sách sản phẩm (có phân trang, tìm kiếm, lọc theo danh mục)
+   * Lấy danh sách sản phẩm
    */
-  static async getAll(query = {}) {
-    const filter = { isDeleted: false };
-    if (query.keyword) {
-      filter.name = { $regex: query.keyword, $options: 'i' };
-    }
-    if (query.category) {
-      filter.category = query.category;
-    }
-    if (query.isActive !== undefined) {
-      filter.isActive = query.isActive;
-    }
+  static async getAll() {
+    const products = await Product.find({}).populate('category', 'name').lean();
+    return products.map(p => {
+      p.status = p.isActive;
+      return p;
+    });
+  }
 
-    let sort = '-createdAt';
-    if (query.sortBy) {
-      const parts = query.sortBy.split(':');
-      sort = { [parts[0]]: parts[1] === 'desc' ? -1 : 1 };
-    }
+  /**
+   * Lấy chi tiết một sản phẩm
+   */
+  static async getById(id) {
+    const product = await Product.findById(id).populate('category', 'name').lean();
+    if (!product) return null;
 
-    const page = parseInt(query.page, 10) || 1;
-    const limit = parseInt(query.limit, 10) || 10;
-    const skip = (page - 1) * limit;
-
-    const products = await Product.find(filter)
-      .populate('category', 'name')
-      .sort(sort)
-      .skip(skip)
-      .limit(limit);
-
-    const total = await Product.countDocuments(filter);
-
+    const variants = await ProductVariant.find({ product: product._id }).lean();
     return {
-      products,
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
+      ...product,
+      status: product.isActive,
+      variants,
     };
   }
 
-  static async getById(id) {
-    return await Product.findOne({ _id: id, isDeleted: false }).populate('category', 'name');
-  }
-
+  /**
+   * Tạo sản phẩm mới
+   */
   static async create(body, files) {
-    if (!body.name) throw new Error('Vui lòng nhập tên sản phẩm');
-    if (!body.price) throw new Error('Vui lòng nhập giá sản phẩm');
-    if (!body.category) throw new Error('Vui lòng chọn danh mục (category)');
+    const { name, description, price, category, stock, isActive, status, variants } = body;
 
-    const productData = { ...body };
+    const allImages = files || [];
+    const uploadedUrls = await Promise.all(
+      allImages.map(async (item) => {
+        const result = await cloudinary.uploader.upload(item.path, {
+          resource_type: 'image',
+          folder: 'products',
+        });
+        return result.secure_url;
+      })
+    );
 
-    // Xử lý file ảnh được tải lên từ multer
-    if (files) {
-      if (files['image'] && files['image'][0]) {
-        productData.image = files['image'][0].filename;
+    const productData = {
+      name,
+      description,
+      price: Number(price),
+      category,
+      stock: Number(stock) || 0,
+      isActive: isActive || status || 'active',
+      image: uploadedUrls.length > 0 ? uploadedUrls[0] : '',
+      images: uploadedUrls,
+    };
+
+    const product = new Product(productData);
+    await product.save();
+
+    let createdVariants = [];
+    if (variants) {
+      let parsedVariants = [];
+      try {
+        parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+      } catch (e) {
+        console.log('Failed to parse variants:', e);
       }
-      if (files['images']) {
-        productData.images = files['images'].map(file => file.filename);
+
+      if (Array.isArray(parsedVariants) && parsedVariants.length > 0) {
+        const variantsData = parsedVariants.map(variant => ({
+          product: product._id,
+          variantType: variant.variantType,
+          name: variant.name,
+          priceAdjustment: Number(variant.priceAdjustment) || 0,
+          isActive: variant.isActive !== undefined ? variant.isActive : 'active',
+        }));
+        createdVariants = await ProductVariant.insertMany(variantsData);
       }
     }
 
-    if (!productData.image) {
-      throw new Error('Vui lòng tải lên hình ảnh (image) chính cho sản phẩm');
-    }
-
-    return await Product.create(productData);
+    return {
+      ...product.toObject(),
+      status: product.isActive,
+      variants: createdVariants,
+    };
   }
 
+  /**
+   * Cập nhật sản phẩm
+   */
   static async update(id, body, files) {
-    const productData = { ...body };
+    const { name, description, price, category, stock, isActive, status, variants } = body;
 
-    // Xử lý file ảnh được tải lên từ multer
-    if (files) {
-      if (files['image'] && files['image'][0]) {
-        productData.image = files['image'][0].filename;
-      }
-      if (files['images']) {
-        productData.images = files['images'].map(file => file.filename);
-      }
+    const productData = {
+      name,
+      description,
+      price: Number(price),
+      category,
+      stock: Number(stock) || 0,
+      isActive: isActive || status || 'active',
+    };
+
+    const allImages = files || [];
+    if (allImages.length > 0) {
+      const imagesUrls = await Promise.all(
+        allImages.map(async (item) => {
+          const result = await cloudinary.uploader.upload(item.path, {
+            resource_type: 'image',
+            folder: 'products',
+          });
+          return result.secure_url;
+        })
+      );
+      productData.image = imagesUrls[0];
+      productData.images = imagesUrls;
     }
 
-    const item = await Product.findOneAndUpdate(
-      { _id: id, isDeleted: false },
-      productData,
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+    const updatedProduct = await Product.findByIdAndUpdate(id, productData, { new: true });
+    if (!updatedProduct) return null;
 
-    return item;
+    let updatedVariants = [];
+    if (variants !== undefined) {
+      let parsedVariants = [];
+      try {
+        parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+      } catch (e) {
+        console.log('Failed to parse variants:', e);
+      }
+
+      if (Array.isArray(parsedVariants)) {
+        await ProductVariant.deleteMany({ product: id });
+        if (parsedVariants.length > 0) {
+          const variantsData = parsedVariants.map(variant => ({
+            product: id,
+            variantType: variant.variantType,
+            name: variant.name,
+            priceAdjustment: Number(variant.priceAdjustment) || 0,
+            isActive: variant.isActive !== undefined ? variant.isActive : 'active',
+          }));
+          updatedVariants = await ProductVariant.insertMany(variantsData);
+        }
+      }
+    } else {
+      updatedVariants = await ProductVariant.find({ product: id }).lean();
+    }
+
+    return {
+      ...updatedProduct.toObject(),
+      status: updatedProduct.isActive,
+      variants: updatedVariants,
+    };
   }
 
+  /**
+   * Xóa sản phẩm
+   */
   static async delete(id) {
-    return await Product.findOneAndUpdate(
-      { _id: id, isDeleted: false },
-      { isDeleted: true },
-      { new: true }
-    );
+    const deletedProduct = await Product.findByIdAndDelete(id);
+    if (deletedProduct) {
+      await ProductVariant.deleteMany({ product: id });
+    }
+    return deletedProduct;
+  }
+
+  /**
+   * Import sản phẩm từ file Excel
+   */
+  static async importExcel(file) {
+    if (!file) throw new Error('Vui lòng tải lên file Excel');
+
+    const workbook = new exceljs.Workbook();
+    if (file.path) {
+      await workbook.xlsx.readFile(file.path);
+    } else if (file.buffer) {
+      await workbook.xlsx.load(file.buffer);
+    } else {
+      throw new Error('Định dạng file không được hỗ trợ');
+    }
+
+    const worksheet = workbook.worksheets[0];
+    const productsToInsert = [];
+    const errors = [];
+    const categoriesCache = {};
+
+    const categories = await Category.find({}).lean();
+    categories.forEach(cat => {
+      categoriesCache[cat.name.toLowerCase().trim()] = cat._id;
+    });
+
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return;
+
+      const name = row.getCell(1).value;
+      const description = row.getCell(2).value;
+      const price = row.getCell(3).value;
+      const categoryName = row.getCell(4).value;
+      let imageUrl = row.getCell(5).value;
+      const stock = row.getCell(6).value;
+
+      if (!name || price == null || !categoryName) {
+        errors.push({ row: rowNumber, message: 'Thiếu thông tin bắt buộc (Tên, Giá hoặc Tên Danh Mục)' });
+        return;
+      }
+
+      if (imageUrl && typeof imageUrl === 'object') {
+        imageUrl = imageUrl.hyperlink || imageUrl.text;
+      }
+
+      const catNameStr = categoryName.toString().toLowerCase().trim();
+      const categoryId = categoriesCache[catNameStr];
+
+      if (!categoryId) {
+        errors.push({ row: rowNumber, message: `Không tìm thấy danh mục: ${categoryName}` });
+        return;
+      }
+
+      productsToInsert.push({
+        name: name.toString().trim(),
+        description: description ? description.toString().trim() : '',
+        price: Number(price),
+        category: categoryId,
+        image: imageUrl ? imageUrl.toString().trim() : '',
+        images: imageUrl ? [imageUrl.toString().trim()] : [],
+        stock: Number(stock) || 0,
+        isActive: 'active'
+      });
+    });
+
+    if (productsToInsert.length > 0) {
+      await Product.insertMany(productsToInsert);
+    }
+
+    return {
+      successCount: productsToInsert.length,
+      errorCount: errors.length,
+      errors
+    };
   }
 }
 

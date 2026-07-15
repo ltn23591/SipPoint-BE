@@ -26,7 +26,7 @@ exports.protect = async (req, res, next) => {
         // Xác thực token
         const decoded = jwt.verify(
             token,
-            process.env.JWT_SECRET || 'secret123',
+            process.env.JWT_SECRET,
         );
 
         // Lấy thông tin tài khoản từ DB dựa trên type được lưu trong token

@@ -12,7 +12,7 @@ const sendTokenResponse = (user, status, res, message = 'Thành công', userType
     : 1 * 24 * 60 * 60 * 1000; // 1 ngày
 
   // Tạo token
-  const token = jwt.sign({ id: user._id, role: roleCode, type: userType }, process.env.JWT_SECRET || 'secret123', {
+  const token = jwt.sign({ id: user._id, role: roleCode, type: userType }, process.env.JWT_SECRET, {
     expiresIn,
   });
 

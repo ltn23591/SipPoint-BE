@@ -1,3 +1,4 @@
+const catchAsync = require('../utils/catchAsync');
 const CustomerSegmentService = require('../services/customerSegment.service');
 
 class CustomerSegmentController {

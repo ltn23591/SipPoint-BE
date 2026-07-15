@@ -1,8 +1,8 @@
+const catchAsync = require('../utils/catchAsync');
 const AIService = require('../services/ai.service');
 
-exports.chatWithProducts = async (req, res, next) => {
-  try {
-    const { message, sessionId, cart } = req.body;
+exports.chatWithProducts = catchAsync(async (req, res, next) => {
+  const { message, sessionId, cart } = req.body;
 
     if (!message) {
       return res.status(400).json({
@@ -26,17 +26,10 @@ exports.chatWithProducts = async (req, res, next) => {
         reply: aiResponse,
       },
     });
-  } catch (error) {
-    next(error);
-  }
-};
+});;
 
-exports.recommendTopProduct = async (req, res, next) => {
-  try {
-    const result = await AIService.recommendTopProduct();
+exports.recommendTopProduct = catchAsync(async (req, res, next) => {
+  const result = await AIService.recommendTopProduct();
     res.status(200).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
+});;
 

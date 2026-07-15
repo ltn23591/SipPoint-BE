@@ -1,3 +1,4 @@
+const catchAsync = require('../utils/catchAsync');
 const CustomerService = require('../services/customer.service');
 
 class CustomerController {
