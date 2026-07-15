@@ -1,7 +1,6 @@
 const ejs = require('ejs');
 const path = require('path');
 const logger = require('../config/logger');
-// const nodemailer = require('nodemailer'); // Không dùng nữa do lỗi Render chặn SMTP
 
 const sendEmail = async (options) => {
   try {
@@ -12,39 +11,32 @@ const sendEmail = async (options) => {
       html = await ejs.renderFile(templatePath, options.data || {});
     }
 
-    // Cấu hình payload cho Brevo API
+    // Cấu hình payload cho Google Apps Script API
     const payload = {
-      sender: {
-        name: process.env.FROM_NAME || 'Admin',
-        email: process.env.FROM_EMAIL || 'noreply@example.com'
-      },
-      to: [
-        {
-          email: options.email
-        }
-      ],
+      to: options.email,
       subject: options.subject,
-      htmlContent: html
+      htmlContent: html,
+      senderName: process.env.FROM_NAME || 'SipPoint'
     };
 
-    // Gửi request qua HTTP API (port 443) để không bị Render chặn
-    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    const GOOGLE_SCRIPT_URL = process.env.GOOGLE_SCRIPT_EMAIL_URL || 'https://script.google.com/macros/s/AKfycbwtPr-yU4C2fLOAsyKSticy9E8OlVoFpSp8iGRLsIR3q-Ow0lc_028Iw1aFTCtabsQI/exec';
+
+    // Gửi request qua Google Apps Script Web App
+    const response = await fetch(GOOGLE_SCRIPT_URL, {
       method: 'POST',
       headers: {
-        'accept': 'application/json',
-        'api-key': process.env.BREVO_API_KEY,
-        'content-type': 'application/json'
+        'Content-Type': 'application/json' // Không được dùng 'accept' hoặc các header phức tạp vì GAS không hỗ trợ CORS preflight phức tạp
       },
       body: JSON.stringify(payload)
     });
 
     const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(`Brevo API Error: ${JSON.stringify(data)}`);
+    if (data.status !== 'success') {
+      throw new Error(`Google Apps Script Error: ${JSON.stringify(data)}`);
     }
 
-    logger.info('Email sent via Brevo API: %s', data.messageId || 'Success');
+    logger.info('Email sent via Google Apps Script API to: %s', options.email);
     return data;
   } catch (error) {
     logger.error('Error sending email: ', error);
