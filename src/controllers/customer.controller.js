@@ -2,94 +2,57 @@ const catchAsync = require('../utils/catchAsync');
 const CustomerService = require('../services/customer.service');
 
 class CustomerController {
-  static async getAll(req, res) {
-    try {
+  static getAll = catchAsync(async (req, res, next) => {
       const result = await CustomerService.getAllCustomers(req.query);
       res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+    });
 
-  static async getById(req, res) {
-    try {
+  static getById = catchAsync(async (req, res, next) => {
       const result = await CustomerService.getCustomerById(req.params.id);
       res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+    });
 
-  static async getMyPointHistory(req, res) {
-    try {
+  static getMyPointHistory = catchAsync(async (req, res, next) => {
       const result = await CustomerService.getMyPointHistory(req.user.id);
       res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+    });
 
-  static async create(req, res) {
-    try {
+  static create = catchAsync(async (req, res, next) => {
       const result = await CustomerService.createCustomer(req.body);
       res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+    });
 
-  static async updateMyProfile(req, res) {
-    try {
+  static updateMyProfile = catchAsync(async (req, res, next) => {
       const result = await CustomerService.updateMyProfile(req.user.id, req.body);
       res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+    });
 
-  static async getMyVouchers(req, res) {
-    try {
+  static getMyVouchers = catchAsync(async (req, res, next) => {
       const result = await CustomerService.getMyVouchers(req.user.id);
       res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+    });
 
-  static async update(req, res) {
-    try {
+  static update = catchAsync(async (req, res, next) => {
       const result = await CustomerService.updateCustomer(req.params.id, req.body);
       res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+    });
 
-  static async getMyOrders(req, res) {
-    try {
+  static getMyOrders = catchAsync(async (req, res, next) => {
       const OrderService = require('../services/order.service');
       const result = await OrderService.getAllOrders({ customerId: req.user.id, limit: 50 });
       res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+    });
 
-  static async getMyOrderById(req, res) {
-    try {
+  static getMyOrderById = catchAsync(async (req, res, next) => {
       const OrderService = require('../services/order.service');
       const result = await OrderService.getOrderById(req.params.orderId);
       if (result.success && result.data.customerId && result.data.customerId._id.toString() !== req.user.id.toString()) {
         return res.status(403).json({ success: false, message: 'Bạn không có quyền xem đơn hàng này' });
       }
       res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+    });
 
-  static async createMyOrder(req, res) {
-    try {
+  static createMyOrder = catchAsync(async (req, res, next) => {
       const OrderService = require('../services/order.service');
       const orderData = {
         ...req.body,
@@ -97,13 +60,9 @@ class CustomerController {
       };
       const result = await OrderService.createOrder(orderData, null);
       res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+    });
 
-  static async adjustPoints(req, res) {
-    try {
+  static adjustPoints = catchAsync(async (req, res, next) => {
       const { pointsChange, title, description, transactionType } = req.body;
       const result = await CustomerService.adjustPoints(
         req.params.id,
@@ -113,10 +72,7 @@ class CustomerController {
         transactionType
       );
       res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+    });
 }
 
 module.exports = CustomerController;
