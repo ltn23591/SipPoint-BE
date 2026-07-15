@@ -24,17 +24,12 @@ const createSepayPayment = catchAsync(async (req, res, next) => {
   });
 });
 
-const sepayIPN = catchAsync(async (req, res, next) => {
+const sepayIPN = catchAsync(async (req, res) => {
   console.log('SePay IPN Request Body:', req.body);
   
-  // Note: tuỳ thuộc data SePay truyền về, ví dụ có req.body.code hoặc req.body.status
-  // Nên verify signature nếu có
-  
-  // Ở đây là logic giả định cập nhật đơn hàng
-  const { order_invoice_number, payment_status, error_code } = req.body;
+  const { order_invoice_number, payment_status } = req.body;
   
   if (payment_status === 'SUCCESS' || payment_status === 'PAID') {
-    // TODO: Tìm đơn hàng theo order_invoice_number và cập nhật isPaid = true, status = 'PAID'
     console.log(`SePay Payment successful for order ${order_invoice_number}`);
   } else {
     console.log(`SePay Payment failed for order ${order_invoice_number}`);

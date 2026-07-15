@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const Employee = require('../models/employee.model');
 const Customer = require('../models/customer.model');
-
+const AppError = require('../utils/AppError');
 // Middleware xác thực user (cả nhân viên và khách hàng)
 exports.protect = async (req, res, next) => {
     let token;
@@ -19,8 +19,7 @@ exports.protect = async (req, res, next) => {
     }
 
     if (!token) {
-        res.status(401);
-        return next(new Error('Không có quyền truy cập, vui lòng đăng nhập'));
+        return next(new AppError('Không có quyền truy cập, vui lòng đăng nhập', 401));
     }
 
     try {
@@ -39,35 +38,29 @@ exports.protect = async (req, res, next) => {
         }
 
         if (!user) {
-            res.status(401);
-            return next(new Error('Phiên đăng nhập đã hết hạn hoặc tài khoản không tồn tại, vui lòng đăng nhập lại.'));
+            return next(new AppError('Phiên đăng nhập đã hết hạn hoặc tài khoản không tồn tại, vui lòng đăng nhập lại.', 401));
         }
 
         // Kiểm tra trạng thái tài khoản
         if (decoded.type === 'customer') {
             if (!user.isActive) {
-                res.status(403);
-                return next(new Error('Tài khoản của bạn đang bị khóa'));
+                return next(new AppError('Tài khoản của bạn đang bị khóa', 403));
             }
             if (!user.isVerified) {
-                res.status(403);
-                return next(new Error('Vui lòng xác thực tài khoản trước khi truy cập'));
+                return next(new AppError('Vui lòng xác thực tài khoản trước khi truy cập', 403));
             }
         } else {
             if (user.isDeleted) {
-                res.status(401);
-                return next(new Error('Tài khoản không tồn tại hoặc đã bị xóa'));
+                return next(new AppError('Tài khoản không tồn tại hoặc đã bị xóa', 401));
             }
             if (user.status === 'banned') {
-                res.status(403);
-                return next(new Error('Tài khoản của bạn đang bị khóa'));
+                return next(new AppError('Tài khoản của bạn đang bị khóa', 403));
             }
         }
 
         req.user = user;
         next();
     } catch {
-        res.status(401);
-        next(new Error('Không có quyền truy cập, token không hợp lệ')); 
+        return next(new AppError('Không có quyền truy cập, token không hợp lệ', 401)); 
     }
 };
