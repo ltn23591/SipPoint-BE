@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
 const compression = require('compression');
+const logger = require('./config/logger');
 
 dotenv.config();
 
@@ -25,11 +26,14 @@ app.use(securityHeaders); // Security Headers bổ sung
 app.use(compression()); // Nén toàn bộ payload JSON để giảm băng thông
 app.use(generalLimiter); // Giới hạn 100 request/phút/IP cho toàn bộ API
 
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-} else {
-  app.use(morgan('combined'));
-}
+const morganFormat = process.env.NODE_ENV === 'production' ? 'combined' : 'dev';
+app.use(
+  morgan(morganFormat, {
+    stream: {
+      write: (message) => logger.info(message.trim()),
+    },
+  })
+);
 
 // 2. Parsers
 app.use(express.json({ limit: '500kb' })); // Giới hạn kích thước JSON body

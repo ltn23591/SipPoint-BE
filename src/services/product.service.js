@@ -9,7 +9,7 @@ class ProductService {
    * Lấy danh sách sản phẩm
    */
   static async getAll() {
-    const products = await Product.find({}).populate('category', 'name').lean();
+    const products = await Product.find({}).sort({ createdAt: -1 }).populate('category', 'name').lean();
     return products.map(p => {
       p.status = p.isActive;
       return p;
@@ -35,7 +35,7 @@ class ProductService {
    * Tạo sản phẩm mới
    */
   static async create(body, files) {
-    const { name, description, price, category, stock, isActive, status, variants } = body;
+    const { name, description, price, category, stock, isActive, status, variants, image, images } = body;
 
     const allImages = files || [];
     const uploadedUrls = await Promise.all(
@@ -48,6 +48,9 @@ class ProductService {
       })
     );
 
+    const finalImage = uploadedUrls.length > 0 ? uploadedUrls[0] : (image || '');
+    const finalImages = uploadedUrls.length > 0 ? uploadedUrls : (images || (image ? [image] : []));
+
     const productData = {
       name,
       description,
@@ -55,8 +58,8 @@ class ProductService {
       category,
       stock: Number(stock) || 0,
       isActive: isActive || status || 'active',
-      image: uploadedUrls.length > 0 ? uploadedUrls[0] : '',
-      images: uploadedUrls,
+      image: finalImage,
+      images: finalImages,
     };
 
     const product = new Product(productData);
@@ -94,7 +97,7 @@ class ProductService {
    * Cập nhật sản phẩm
    */
   static async update(id, body, files) {
-    const { name, description, price, category, stock, isActive, status, variants } = body;
+    const { name, description, price, category, stock, isActive, status, variants, image, images } = body;
 
     const productData = {
       name,
@@ -104,6 +107,11 @@ class ProductService {
       stock: Number(stock) || 0,
       isActive: isActive || status || 'active',
     };
+    
+    if (image) {
+      productData.image = image;
+      productData.images = images || [image];
+    }
 
     const allImages = files || [];
     if (allImages.length > 0) {
