@@ -205,7 +205,7 @@ ${voucherCatalog}
       const recentHistory = chatSession.messages.slice(-12);
       try {
         const model = genAI.getGenerativeModel({
-          model: 'gemini-3.5-flash',
+          model: 'gemini-2.5-flash',
           systemInstruction: systemInstruction,
         });
         const chat = model.startChat({
@@ -222,7 +222,7 @@ ${voucherCatalog}
         if (genAIBackup) {
           try {
             const modelBackup = genAIBackup.getGenerativeModel({
-              model: 'gemini-3.5-flash',
+              model: 'gemini-2.5-flash',
               systemInstruction: systemInstruction,
             });
             const chatBackup = modelBackup.startChat({
@@ -407,6 +407,9 @@ ${voucherCatalog}
   }
 
   static async recommendTopProduct() {
+    let systemInstruction = '';
+    let userContent = '';
+    let productSalesData = [];
     try {
      
 
@@ -431,7 +434,7 @@ ${voucherCatalog}
       // Map statistics to products
       const statsMap = new Map(salesStats.map(item => [item._id.toString(), item]));
       
-      const productSalesData = products.map(p => {
+      productSalesData = products.map(p => {
         const stats = statsMap.get(p._id.toString()) || { qty: 0, revenue: 0 };
         return {
           name: p.name,
@@ -451,7 +454,7 @@ ${voucherCatalog}
         `- **${p.name}** (${p.category}) - Giá: ${p.price ? p.price.toLocaleString('vi-VN') : 0} VNĐ - Đã bán: ${p.qtySold} ly - Doanh thu: ${p.revenue ? p.revenue.toLocaleString('vi-VN') : 0} VNĐ - Tồn kho: ${p.stock}`
       ).join('\n');
 
-      const systemInstruction = `
+      systemInstruction = `
 Bạn là một chuyên gia phân tích dữ liệu bán hàng và tư vấn chiến lược kinh doanh của chuỗi cửa hàng đồ uống "SipPoint".
 Nhiệm vụ của bạn là phân tích dữ liệu bán hàng thực tế từ hệ thống và đưa ra đề xuất/dự đoán xem món nước nào sẽ được mua nhiều nhất trong thời gian tới (Sản phẩm bán chạy nhất / Best-seller).
 
@@ -466,7 +469,7 @@ Hãy thực hiện phân tích theo các khía cạnh sau:
 4. Trình bày kết quả phân tích bằng tiếng Việt một cách chuyên nghiệp, rõ ràng, sử dụng định dạng Markdown đẹp mắt với các tiêu đề, danh sách, và chữ in đậm.
 `;
 
-      const userContent = `
+      userContent = `
 Dưới đây là danh sách sản phẩm và số liệu bán hàng thực tế của SipPoint:
 ${promptData}
 
@@ -476,7 +479,7 @@ Dựa trên dữ liệu trên, hãy phân tích và đề xuất món nước n�
       let analysisText;
       try {
         const model = genAI.getGenerativeModel({
-          model: 'gemini-3.5-flash',
+          model: 'gemini-2.5-flash',
           systemInstruction: systemInstruction,
         });
         const result = await model.generateContent(userContent);
@@ -487,7 +490,7 @@ Dựa trên dữ liệu trên, hãy phân tích và đề xuất món nước n�
         if (genAIBackup) {
           try {
             const modelBackup = genAIBackup.getGenerativeModel({
-              model: 'gemini-3.5-flash',
+              model: 'gemini-2.5-flash',
               systemInstruction: systemInstruction,
             });
             const resultBackup = await modelBackup.generateContent(userContent);
@@ -509,6 +512,9 @@ Dựa trên dữ liệu trên, hãy phân tích và đề xuất món nước n�
         salesStats: productSalesData
       };
     } catch (error) {
+      if (!systemInstruction || !userContent) {
+        throw error;
+      }
       console.warn('[AI Service] Lỗi Gemini AI trong recommendTopProduct, chuyển sang OpenAI:', error.message);
       if (!openaiApiKey) {
         console.error('[AI Service] Không thể chuyển sang OpenAI: Chưa cấu hình OPENAI_API_KEY trong .env');
