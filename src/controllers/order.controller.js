@@ -2,37 +2,24 @@ const catchAsync = require('../utils/catchAsync');
 const OrderService = require('../services/order.service');
 const { ORDER_STATUS, ROLE } = require('../enums');
 class OrderController {
-  static async getAll(req, res) {
-    try {
+  static getAll = catchAsync(async (req, res, next) => {
       const result = await OrderService.getAllOrders(req.query);
       res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+    });
 
-  static async getById(req, res) {
-    try {
+  static getById = catchAsync(async (req, res, next) => {
       const result = await OrderService.getOrderById(req.params.id);
       res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+    });
 
-  static async create(req, res) {
-    try {
+  static create = catchAsync(async (req, res, next) => {
       // Lấy id của nhân viên thực hiện (từ auth middleware)
       const createdById = req.user ? req.user._id : null;
       const result = await OrderService.createOrder(req.body, createdById);
       res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+    });
 
-  static async updateStatus(req, res) {
-    try {
+  static updateStatus = catchAsync(async (req, res, next) => {
       const { status, id, orderId, reason } = req.body;
       const targetId = req.params.id || id || orderId;
       const updatedById = req.user ? req.user._id : null;
@@ -51,20 +38,13 @@ class OrderController {
         result = await OrderService.updateOrderStatus(targetId, status, updatedById);
       }
       res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+    });
 
-  static async refund(req, res) {
-    try {
+  static refund = catchAsync(async (req, res, next) => {
       const updatedById = req.user ? req.user._id : null;
       const result = await OrderService.refundOrder(req.params.id, req.body.reason, updatedById);
       res.status(result.status).json(result);
-    } catch (error) {
-      res.status(500).json({ success: false, message: error.message });
-    }
-  }
+    });
 }
 
 module.exports = OrderController;

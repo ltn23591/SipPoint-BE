@@ -38,7 +38,11 @@ Sau quá trình phát triển, dự án đã hoàn thiện các module nghiệp 
 ## 🛠 Nền tảng kỹ thuật (Technical Stack)
 
 - **Framework:** Express.js (Node.js) + MongoDB (Mongoose).
-- **Bảo mật (Auth):** Xác thực qua JWT (bảo vệ route bằng middleware `auth`), hash mật khẩu bằng `bcrypt`. 
+- **Bảo mật & Chống tấn công:** 
+  - Xác thực qua JWT (bảo vệ route bằng middleware `auth`), hash mật khẩu bằng `bcrypt`.
+  - Tích hợp **Rate Limiting** sử dụng **Redis** (chống spam/DDoS chia nhiều cấp độ: API thường, Auth, OTP).
+  - Tích hợp Security Middleware chống **NoSQL Injection**, giới hạn kích thước Payload, và `helmet` Security Headers.
+  - Kiểm duyệt chặt chẽ dữ liệu đầu vào (Input Validation) bằng `express-validator`.
 - **Tối ưu Hiệu năng:** Sử dụng middleware `compression` nén GZIP toàn bộ response và dùng `.lean()` ở mức database giúp truy vấn siêu tốc.
 - **Logging & Error Handling:** Dùng `winston` lưu log ra file, cơ chế chặn lỗi tập trung bằng `errorHandler` middleware.
 - **Upload File:** Hỗ trợ Cloudinary (qua `multer` & `multer-storage-cloudinary`).
@@ -80,6 +84,12 @@ Cần có file `.env` với các cấu hình cơ bản:
 PORT=5000
 MONGO_URI=mongodb+srv://<username>:<password>@cluster/database
 JWT_SECRET=your_secret_key
+ACTIVATION_SECRET=your_activation_secret
+
+# Cấu hình Redis (Bắt buộc để chạy Rate Limiting)
+# Chạy local: redis://localhost:6379, Chạy Upstash Cloud: rediss://...
+REDIS_URL=rediss://default:matkhau@diachi.upstash.io:6379
+
 # Cấu hình SePay Webhook
 SEPAY_MERCHANT_ID=SP-LIVE-...
 SEPAY_SECRET_KEY=spsk_live_...

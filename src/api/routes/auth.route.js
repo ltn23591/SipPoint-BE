@@ -21,22 +21,23 @@ const {
 const { protect } = require('../../middleware/auth.middleware');
 const validate = require('../../middleware/validate');
 const authValidation = require('../../validations/auth.validation');
+const { authLimiter, otpLimiter, strictLimiter } = require('../../middleware/rateLimit.middleware');
 
 const router = express.Router();
 
 // Route Đăng ký / Đăng nhập cho Khách hàng
-router.post('/customer/register', authValidation.customerRegister, validate, customerRegister);
-router.post('/customer/verify-email', customerVerifyEmail);
-router.post('/customer/resend-verify-email', customerResendVerifyEmail);
-router.post('/customer/login', authValidation.customerLogin, validate, customerLogin);
+router.post('/customer/register', authLimiter, authValidation.customerRegister, validate, customerRegister);
+router.post('/customer/verify-email', otpLimiter, customerVerifyEmail);
+router.post('/customer/resend-verify-email', otpLimiter, customerResendVerifyEmail);
+router.post('/customer/login', authLimiter, authValidation.customerLogin, validate, customerLogin);
 
 // Cung cấp các đường dẫn alias gốc để tương thích ngược với FE/Postman
-router.post('/register', authValidation.employeeRegister, validate, employeeRegister);
-router.post('/verify-email', customerVerifyEmail);
-router.post('/resend-verify-email', customerResendVerifyEmail);
+router.post('/register', authLimiter, authValidation.employeeRegister, validate, employeeRegister);
+router.post('/verify-email', otpLimiter, customerVerifyEmail);
+router.post('/resend-verify-email', otpLimiter, customerResendVerifyEmail);
 
 // Route Đăng nhập cho Nhân viên (Admin, Cashier, Barista, Waiter)
-router.post('/login', authValidation.login, validate, login);
+router.post('/login', authLimiter, authValidation.login, validate, login);
 
 // Route Đăng xuất chung
 router.get('/logout', logout);
@@ -46,17 +47,17 @@ router.post('/logout', logout); // Support POST logout from FE
 router.get('/me', protect, getMe);
 
 // Đổi mật khẩu
-router.put('/change-password', protect, authValidation.changePassword, validate, changePassword);
+router.put('/change-password', protect, strictLimiter, authValidation.changePassword, validate, changePassword);
 
 // Routes 2FA cho Nhân viên
-router.post('/2fa/enable', protect, enable2FA);
-router.post('/2fa/verify-enable', protect, verifyEnable2FA);
-router.post('/2fa/login', login2FA);
-router.post('/2fa/disable', protect, disable2FA);
+router.post('/2fa/enable', protect, strictLimiter, enable2FA);
+router.post('/2fa/verify-enable', protect, otpLimiter, verifyEnable2FA);
+router.post('/2fa/login', authLimiter, login2FA);
+router.post('/2fa/disable', protect, strictLimiter, disable2FA);
 
 // Routes khôi phục mật khẩu cho Nhân viên
-router.post('/forgot-password', authValidation.forgotPassword, validate, forgotPassword);
-router.post('/verify-otp', verifyOtpCode);
-router.post('/reset-password', authValidation.resetPassword, validate, resetPassword);
+router.post('/forgot-password', otpLimiter, authValidation.forgotPassword, validate, forgotPassword);
+router.post('/verify-otp', otpLimiter, verifyOtpCode);
+router.post('/reset-password', strictLimiter, authValidation.resetPassword, validate, resetPassword);
 
 module.exports = router;
