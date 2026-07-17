@@ -43,6 +43,28 @@ const sendTokenResponse = (user, status, res, message = 'Thành công', userType
     });
 };
 
+const sendSuccess = (res, data, message = 'Thành công', count = undefined) => {
+  const responseData = {
+    success: true,
+    message,
+    data
+  };
+  if (count !== undefined) {
+    responseData.count = count;
+  }
+  return res.status(200).json(responseData);
+};
+
+const sendCreated = (res, data, message = 'Thành công') => {
+  return res.status(201).json({
+    success: true,
+    message,
+    data
+  });
+};
+
 module.exports = {
-  sendTokenResponse
+  sendTokenResponse,
+  sendSuccess,
+  sendCreated
 };

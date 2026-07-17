@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
 const compression = require('compression');
+const logger = require('./config/logger');
 
 dotenv.config();
 
@@ -21,11 +22,14 @@ app.use(helmet());
 app.use(cors());
 app.use(compression()); // Nén toàn bộ payload JSON để giảm băng thông
 
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-} else {
-  app.use(morgan('combined'));
-}
+const morganFormat = process.env.NODE_ENV === 'production' ? 'combined' : 'dev';
+app.use(
+  morgan(morganFormat, {
+    stream: {
+      write: (message) => logger.info(message.trim()),
+    },
+  })
+);
 
 // 2. Parsers
 app.use(express.json());
