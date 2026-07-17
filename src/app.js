@@ -18,6 +18,7 @@ const { generalLimiter } = require('./middleware/rateLimit.middleware');
 const { sanitizeInput, securityHeaders } = require('./middleware/security.middleware');
 
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy (Render, Heroku, etc.)
 
 // 1. Middlewares bảo mật & Tối ưu & Logging
 app.use(helmet());
