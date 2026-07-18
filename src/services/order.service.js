@@ -2,6 +2,7 @@ const Order = require('../models/order.model');
 const { OrderItem } = require('../models/orderItem.model');
 const Product = require('../models/product.model');
 const ProductVariant = require('../models/productVariant.model');
+const Topping = require('../models/topping.model');
 const Table = require('../models/table.model');
 const Voucher = require('../models/voucher.model');
 const CustomerVoucher = require('../models/customerVoucher.model');
@@ -90,9 +91,26 @@ class OrderService {
         }
       }
 
+      const itemToppings = [];
+      let toppingPriceSum = 0;
+      if (item.toppings && Array.isArray(item.toppings)) {
+        for (const t of item.toppings) {
+          const topping = await Topping.findById(t.toppingId || t._id);
+          if (!topping || topping.isActive === 'inactive') {
+            return { status: 404, success: false, message: `Topping với ID ${t.toppingId || t._id} không tồn tại hoặc đã ngừng hoạt động` };
+          }
+          itemToppings.push({
+            toppingId: topping._id,
+            name: topping.name,
+            price: topping.price,
+          });
+          toppingPriceSum += topping.price;
+        }
+      }
+
       const itemPrice = product.price;
       const quantity = parseInt(item.qty) || 1;
-      const itemSubtotal = (itemPrice + variantPriceSum) * quantity;
+      const itemSubtotal = (itemPrice + variantPriceSum + toppingPriceSum) * quantity;
 
       orderItemsToCreate.push({
         productId: product._id,
@@ -100,6 +118,7 @@ class OrderService {
         unitPrice: itemPrice,
         qty: quantity,
         variants: itemVariants,
+        toppings: itemToppings,
         note: item.note || '',
         subtotal: itemSubtotal,
       });
@@ -210,6 +229,9 @@ class OrderService {
       for (const itemData of orderItemsToCreate) {
         itemData.orderId = order._id;
         await OrderItem.create(itemData);
+        
+        // Trừ tồn kho
+        await Product.findByIdAndUpdate(itemData.productId, { $inc: { stock: -itemData.qty } });
       }
     } catch (error) {
       // Bù trừ: hoàn lại voucher đã claim nếu tạo đơn thất bại
@@ -368,8 +390,7 @@ class OrderService {
     order.updatedBy = updatedById;
     await order.save();
 
-    // Hoàn lại voucher đã dùng cho đơn: voucher ví trả về trạng thái chưa dùng,
-    // mã public hoàn lại lượt sử dụng
+    // Hoàn lại voucher đã dùng cho đơn
     if (order.customerVoucherId) {
       await CustomerVoucher.updateOne(
         { _id: order.customerVoucherId },
@@ -380,6 +401,12 @@ class OrderService {
         { _id: order.voucherId, usedCount: { $gt: 0 } },
         { $inc: { usedCount: -1 } }
       );
+    }
+
+    // Hoàn lại số lượng tồn kho
+    const orderItems = await OrderItem.find({ orderId: order._id });
+    for (const item of orderItems) {
+      await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.qty } });
     }
 
     // Giải phóng bàn nếu không còn đơn hàng nào hoạt động
@@ -454,7 +481,7 @@ class OrderService {
       order.pointsAwarded = 0;
     }
 
-    // Hoàn lại voucher đã dùng cho đơn (tiền đã trả về khách nên trả lại quyền lợi voucher)
+    // Hoàn lại voucher đã dùng cho đơn
     if (order.customerVoucherId) {
       await CustomerVoucher.updateOne(
         { _id: order.customerVoucherId },
@@ -465,6 +492,12 @@ class OrderService {
         { _id: order.voucherId, usedCount: { $gt: 0 } },
         { $inc: { usedCount: -1 } }
       );
+    }
+
+    // Hoàn lại số lượng tồn kho
+    const refundOrderItems = await OrderItem.find({ orderId: order._id });
+    for (const item of refundOrderItems) {
+      await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.qty } });
     }
 
     await order.save();
