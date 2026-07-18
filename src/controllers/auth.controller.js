@@ -1,6 +1,7 @@
 const catchAsync = require('../utils/catchAsync');
 const AuthService = require('../services/auth.service');
 const { sendTokenResponse } = require('../utils/response');
+const jwt = require('jsonwebtoken');
 
 exports.customerRegister = catchAsync(async (req, res, next) => {
   const result = await AuthService.customerRegister(req.body);
@@ -103,4 +104,31 @@ exports.changePassword = catchAsync(async (req, res, next) => {
   const { currentPassword, newPassword } = req.body;
     const result = await AuthService.changePassword(req.user.id, currentPassword, newPassword);
     return res.status(200).json({ success: true, ...result });
+});;
+
+exports.oauthSuccess = catchAsync(async (req, res, next) => {
+  const user = req.user;
+  const frontendUrl = process.env.FRONTEND_URL;
+
+  if (!user) {
+    return res.redirect(`${frontendUrl}/login?error=OAuthFailed`);
+  }
+
+  const roleCode = 'customer';
+  const token = jwt.sign({ id: user._id, role: roleCode, type: 'customer' }, process.env.JWT_SECRET, {
+    expiresIn: '30d',
+  });
+
+  const cookieMaxAge = 30 * 24 * 60 * 60 * 1000;
+  const options = {
+    expires: new Date(Date.now() + cookieMaxAge),
+    httpOnly: true,
+  };
+  if (process.env.NODE_ENV === 'production') {
+    options.secure = true;
+  }
+
+  res.cookie('token', token, options);
+
+  return res.redirect(`${frontendUrl}/login-success?token=${token}&email=${encodeURIComponent(user.email || '')}&name=${encodeURIComponent(user.fullName || '')}&id=${user._id}`);
 });;

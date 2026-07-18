@@ -6,7 +6,7 @@ const dotenv = require('dotenv');
 const compression = require('compression');
 const logger = require('./config/logger');
 
-dotenv.config();
+dotenv.config(); // Load env variables first!
 
 const cookieParser = require('cookie-parser');
 const path = require('path');
@@ -37,9 +37,26 @@ app.use(
 );
 
 // 2. Parsers
+const session = require('express-session');
+const passport = require('passport');
+require('./config/passport');
+
 app.use(express.json({ limit: '500kb' })); // Giới hạn kích thước JSON body
 app.use(express.urlencoded({ extended: true, limit: '500kb' }));
 app.use(cookieParser());
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'sippoint_session_secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
 app.use(sanitizeInput); // Chống NoSQL Injection
 app.use(i18n.init); // Khởi tạo i18n
 

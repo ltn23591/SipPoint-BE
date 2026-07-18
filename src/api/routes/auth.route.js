@@ -17,7 +17,9 @@ const {
   resetPassword,
   verifyOtpCode,
   changePassword,
+  oauthSuccess,
 } = require('../../controllers/auth.controller');
+const passport = require('passport');
 const { protect } = require('../../middleware/auth.middleware');
 const validate = require('../../middleware/validate');
 const authValidation = require('../../validations/auth.validation');
@@ -26,10 +28,55 @@ const { authLimiter, otpLimiter, strictLimiter } = require('../../middleware/rat
 const router = express.Router();
 
 // Route Đăng ký / Đăng nhập cho Khách hàng
-router.post('/customer/register', authLimiter, authValidation.customerRegister, validate, customerRegister);
+router.post(
+  '/customer/register',
+  authLimiter,
+  authValidation.customerRegister,
+  validate,
+  customerRegister,
+);
 router.post('/customer/verify-email', otpLimiter, customerVerifyEmail);
 router.post('/customer/resend-verify-email', otpLimiter, customerResendVerifyEmail);
 router.post('/customer/login', authLimiter, authValidation.customerLogin, validate, customerLogin);
+
+// OAuth Google & Facebook
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get(
+  '/google/callback',
+  (req, res, next) => {
+    passport.authenticate('google', { session: false }, (err, user, info) => {
+      if (err) {
+        console.error("Google OAuth Error:", err);
+        return res.redirect(`${process.env.FRONTEND_URL}/login?error=OAuthFailed`);
+      }
+      if (!user) {
+        return res.redirect(`${process.env.FRONTEND_URL}/login?error=NoUser`);
+      }
+      req.user = user;
+      next();
+    })(req, res, next);
+  },
+  oauthSuccess,
+);
+
+router.get('/facebook', passport.authenticate('facebook', { scope: ['email'] }));
+router.get(
+  '/facebook/callback',
+  (req, res, next) => {
+    passport.authenticate('facebook', { session: false }, (err, user, info) => {
+      if (err) {
+        console.error("Facebook OAuth Error:", err);
+        return res.redirect(`${process.env.FRONTEND_URL}/login?error=OAuthFailed`);
+      }
+      if (!user) {
+        return res.redirect(`${process.env.FRONTEND_URL}/login?error=NoUser`);
+      }
+      req.user = user;
+      next();
+    })(req, res, next);
+  },
+  oauthSuccess,
+);
 
 // Cung cấp các đường dẫn alias gốc để tương thích ngược với FE/Postman
 router.post('/register', authLimiter, authValidation.employeeRegister, validate, employeeRegister);
@@ -47,7 +94,14 @@ router.post('/logout', logout); // Support POST logout from FE
 router.get('/me', protect, getMe);
 
 // Đổi mật khẩu
-router.put('/change-password', protect, strictLimiter, authValidation.changePassword, validate, changePassword);
+router.put(
+  '/change-password',
+  protect,
+  strictLimiter,
+  authValidation.changePassword,
+  validate,
+  changePassword,
+);
 
 // Routes 2FA cho Nhân viên
 router.post('/2fa/enable', protect, strictLimiter, enable2FA);
@@ -56,8 +110,20 @@ router.post('/2fa/login', authLimiter, login2FA);
 router.post('/2fa/disable', protect, strictLimiter, disable2FA);
 
 // Routes khôi phục mật khẩu cho Nhân viên
-router.post('/forgot-password', otpLimiter, authValidation.forgotPassword, validate, forgotPassword);
+router.post(
+  '/forgot-password',
+  otpLimiter,
+  authValidation.forgotPassword,
+  validate,
+  forgotPassword,
+);
 router.post('/verify-otp', otpLimiter, verifyOtpCode);
-router.post('/reset-password', strictLimiter, authValidation.resetPassword, validate, resetPassword);
+router.post(
+  '/reset-password',
+  strictLimiter,
+  authValidation.resetPassword,
+  validate,
+  resetPassword,
+);
 
 module.exports = router;
