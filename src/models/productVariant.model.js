@@ -8,12 +8,6 @@ const productVariantSchema = new mongoose.Schema(
       ref: 'Product',
       required: true,
     },
-    // Ví dụ: size: SIZE, topping: TOPPING
-    variantType: {
-      type: String,
-      required: true,
-      enum: ['size', 'topping'],
-    },
     name: {
       type: String,
       required: true,
@@ -36,7 +30,7 @@ const productVariantSchema = new mongoose.Schema(
 );
 
 // Tạo index để tối ưu hóa truy vấn biến thể theo sản phẩm
-productVariantSchema.index({ product: 1, variantType: 1 });
+productVariantSchema.index({ product: 1 });
 
 const ProductVariant = mongoose.model('ProductVariant', productVariantSchema);
 

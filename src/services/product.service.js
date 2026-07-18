@@ -77,7 +77,6 @@ class ProductService {
       if (Array.isArray(parsedVariants) && parsedVariants.length > 0) {
         const variantsData = parsedVariants.map(variant => ({
           product: product._id,
-          variantType: variant.variantType,
           name: variant.name,
           priceAdjustment: Number(variant.priceAdjustment) || 0,
           isActive: variant.isActive !== undefined ? variant.isActive : 'active',
@@ -145,7 +144,6 @@ class ProductService {
         if (parsedVariants.length > 0) {
           const variantsData = parsedVariants.map(variant => ({
             product: id,
-            variantType: variant.variantType,
             name: variant.name,
             priceAdjustment: Number(variant.priceAdjustment) || 0,
             isActive: variant.isActive !== undefined ? variant.isActive : 'active',
