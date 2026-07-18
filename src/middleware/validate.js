@@ -6,11 +6,8 @@ const validate = (req, res, next) => {
   if (errors.isEmpty()) {
     return next();
   }
-  const extractedErrors = [];
-  errors.array().map(err => extractedErrors.push(err.msg));
-
-  // Ném lỗi 400 Bad Request
-  return next(new AppError(extractedErrors.join(', '), 400));
+  const errorMessages = errors.array().map(err => err.msg);
+  return next(new AppError(errorMessages.join(', '), 400));
 };
 
 module.exports = validate;

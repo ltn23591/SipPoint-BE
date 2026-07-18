@@ -1,4 +1,7 @@
 const cron = require('node-cron');
+const CustomerService = require('./customer.service');
+const CustomerSegmentService = require('./customerSegment.service');
+const CampaignService = require('./campaign.service');
 
 // Job nghiệp vụ 00:00 hằng ngày (giờ VN): duy trì / hạ hạng thành viên hết chu kỳ
 const scheduleDailyJobs = () => {
@@ -7,7 +10,6 @@ const scheduleDailyJobs = () => {
     async () => {
       // Lazy-require để tránh vòng lặp require khi khởi động
       try {
-        const CustomerService = require('./customer.service');
         const result = await CustomerService.processTierExpirations();
         console.log(`✅ [Cron] Tier expiration check done. Processed: ${result.processed} customer(s)`);
       } catch (error) {
@@ -15,7 +17,6 @@ const scheduleDailyJobs = () => {
       }
 
       try {
-        const CustomerSegmentService = require('./customerSegment.service');
         const result = await CustomerSegmentService.syncAllSegments();
         console.log(`✅ [Cron] Segment sync done. Synced: ${result.synced} segment(s)`);
       } catch (error) {
@@ -23,7 +24,6 @@ const scheduleDailyJobs = () => {
       }
 
       try {
-        const CampaignService = require('./campaign.service');
         const result = await CampaignService.finishExpiredCampaigns();
         console.log(`✅ [Cron] Campaign expiration check done. Finished: ${result.finished} campaign(s)`);
       } catch (error) {

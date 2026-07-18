@@ -16,7 +16,6 @@ class CustomerService {
       filter.$or = [
         { fullName: { $regex: search, $options: 'i' } },
         { phone: { $regex: search, $options: 'i' } },
-        { customerId: { $regex: search, $options: 'i' } },
       ];
     }
 
@@ -85,11 +84,6 @@ class CustomerService {
     const existing = await Customer.findOne({ phone: data.phone });
     if (existing) {
       return { status: 400, success: false, message: 'Số điện thoại đã tồn tại' };
-    }
-
-    if (!data.customerId) {
-      // Tạo mã gồm 8 chữ số ngẫu nhiên (từ 10000000 đến 99999999)
-      data.customerId = Math.floor(10000000 + Math.random() * 90000000).toString();
     }
 
     // Tự động gán hạng thấp nhất của MembershipTier

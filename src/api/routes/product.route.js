@@ -9,14 +9,17 @@ const productValidation = require('../../validations/product.validation');
 
 const router = express.Router();
 
-// Public: Khách hàng và nhân viên đều có thể xem danh sách sản phẩm
-router.get('/', ProductController.getAll);
-router.get('/:id', productValidation.getById, validate, ProductController.getById);
+// Lấy danh sách (Public) / Tạo mới (Admin)
+router.route('/')
+  .get(ProductController.getAll)
+  .post(protect, authorize(ROLE.ADMIN), upload.any(), productValidation.createProduct, validate, ProductController.create);
 
-// Admin-only: Chỉ Admin mới được tạo, sửa, xóa sản phẩm
+// Lấy chi tiết (Public) / Sửa, xóa (Admin)
+router.route('/:id')
+  .get(productValidation.getById, validate, ProductController.getById)
+  .put(protect, authorize(ROLE.ADMIN), upload.any(), productValidation.updateProduct, validate, ProductController.update)
+  .delete(protect, authorize(ROLE.ADMIN), productValidation.getById, validate, ProductController.remove);
+
 router.post('/import', protect, authorize(ROLE.ADMIN), upload.any(), ProductController.importExcel);
-router.post('/', protect, authorize(ROLE.ADMIN), upload.any(), productValidation.createProduct, validate, ProductController.create);
-router.put('/:id', protect, authorize(ROLE.ADMIN), upload.any(), productValidation.updateProduct, validate, ProductController.update);
-router.delete('/:id', protect, authorize(ROLE.ADMIN), productValidation.getById, validate, ProductController.remove);
 
 module.exports = router;

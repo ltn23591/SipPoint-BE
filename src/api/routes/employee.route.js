@@ -16,14 +16,13 @@ const router = express.Router();
 router.use(protect);
 router.use(authorize(ROLE.ADMIN));
 
-router.get('/', getEmployees);
+router.route('/')
+  .get(getEmployees)
+  .post(createEmployee);
 
-router.post('/', createEmployee);
-
-router.get('/:id', getEmployee);
-
-router.put('/:id', updateEmployee);
-
-router.delete('/:id', deleteEmployee);
+router.route('/:id')
+  .get(getEmployee)
+  .put(updateEmployee)
+  .delete(deleteEmployee);
 
 module.exports = router;

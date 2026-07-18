@@ -2,7 +2,6 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-const os = require('os');
 
 // Đảm bảo thư mục upload tồn tại
 const uploadDir = path.join(__dirname, '../../public/uploads');

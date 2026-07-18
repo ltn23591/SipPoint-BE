@@ -7,8 +7,9 @@ const { ROLE } = require('../../enums');
 const router = express.Router();
 
 // Tất cả các routes quản lý khách hàng yêu cầu đăng nhập và có vai trò phù hợp
-router.get('/', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.getAll);
-router.post('/', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.create);
+router.route('/')
+  .get(protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.getAll)
+  .post(protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.create);
 
 // Khách hàng lấy lịch sử điểm
 router.get('/me/point-history', protect, CustomerController.getMyPointHistory);
@@ -20,12 +21,14 @@ router.put('/me', protect, CustomerController.updateMyProfile);
 router.get('/me/vouchers', protect, CustomerController.getMyVouchers);
 
 // Khách hàng lấy danh sách đơn hàng
-router.get('/me/orders', protect, CustomerController.getMyOrders);
+router.route('/me/orders')
+  .get(protect, CustomerController.getMyOrders)
+  .post(protect, CustomerController.createMyOrder);
 router.get('/me/orders/:orderId', protect, CustomerController.getMyOrderById);
-router.post('/me/orders', protect, CustomerController.createMyOrder);
 
-router.get('/:id', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.getById);
-router.put('/:id', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.update);
+router.route('/:id')
+  .get(protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.getById)
+  .put(protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.update);
 router.post('/:id/points', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.adjustPoints);
 
 module.exports = router;

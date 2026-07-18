@@ -6,7 +6,8 @@ const { ROLE } = require('../../enums');
 
 const router = express.Router();
 
-router.get('/config', StoreController.getConfig);
-router.put('/config', protect, authorize(ROLE.ADMIN), StoreController.updateConfig);
+router.route('/config')
+  .get(StoreController.getConfig)
+  .put(protect, authorize(ROLE.ADMIN), StoreController.updateConfig);
 
 module.exports = router;

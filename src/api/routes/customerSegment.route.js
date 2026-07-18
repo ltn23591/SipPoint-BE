@@ -7,11 +7,14 @@ const { ROLE } = require('../../enums');
 const router = express.Router();
 
 router.post('/preview', protect, authorize(ROLE.ADMIN), CustomerSegmentController.preview);
-router.get('/', protect, authorize(ROLE.ADMIN), CustomerSegmentController.getAll);
-router.post('/', protect, authorize(ROLE.ADMIN), CustomerSegmentController.create);
-router.get('/:id', protect, authorize(ROLE.ADMIN), CustomerSegmentController.getById);
-router.put('/:id', protect, authorize(ROLE.ADMIN), CustomerSegmentController.update);
-router.delete('/:id', protect, authorize(ROLE.ADMIN), CustomerSegmentController.remove);
+router.route('/')
+  .get(protect, authorize(ROLE.ADMIN), CustomerSegmentController.getAll)
+  .post(protect, authorize(ROLE.ADMIN), CustomerSegmentController.create);
+
+router.route('/:id')
+  .get(protect, authorize(ROLE.ADMIN), CustomerSegmentController.getById)
+  .put(protect, authorize(ROLE.ADMIN), CustomerSegmentController.update)
+  .delete(protect, authorize(ROLE.ADMIN), CustomerSegmentController.remove);
 router.post('/:id/sync', protect, authorize(ROLE.ADMIN), CustomerSegmentController.sync);
 router.get('/:id/members', protect, authorize(ROLE.ADMIN), CustomerSegmentController.getMembers);
 

@@ -1,5 +1,6 @@
 const CustomerSegment = require('../models/customerSegment.model');
 const Customer = require('../models/customer.model');
+const Campaign = require('../models/campaign.model');
 const { IS_ACTIVE } = require('../enums');
 
 class CustomerSegmentService {
@@ -144,7 +145,6 @@ class CustomerSegmentService {
 
     // Chặn xóa nếu đang được campaign ACTIVE tham chiếu
     try {
-      const Campaign = require('../models/campaign.model');
       const activeCampaign = await Campaign.findOne({ segmentIds: id, status: 'ACTIVE' });
       if (activeCampaign) {
         return {
@@ -154,7 +154,11 @@ class CustomerSegmentService {
         };
       }
     } catch (e) {
-      // Model Campaign chưa tồn tại - bỏ qua kiểm tra
+      return {
+        status: 400,
+        success: false,
+        message: `Không thể xóa: ${e.message}`,
+      };
     }
 
     await CustomerSegment.findByIdAndDelete(id);

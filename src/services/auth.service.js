@@ -45,8 +45,6 @@ class AuthService {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const customerId = Math.floor(10000000 + Math.random() * 90000000).toString();
-
     let defaultTierId = null;
     const lowestTier = await MembershipTier.findOne({ status: 'active' }).sort({ minPoints: 1 }).lean();
     if (lowestTier) {
@@ -54,7 +52,6 @@ class AuthService {
     }
 
     const customer = await Customer.create({
-      customerId,
       fullName,
       phone,
       email,
@@ -87,7 +84,6 @@ class AuthService {
       message: 'Đăng ký thành công. Vui lòng kiểm tra email để lấy mã xác thực kích hoạt tài khoản.',
       data: {
         _id: populatedCustomer._id,
-        customerId: populatedCustomer.customerId,
         fullName: populatedCustomer.fullName,
         phone: populatedCustomer.phone,
         email: populatedCustomer.email,

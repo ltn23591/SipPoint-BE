@@ -1,5 +1,6 @@
 const catchAsync = require('../utils/catchAsync');
 const CustomerService = require('../services/customer.service');
+const OrderService = require('../services/order.service');
 
 class CustomerController {
   static getAll = catchAsync(async (req, res, next) => {
@@ -38,13 +39,11 @@ class CustomerController {
     });
 
   static getMyOrders = catchAsync(async (req, res, next) => {
-      const OrderService = require('../services/order.service');
       const result = await OrderService.getAllOrders({ customerId: req.user.id, limit: 50 });
       res.status(result.status).json(result);
     });
 
   static getMyOrderById = catchAsync(async (req, res, next) => {
-      const OrderService = require('../services/order.service');
       const result = await OrderService.getOrderById(req.params.orderId);
       if (result.success && result.data.customerId && result.data.customerId._id.toString() !== req.user.id.toString()) {
         return res.status(403).json({ success: false, message: 'Bạn không có quyền xem đơn hàng này' });
@@ -53,7 +52,6 @@ class CustomerController {
     });
 
   static createMyOrder = catchAsync(async (req, res, next) => {
-      const OrderService = require('../services/order.service');
       const orderData = {
         ...req.body,
         customerId: req.user.id

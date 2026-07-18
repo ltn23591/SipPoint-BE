@@ -6,21 +6,16 @@ const { ROLE } = require('../../enums');
 
 const router = express.Router();
 
-// Public / Authenticated views
-router.get('/', TableController.getAll);
-router.get('/:id', TableController.getById);
+// Lấy danh sách (Public) / Tạo mới (Admin)
+router.route('/')
+  .get(TableController.getAll)
+  .post(protect, authorize(ROLE.ADMIN), TableController.create);
 
-// Admin-only creation and deletion
-router.post('/', protect, authorize(ROLE.ADMIN), TableController.create);
-router.delete('/:id', protect, authorize(ROLE.ADMIN), TableController.remove);
-
-// Staff and Admin can update tables (status updates)
-router.put(
-  '/:id',
-  protect,
-  authorize(ROLE.ADMIN, ROLE.CASHIER, ROLE.WAITER, ROLE.BARISTA),
-  TableController.update
-);
+// Lấy chi tiết (Public) / Cập nhật (Staff) / Xóa (Admin)
+router.route('/:id')
+  .get(TableController.getById)
+  .put(protect, authorize(ROLE.ADMIN, ROLE.CASHIER, ROLE.WAITER, ROLE.BARISTA), TableController.update)
+  .delete(protect, authorize(ROLE.ADMIN), TableController.remove);
 
 // Admin can regenerate QR codes
 router.post(

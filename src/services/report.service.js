@@ -1,6 +1,7 @@
 const Order = require('../models/order.model');
 const { OrderItem } = require('../models/orderItem.model');
 const Customer = require('../models/customer.model');
+const Shift = require('../models/shift.model');
 const exceljs = require('exceljs');
 
 class ReportService {
@@ -185,7 +186,6 @@ class ReportService {
   }
 
   static async exportShifts(query, res) {
-    const Shift = require('../models/shift.model');
     const filter = {};
     if (query.startDate || query.endDate) {
       filter.createdAt = {};

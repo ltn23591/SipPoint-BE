@@ -6,11 +6,14 @@ const { ROLE } = require('../../enums');
 
 const router = express.Router();
 
-router.get('/', protect, authorize(ROLE.ADMIN), CampaignController.getAll);
-router.post('/', protect, authorize(ROLE.ADMIN), CampaignController.create);
-router.get('/:id', protect, authorize(ROLE.ADMIN), CampaignController.getById);
-router.put('/:id', protect, authorize(ROLE.ADMIN), CampaignController.update);
-router.delete('/:id', protect, authorize(ROLE.ADMIN), CampaignController.remove);
+router.route('/')
+  .get(protect, authorize(ROLE.ADMIN), CampaignController.getAll)
+  .post(protect, authorize(ROLE.ADMIN), CampaignController.create);
+
+router.route('/:id')
+  .get(protect, authorize(ROLE.ADMIN), CampaignController.getById)
+  .put(protect, authorize(ROLE.ADMIN), CampaignController.update)
+  .delete(protect, authorize(ROLE.ADMIN), CampaignController.remove);
 
 router.post('/:id/activate', protect, authorize(ROLE.ADMIN), CampaignController.activate);
 router.post('/:id/deactivate', protect, authorize(ROLE.ADMIN), CampaignController.deactivate);

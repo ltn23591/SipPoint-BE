@@ -6,13 +6,15 @@ const { ROLE } = require('../../enums');
 
 const router = express.Router();
 
-// Public / Authenticated user views
-router.get('/', ZoneController.getAll);
-router.get('/:id', ZoneController.getById);
+// Quản lý khu vực: Lấy danh sách (Public) / Tạo mới (Admin)
+router.route('/')
+  .get(ZoneController.getAll)
+  .post(protect, authorize(ROLE.ADMIN), ZoneController.create);
 
-// Admin-only actions for zone management
-router.post('/', protect, authorize(ROLE.ADMIN), ZoneController.create);
-router.put('/:id', protect, authorize(ROLE.ADMIN), ZoneController.update);
-router.delete('/:id', protect, authorize(ROLE.ADMIN), ZoneController.remove);
+// Quản lý khu vực: Lấy chi tiết (Public) / Sửa, xóa (Admin)
+router.route('/:id')
+  .get(ZoneController.getById)
+  .put(protect, authorize(ROLE.ADMIN), ZoneController.update)
+  .delete(protect, authorize(ROLE.ADMIN), ZoneController.remove);
 
 module.exports = router;

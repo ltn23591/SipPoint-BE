@@ -6,13 +6,15 @@ const { ROLE } = require('../../enums');
 
 const router = express.Router();
 
-// Public: Ai cũng có thể xem danh mục (dùng để hiển thị menu)
-router.get('/', CategoryController.getAll);
-router.get('/:id', CategoryController.getById);
+// Lấy danh sách (Public) / Tạo mới (Admin)
+router.route('/')
+  .get(CategoryController.getAll)
+  .post(protect, authorize(ROLE.ADMIN), CategoryController.create);
 
-// Admin-only: Chỉ Admin mới được tạo, sửa, xóa danh mục
-router.post('/', protect, authorize(ROLE.ADMIN), CategoryController.create);
-router.put('/:id', protect, authorize(ROLE.ADMIN), CategoryController.update);
-router.delete('/:id', protect, authorize(ROLE.ADMIN), CategoryController.remove);
+// Lấy chi tiết (Public) / Sửa, xóa (Admin)
+router.route('/:id')
+  .get(CategoryController.getById)
+  .put(protect, authorize(ROLE.ADMIN), CategoryController.update)
+  .delete(protect, authorize(ROLE.ADMIN), CategoryController.remove);
 
 module.exports = router;

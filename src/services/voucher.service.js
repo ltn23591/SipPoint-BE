@@ -1,5 +1,7 @@
 const Voucher = require('../models/voucher.model');
 const CustomerVoucher = require('../models/customerVoucher.model');
+const Campaign = require('../models/campaign.model');
+const CustomerService = require('./customer.service');
 const { DISCOUNT_TYPE, POINT_TRANSACTION_TYPE, CUSTOMER_VOUCHER_SOURCE } = require('../enums');
 
 class VoucherService {
@@ -131,7 +133,6 @@ class VoucherService {
     // Điều kiện bổ sung của campaign (nếu voucher được phát từ chiến dịch)
     let effectiveMinOrderValue = voucher.minOrderValue || 0;
     if (customerVoucher.campaignId) {
-      const Campaign = require('../models/campaign.model');
       const campaign = await Campaign.findById(customerVoucher.campaignId);
 
       if (!campaign || campaign.status !== 'ACTIVE') {
@@ -207,8 +208,6 @@ class VoucherService {
 
   // Khách hàng đổi điểm lấy voucher (phát vào ví)
   static async redeemVoucherByPoints(customerId, voucherId) {
-    const CustomerService = require('./customer.service');
-
     // 1. Kiểm tra giới hạn đổi trên mỗi khách hàng
     const voucherInfo = await Voucher.findById(voucherId);
     if (!voucherInfo) {
