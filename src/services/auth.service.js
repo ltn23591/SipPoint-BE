@@ -278,31 +278,36 @@ class AuthService {
   }
 
   static async forgotPassword(email) {
-    const employee = await Employee.findOne({ email, isDeleted: false });
-    if (!employee) throw new AppError('Không tìm thấy tài khoản với email này', 404);
+    let user = await Employee.findOne({ email, isDeleted: false });
+    let userModel = 'Employee';
+    if (!user) {
+      user = await Customer.findOne({ email });
+      userModel = 'Customer';
+    }
+    if (!user) throw new AppError('Không tìm thấy tài khoản với email này', 404);
 
     const otp = crypto.randomInt(100000, 999999).toString();
     
     // Lưu OTP vào database để đối chiếu thay vì đưa vào JWT
-    await OTP.deleteMany({ userId: employee._id, type: OTP_TYPE.RESET_PASSWORD, userModel: 'Employee' });
+    await OTP.deleteMany({ userId: user._id, type: OTP_TYPE.RESET_PASSWORD, userModel });
     await OTP.create({
-      userId: employee._id,
+      userId: user._id,
       code: otp,
       type: OTP_TYPE.RESET_PASSWORD,
-      userModel: 'Employee'
+      userModel
     });
 
     const activationSecret = process.env.ACTIVATION_SECRET;
-    const activationToken = jwt.sign({ email: employee.email }, activationSecret, { expiresIn: '5m' });
+    const activationToken = jwt.sign({ email: user.email }, activationSecret, { expiresIn: '5m' });
 
     await sendEmail({
-      email: employee.email,
+      email: user.email,
       subject: 'Mã xác thực khôi phục mật khẩu',
       template: 'reset-password',
-      data: { name: employee.name, otp }
+      data: { name: user.name || user.fullName, otp }
     }).catch(err => logger.error('Lỗi gửi OTP reset password', err));
 
-    logger.info(`[DEV - BYPASS EMAIL] MÃ OTP KHÔI PHỤC MẬT KHẨU CỦA ${employee.email} LÀ: ${otp}`);
+    logger.info(`[DEV - BYPASS EMAIL] MÃ OTP KHÔI PHỤC MẬT KHẨU CỦA ${user.email} LÀ: ${otp}`);
 
     return { activationToken, message: 'Mã OTP khôi phục mật khẩu đã được gửi đến email của bạn.' };
   }
@@ -317,48 +322,62 @@ class AuthService {
       throw new AppError('Mã xác thực không hợp lệ', 400);
     }
 
-    const employee = await Employee.findOne({ email: decoded.email, isDeleted: false });
-    if (!employee) throw new AppError('Không tìm thấy tài khoản nhân viên', 404);
+    let user = await Employee.findOne({ email: decoded.email, isDeleted: false });
+    let userModel = 'Employee';
+    if (!user) {
+      user = await Customer.findOne({ email: decoded.email });
+      userModel = 'Customer';
+    }
+    if (!user) throw new AppError('Không tìm thấy tài khoản người dùng', 404);
 
     // Đối chiếu OTP trong database
     const otpRecord = await OTP.findOne({
-      userId: employee._id,
+      userId: user._id,
       code: activation_code,
       type: OTP_TYPE.RESET_PASSWORD,
-      userModel: 'Employee'
+      userModel
     });
 
     if (!otpRecord) throw new AppError('Mã OTP không chính xác hoặc đã hết hạn', 400);
     await otpRecord.deleteOne();
 
     const resetToken = crypto.randomBytes(20).toString('hex');
-    employee.resetPasswordToken = resetToken;
-    employee.resetPasswordTokenExpire = Date.now() + 10 * 60 * 1000;
-    await employee.save({ validateBeforeSave: false });
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordTokenExpire = Date.now() + 10 * 60 * 1000;
+    await user.save({ validateBeforeSave: false });
 
-    return { email: employee.email, resetToken, message: 'OTP đã được xác minh thành công' };
+    return { email: user.email, resetToken, message: 'OTP đã được xác minh thành công' };
   }
 
   static async resetPassword(resetToken, newPassword) {
-    const employee = await Employee.findOne({
+    let user = await Employee.findOne({
       resetPasswordToken: resetToken,
       resetPasswordTokenExpire: { $gt: Date.now() }
     }).select('+password');
 
-    if (!employee) throw new AppError('Reset token không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.', 400);
+    if (!user) {
+      user = await Customer.findOne({
+        resetPasswordToken: resetToken,
+        resetPasswordTokenExpire: { $gt: Date.now() }
+      }).select('+password');
+    }
 
-    const isSame = await bcrypt.compare(newPassword, employee.password);
+    if (!user) throw new AppError('Reset token không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.', 400);
+
+    const isSame = await bcrypt.compare(newPassword, user.password);
     if (isSame) throw new AppError('Mật khẩu mới không được trùng với mật khẩu cũ', 400);
 
     const salt = await bcrypt.genSalt(10);
-    employee.password = await bcrypt.hash(newPassword, salt);
+    user.password = await bcrypt.hash(newPassword, salt);
 
-    employee.resetPasswordToken = undefined;
-    employee.resetPasswordTokenExpire = undefined;
-    employee.loginAttempts = 0;
-    employee.lockUntil = undefined;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordTokenExpire = undefined;
+    if (user.loginAttempts !== undefined) {
+      user.loginAttempts = 0;
+      user.lockUntil = undefined;
+    }
     
-    await employee.save({ validateBeforeSave: false });
+    await user.save({ validateBeforeSave: false });
 
     return { message: 'Mật khẩu đã được đặt lại thành công' };
   }

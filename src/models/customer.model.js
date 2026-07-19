@@ -71,6 +71,12 @@ const customerSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    resetPasswordToken: {
+      type: String,
+    },
+    resetPasswordTokenExpire: {
+      type: Date,
+    },
   },
   {
     timestamps: true, // Tự động tạo trường createdAt (Ngày tham gia) và updatedAt
