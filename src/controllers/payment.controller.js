@@ -85,7 +85,54 @@ const sepayIPN = catchAsync(async (req, res) => {
   res.status(200).json({ success: true });
 });
 
+// API cho Frontend gọi sau khi SePay redirect về với status=success
+const confirmPayment = catchAsync(async (req, res) => {
+  const { orderId } = req.body;
+  
+  if (!orderId) {
+    return res.status(400).json({ success: false, message: 'orderId is required' });
+  }
+
+  // Tìm đơn hàng theo _id hoặc code
+  let order = null;
+  if (orderId.match(/^[0-9a-fA-F]{24}$/)) {
+    order = await Order.findById(orderId);
+  }
+  if (!order) {
+    order = await Order.findOne({ code: orderId });
+  }
+
+  if (!order) {
+    return res.status(404).json({ success: false, message: 'Không tìm thấy đơn hàng' });
+  }
+
+  // Chỉ xác nhận nếu đơn hàng đang ở trạng thái PENDING và phương thức thanh toán là TRANSFER
+  if (order.status !== ORDER_STATUS.PENDING) {
+    return res.status(200).json({ success: true, message: 'Đơn hàng đã được xác nhận trước đó', data: order });
+  }
+
+  if (order.paymentMethod !== 'TRANSFER') {
+    return res.status(400).json({ success: false, message: 'Đơn hàng không phải thanh toán chuyển khoản' });
+  }
+
+  order.isPaid = true;
+  order.status = ORDER_STATUS.CONFIRMED;
+  await order.save();
+
+  const populatedOrder = await Order.findById(order._id)
+    .populate('tableId', 'name zoneId')
+    .populate('customerId', 'fullName phone')
+    .populate('createdBy', 'name email')
+    .populate('items');
+
+  emitToAll('order_status_updated', populatedOrder);
+  console.log(`Payment confirmed for order ${order.code} via Frontend callback.`);
+
+  res.status(200).json({ success: true, message: 'Xác nhận thanh toán thành công', data: populatedOrder });
+});
+
 module.exports = {
   createSepayPayment,
-  sepayIPN
+  sepayIPN,
+  confirmPayment
 };
