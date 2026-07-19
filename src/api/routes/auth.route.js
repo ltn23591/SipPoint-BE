@@ -17,6 +17,7 @@ const {
   resetPassword,
   verifyOtpCode,
   changePassword,
+  googleCallback,
   oauthSuccess,
 } = require('../../controllers/auth.controller');
 const passport = require('passport');
@@ -39,42 +40,11 @@ router.post('/customer/verify-email', otpLimiter, customerVerifyEmail);
 router.post('/customer/resend-verify-email', otpLimiter, customerResendVerifyEmail);
 router.post('/customer/login', authLimiter, authValidation.customerLogin, validate, customerLogin);
 
-// OAuth Google & Facebook
+// OAuth Google
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get(
   '/google/callback',
-  (req, res, next) => {
-    passport.authenticate('google', { session: false }, (err, user, info) => {
-      if (err) {
-        console.error("Google OAuth Error:", err);
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=OAuthFailed`);
-      }
-      if (!user) {
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=NoUser`);
-      }
-      req.user = user;
-      next();
-    })(req, res, next);
-  },
-  oauthSuccess,
-);
-
-router.get('/facebook', passport.authenticate('facebook', { scope: ['email'] }));
-router.get(
-  '/facebook/callback',
-  (req, res, next) => {
-    passport.authenticate('facebook', { session: false }, (err, user, info) => {
-      if (err) {
-        console.error("Facebook OAuth Error:", err);
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=OAuthFailed`);
-      }
-      if (!user) {
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=NoUser`);
-      }
-      req.user = user;
-      next();
-    })(req, res, next);
-  },
+  googleCallback,
   oauthSuccess,
 );
 

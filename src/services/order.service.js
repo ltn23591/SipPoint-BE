@@ -2,7 +2,6 @@ const Order = require('../models/order.model');
 const { OrderItem } = require('../models/orderItem.model');
 const Product = require('../models/product.model');
 const ProductVariant = require('../models/productVariant.model');
-const Topping = require('../models/topping.model');
 const Table = require('../models/table.model');
 const Voucher = require('../models/voucher.model');
 const CustomerVoucher = require('../models/customerVoucher.model');
@@ -90,27 +89,9 @@ class OrderService {
           variantPriceSum += variant.priceAdjustment;
         }
       }
-
-      const itemToppings = [];
-      let toppingPriceSum = 0;
-      if (item.toppings && Array.isArray(item.toppings)) {
-        for (const t of item.toppings) {
-          const topping = await Topping.findById(t.toppingId || t._id);
-          if (!topping || topping.isActive === 'inactive') {
-            return { status: 404, success: false, message: `Topping với ID ${t.toppingId || t._id} không tồn tại hoặc đã ngừng hoạt động` };
-          }
-          itemToppings.push({
-            toppingId: topping._id,
-            name: topping.name,
-            price: topping.price,
-          });
-          toppingPriceSum += topping.price;
-        }
-      }
-
       const itemPrice = product.price;
       const quantity = parseInt(item.qty) || 1;
-      const itemSubtotal = (itemPrice + variantPriceSum + toppingPriceSum) * quantity;
+      const itemSubtotal = (itemPrice + variantPriceSum) * quantity;
 
       orderItemsToCreate.push({
         productId: product._id,
@@ -118,7 +99,6 @@ class OrderService {
         unitPrice: itemPrice,
         qty: quantity,
         variants: itemVariants,
-        toppings: itemToppings,
         note: item.note || '',
         subtotal: itemSubtotal,
       });

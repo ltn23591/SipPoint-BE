@@ -45,24 +45,6 @@ const orderItemSchema = new mongoose.Schema(
         },
       },
     ],
-    toppings: [
-      {
-        toppingId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'Topping',
-        },
-        name: {
-          type: String,
-          required: true,
-          trim: true,
-        },
-        price: {
-          type: Number,
-          required: true,
-          default: 0,
-        },
-      },
-    ],
     note: {
       type: String,
       trim: true,

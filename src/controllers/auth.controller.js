@@ -2,6 +2,7 @@ const catchAsync = require('../utils/catchAsync');
 const AuthService = require('../services/auth.service');
 const { sendTokenResponse } = require('../utils/response');
 const jwt = require('jsonwebtoken');
+const passport = require('passport');
 
 exports.customerRegister = catchAsync(async (req, res, next) => {
   const result = await AuthService.customerRegister(req.body);
@@ -106,6 +107,25 @@ exports.changePassword = catchAsync(async (req, res, next) => {
     return res.status(200).json({ success: true, ...result });
 });;
 
+exports.googleCallback = (req, res, next) => {
+  const code = req.query.code;
+  if (code && global.oauthCache && global.oauthCache.has(code)) {
+    console.log(`[OAuth Cache] Google callback double-request handled via cache for code: ${code.substring(0, 10)}...`);
+    return res.redirect(global.oauthCache.get(code));
+  }
+  passport.authenticate('google', { session: false }, (err, user, info) => {
+    if (err) {
+      console.error("Google OAuth Error:", err);
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=OAuthFailed`);
+    }
+    if (!user) {
+      return res.redirect(`${process.env.FRONTEND_URL}/login?error=NoUser`);
+    }
+    req.user = user;
+    next();
+  })(req, res, next);
+};
+
 exports.oauthSuccess = catchAsync(async (req, res, next) => {
   const user = req.user;
   const frontendUrl = process.env.FRONTEND_URL;
@@ -130,5 +150,22 @@ exports.oauthSuccess = catchAsync(async (req, res, next) => {
 
   res.cookie('token', token, options);
 
-  return res.redirect(`${frontendUrl}/login-success?token=${token}&email=${encodeURIComponent(user.email || '')}&name=${encodeURIComponent(user.fullName || '')}&id=${user._id}`);
+  const redirectUrl = `${frontendUrl}/login-success?token=${token}&email=${encodeURIComponent(user.email || '')}&name=${encodeURIComponent(user.fullName || '')}&id=${user._id}`;
+
+  // Cache the redirect URL for duplicate callback requests prevention
+  const code = req.query.code;
+  if (code) {
+    if (!global.oauthCache) {
+      global.oauthCache = new Map();
+    }
+    global.oauthCache.set(code, redirectUrl);
+    // Expire the code from cache after 15 seconds
+    setTimeout(() => {
+      if (global.oauthCache) {
+        global.oauthCache.delete(code);
+      }
+    }, 15000);
+  }
+
+  return res.redirect(redirectUrl);
 });;

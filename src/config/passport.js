@@ -1,6 +1,5 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const FacebookStrategy = require('passport-facebook').Strategy;
 const Customer = require('../models/customer.model');
 const MembershipTier = require('../models/membershipTier.model');
 
@@ -32,7 +31,6 @@ const getOrCreateCustomer = async (filter, profileData) => {
     if (customer) {
       // Link social ID to existing account
       if (profileData.googleId) customer.googleId = profileData.googleId;
-      if (profileData.facebookId) customer.facebookId = profileData.facebookId;
       if (!customer.avatar && profileData.avatar) customer.avatar = profileData.avatar;
       customer.isVerified = true;
       await customer.save();
@@ -50,7 +48,6 @@ const getOrCreateCustomer = async (filter, profileData) => {
         fullName: profileData.fullName,
         email: profileData.email,
         googleId: profileData.googleId,
-        facebookId: profileData.facebookId,
         avatar: profileData.avatar,
         tierId: defaultTierId,
         isActive: true,
@@ -84,37 +81,6 @@ passport.use(
         };
 
         const customer = await getOrCreateCustomer({ googleId: profile.id }, profileData);
-        return done(null, customer);
-      } catch (err) {
-        return done(err, null);
-      }
-    }
-  )
-);
-
-// Configure Facebook Strategy
-
-passport.use(
-  new FacebookStrategy(
-    {
-      clientID: process.env.FACEBOOK_CLIENT_ID,
-      clientSecret: process.env.FACEBOOK_CLIENT_SECRET,
-      callbackURL: `${backendUrl}/api/v1/auth/facebook/callback`,
-      profileFields: ['id', 'displayName', 'emails', 'photos'],
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        const email = profile.emails && profile.emails[0] ? profile.emails[0].value : '';
-        const avatar = profile.photos && profile.photos[0] ? profile.photos[0].value : '';
-
-        const profileData = {
-          fullName: profile.displayName,
-          email,
-          avatar,
-          facebookId: profile.id,
-        };
-
-        const customer = await getOrCreateCustomer({ facebookId: profile.id }, profileData);
         return done(null, customer);
       } catch (err) {
         return done(err, null);

@@ -26,7 +26,6 @@ const reportRoutes = require('./routes/report.route');
 const shiftRoutes = require('./routes/shift.route');
 const aiRoutes = require('./routes/ai.route');
 const paymentRoutes = require('./routes/payment.route');
-const toppingRoutes = require('./routes/topping.route');
 
 const router = express.Router();
 
@@ -66,6 +65,5 @@ router.use('/report', reportRoutes);
 router.use('/shifts', shiftRoutes);
 router.use('/ai', aiRoutes);
 router.use('/payment', paymentRoutes);
-router.use('/toppings', toppingRoutes);
 
 module.exports = router;
