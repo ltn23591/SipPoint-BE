@@ -18,6 +18,11 @@ const productVariantSchema = new mongoose.Schema(
       required: true,
       default: 0,
     },
+    variantType: {
+      type: String,
+      enum: ['size'],
+      default: 'size',
+    },
     isActive: {
       type: String,
       enum: [IS_ACTIVE.FALSE, IS_ACTIVE.TRUE],

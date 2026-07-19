@@ -78,6 +78,7 @@ class ProductService {
         const variantsData = parsedVariants.map(variant => ({
           product: product._id,
           name: variant.name,
+          variantType: variant.variantType || 'size',
           priceAdjustment: Number(variant.priceAdjustment) || 0,
           isActive: variant.isActive !== undefined ? variant.isActive : 'active',
         }));
@@ -145,6 +146,7 @@ class ProductService {
           const variantsData = parsedVariants.map(variant => ({
             product: id,
             name: variant.name,
+            variantType: variant.variantType || 'size',
             priceAdjustment: Number(variant.priceAdjustment) || 0,
             isActive: variant.isActive !== undefined ? variant.isActive : 'active',
           }));
