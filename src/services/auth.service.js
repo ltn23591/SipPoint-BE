@@ -364,8 +364,10 @@ class AuthService {
 
     if (!user) throw new AppError('Reset token không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.', 400);
 
-    const isSame = await bcrypt.compare(newPassword, user.password);
-    if (isSame) throw new AppError('Mật khẩu mới không được trùng với mật khẩu cũ', 400);
+    if (user.password) {
+      const isSame = await bcrypt.compare(newPassword, user.password);
+      if (isSame) throw new AppError('Mật khẩu mới không được trùng với mật khẩu cũ', 400);
+    }
 
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
