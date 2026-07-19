@@ -31,20 +31,38 @@ const createSepayPayment = catchAsync(async (req, res, next) => {
 const sepayIPN = catchAsync(async (req, res) => {
   console.log('SePay IPN Request Body:', req.body);
   
-  const { order_invoice_number, payment_status } = req.body;
+  const { order_invoice_number, payment_status, content } = req.body;
   
-  if (payment_status === 'SUCCESS' || payment_status === 'PAID') {
-    console.log(`SePay Payment successful for order ${order_invoice_number}`);
+  let isPaidSuccessful = false;
+  let orderCodeOrId = '';
+
+  // Trường hợp 1: Callback từ trang thanh toán hosted checkout
+  if (order_invoice_number && (payment_status === 'SUCCESS' || payment_status === 'PAID')) {
+    isPaidSuccessful = true;
+    orderCodeOrId = order_invoice_number;
+  }
+  // Trường hợp 2: Webhook giao dịch chuyển khoản trực tiếp (quét VietQR)
+  else if (content) {
+    // Trích xuất mã đơn hàng (ví dụ: OD-485934-6138) từ nội dung chuyển khoản
+    const match = content.match(/OD-\d{6}-\d{4}/i);
+    if (match) {
+      isPaidSuccessful = true;
+      orderCodeOrId = match[0].toUpperCase();
+    }
+  }
+  
+  if (isPaidSuccessful && orderCodeOrId) {
+    console.log(`SePay Payment successful for order: ${orderCodeOrId}`);
     
     // Tìm đơn hàng theo code hoặc _id
-    let order = await Order.findOne({ code: order_invoice_number });
-    if (!order && order_invoice_number.match(/^[0-9a-fA-F]{24}$/)) {
-      order = await Order.findById(order_invoice_number);
+    let order = await Order.findOne({ code: orderCodeOrId });
+    if (!order && orderCodeOrId.match(/^[0-9a-fA-F]{24}$/)) {
+      order = await Order.findById(orderCodeOrId);
     }
     
     if (order) {
       order.isPaid = true;
-      order.status = ORDER_STATUS.CONFIRMED; // Chuyển khoản thành công -> trạng thái Đã nhận đơn (CONFIRMED)
+      order.status = ORDER_STATUS.CONFIRMED; // Chuyển khoản thành công -> Đã nhận đơn (CONFIRMED)
       await order.save();
       
       // Lấy lại đơn hàng đầy đủ để đẩy socket thông báo thời gian thực cho Portal
@@ -57,10 +75,10 @@ const sepayIPN = catchAsync(async (req, res) => {
       emitToAll('order_status_updated', populatedOrder);
       console.log(`Successfully updated order ${order.code} status to CONFIRMED (paid).`);
     } else {
-      console.warn(`Order not found for SePay invoice number: ${order_invoice_number}`);
+      console.warn(`Order not found for SePay code/id: ${orderCodeOrId}`);
     }
   } else {
-    console.log(`SePay Payment failed for order ${order_invoice_number}`);
+    console.log(`SePay webhook processed, no successful order payment detected.`);
   }
 
   // Phản hồi HTTP 200 OK cho SePay biết đã nhận được IPN
