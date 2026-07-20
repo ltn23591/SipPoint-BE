@@ -75,6 +75,10 @@ const orderSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isEcoFriendly: {
+      type: Boolean,
+      default: false,
+    },
     type: {
       type: String,
       enum: ['dine_in', 'takeaway', 'delivery', 'counter'],

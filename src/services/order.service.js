@@ -202,6 +202,7 @@ class OrderService {
         isPaid: data.isPaid || false,
         paymentMethod: data.paymentMethod || PAYMENT_METHOD.CASH,
         isPickup: data.isPickup || false,
+        isEcoFriendly: data.isEcoFriendly || false,
         type: data.type || 'dine_in',
       });
 
@@ -295,13 +296,41 @@ class OrderService {
     if (newStatus === ORDER_STATUS.COMPLETED) {
       order.isPaid = true;
       if (order.customerId) {
-        const points = Math.floor(order.total / POINTS_RATE);
+        const orderDate = new Date(order.createdAt || Date.now());
+        const day = orderDate.getDay(); // 0: Chủ nhật, 1-5: Thứ 2-Thứ 6, 6: Thứ 7
+        const hour = orderDate.getHours();
+        
+        let multiplier = 1;
+        let isHappyHour = false;
+        
+        // Happy Hour: Thứ 2 - Thứ 6, từ 14h đến trước 17h (14:00 - 16:59)
+        if (day >= 1 && day <= 5 && hour >= 14 && hour < 17) {
+          multiplier = 2;
+          isHappyHour = true;
+        }
+
+        let basePoints = Math.floor(order.total / POINTS_RATE);
+        let points = basePoints * multiplier;
+        
+        // Thưởng điểm bảo vệ môi trường (+15 điểm)
+        if (order.isEcoFriendly) {
+          points += 15;
+        }
+
         if (points > 0 && order.pointsAwarded === 0) {
+          let description = `Tích điểm từ hóa đơn ${order.total.toLocaleString('vi-VN')}đ`;
+          if (isHappyHour) {
+            description += ` (Nhân đôi giờ vàng Happy Hour x2)`;
+          }
+          if (order.isEcoFriendly) {
+            description += ` (+15 điểm bảo vệ môi trường)`;
+          }
+
           const pointRes = await CustomerService.adjustPoints(
             order.customerId,
             points,
             `Đơn hàng ${order.code}`,
-            `Tích điểm từ hóa đơn ${order.total.toLocaleString('vi-VN')}đ`,
+            description,
             POINT_TRANSACTION_TYPE.ORDER,
             { spentChange: order.total, orderId: order._id, affectsCycle: true }
           );
@@ -309,7 +338,11 @@ class OrderService {
             order.pointsAwarded = points;
           }
         }
-        await Customer.updateOne({ _id: order.customerId }, { lastVisitAt: new Date() });
+        const updateFields = { lastVisitAt: new Date() };
+        if (order.total >= 50000) {
+          updateFields.$inc = { luckySpins: 1 };
+        }
+        await Customer.updateOne({ _id: order.customerId }, updateFields);
       }
     }
 

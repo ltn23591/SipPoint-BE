@@ -71,6 +71,10 @@ const customerSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    luckySpins: {
+      type: Number,
+      default: 0,
+    },
     resetPasswordToken: {
       type: String,
     },

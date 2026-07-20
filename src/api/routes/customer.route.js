@@ -1,5 +1,6 @@
 const express = require('express');
 const CustomerController = require('../../controllers/customer.controller');
+const LuckyWheelController = require('../../controllers/luckyWheel.controller');
 const { protect } = require('../../middleware/auth.middleware');
 const { authorize } = require('../../middleware/authorize.middleware');
 const { ROLE } = require('../../enums');
@@ -30,5 +31,9 @@ router.route('/:id')
   .get(protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.getById)
   .put(protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.update);
 router.post('/:id/points', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.adjustPoints);
+
+// Lucky Wheel routes
+router.get('/me/lucky-wheel', protect, LuckyWheelController.getInfo);
+router.post('/me/lucky-wheel/spin', protect, LuckyWheelController.spin);
 
 module.exports = router;

@@ -57,10 +57,11 @@ const POINT_TRANSACTION_TYPE = {
     BIRTHDAY_GIFT: "BIRTHDAY_GIFT",
     ADJUSTMENT: "ADJUSTMENT",   // Admin điều chỉnh thủ công
     REFUND: "REFUND",           // Trừ điểm do hoàn trả đơn hàng
+    LUCKY_SPIN: "LUCKY_SPIN",   // Tiêu điểm để quay vòng quay may mắn
 };
 
 // Quy đổi điểm tích lũy: 1 điểm cho mỗi POINTS_RATE VND trên tổng hóa đơn
-const POINTS_RATE = 10000;
+const POINTS_RATE = 1000;
 
 // Chu kỳ duy trì hạng thành viên (tháng) - cơ chế reset cuốn chiếu
 const TIER_CYCLE_MONTHS = 12;
