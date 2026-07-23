@@ -1,11 +1,12 @@
 const Voucher = require('../models/voucher.model');
 const CustomerVoucher = require('../models/customerVoucher.model');
 const Campaign = require('../models/campaign.model');
+const Customer = require('../models/customer.model');
 const CustomerService = require('./customer.service');
+const CustomerSegmentService = require('./customerSegment.service');
 const { DISCOUNT_TYPE, POINT_TRANSACTION_TYPE, CUSTOMER_VOUCHER_SOURCE } = require('../enums');
 
 class VoucherService {
-  // Tính số tiền được giảm của một voucher trên giá trị đơn hàng
   static computeDiscount(voucher, orderValue) {
     let discountAmount = 0;
     if (voucher.discountType === DISCOUNT_TYPE.PERCENTAGE) {
@@ -262,6 +263,9 @@ class VoucherService {
         expiryDate: voucher.endDate,
         source: CUSTOMER_VOUCHER_SOURCE.POINTS_REDEEM,
       });
+
+      await Customer.updateOne({ _id: customerId }, { $inc: { redeemCount: 1 } });
+      await CustomerSegmentService.resyncRealtimeSegments();
 
       return {
         status: 201,

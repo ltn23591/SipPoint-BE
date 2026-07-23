@@ -284,6 +284,41 @@ class CustomerService {
     result.setMonth(result.getMonth() + months);
     return result;
   }
+
+  // Backfill số liệu lọc nhóm (orderCount/redeemCount) từ dữ liệu lịch sử.
+  // Chạy 1 lần sau khi thêm 2 field, hoặc khi cần đối soát lại.
+  static async recomputeCounters() {
+    const Order = require('../models/order.model');
+    const { ORDER_STATUS, CUSTOMER_VOUCHER_SOURCE } = require('../enums');
+
+    // Reset về 0 rồi tính lại từ nguồn
+    await Customer.updateMany({}, { $set: { orderCount: 0, redeemCount: 0 } });
+
+    // orderCount = số đơn đã COMPLETED của mỗi khách
+    const orderAgg = await Order.aggregate([
+      { $match: { status: ORDER_STATUS.COMPLETED, customerId: { $ne: null } } },
+      { $group: { _id: '$customerId', c: { $sum: 1 } } },
+    ]);
+    for (const row of orderAgg) {
+      await Customer.updateOne({ _id: row._id }, { $set: { orderCount: row.c } });
+    }
+
+    // redeemCount = số voucher đã đổi bằng điểm (POINTS_REDEEM)
+    const redeemAgg = await CustomerVoucher.aggregate([
+      { $match: { source: CUSTOMER_VOUCHER_SOURCE.POINTS_REDEEM } },
+      { $group: { _id: '$customerId', c: { $sum: 1 } } },
+    ]);
+    for (const row of redeemAgg) {
+      await Customer.updateOne({ _id: row._id }, { $set: { redeemCount: row.c } });
+    }
+
+    return {
+      status: 200,
+      success: true,
+      message: 'Đối soát số liệu khách hàng thành công',
+      data: { customersWithOrders: orderAgg.length, customersWithRedeems: redeemAgg.length },
+    };
+  }
 }
 
 module.exports = CustomerService;

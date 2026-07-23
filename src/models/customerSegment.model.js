@@ -1,5 +1,23 @@
 const mongoose = require('mongoose');
-const { IS_ACTIVE } = require('../enums');
+const { IS_ACTIVE, SEGMENT_MODE } = require('../enums');
+
+// Một điều kiện lọc: field + operator + value (value linh hoạt: số / mảng / boolean / chuỗi)
+const conditionSchema = new mongoose.Schema(
+  {
+    field: { type: String, required: true }, // gender | age | birthdayMonth | points | hasEmail | hasPhone | redeemCount | orderCount | tier
+    operator: { type: String, required: true }, // eq | ne | gt | lt | between | in | notIn
+    value: { type: mongoose.Schema.Types.Mixed },
+  },
+  { _id: false }
+);
+
+// Một nhóm điều kiện: các điều kiện bên trong nối bằng AND (VÀ)
+const groupSchema = new mongoose.Schema(
+  {
+    conditions: { type: [conditionSchema], default: [] },
+  },
+  { _id: false }
+);
 
 const customerSegmentSchema = new mongoose.Schema(
   {
@@ -13,19 +31,26 @@ const customerSegmentSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    // Bộ tiêu chí lọc động (kết hợp AND giữa các tiêu chí có giá trị)
-    criteria: {
-      // Thuộc một trong các hạng thành viên
-      tierIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'MembershipTier' }],
-      // Tháng sinh nhật (1-12)
-      birthdayMonth: { type: Number, min: 1, max: 12 },
-      // Số dư điểm tối thiểu
-      minPoints: { type: Number, min: 0 },
-      // Số ngày chưa ghé quán (tính từ lastVisitAt): >= min và/hoặc <= max
-      minDaysSinceLastVisit: { type: Number, min: 0 },
-      maxDaysSinceLastVisit: { type: Number, min: 0 },
+    // Chế độ nhóm: AUTO (lọc động) hoặc MANUAL (chọn tay)
+    mode: {
+      type: String,
+      enum: Object.values(SEGMENT_MODE),
+      default: SEGMENT_MODE.AUTO,
     },
-    // Danh sách thành viên đã materialize (đồng bộ qua cron hằng ngày hoặc sync thủ công)
+    // Tự động cập nhật lại thành viên ngay khi dữ liệu KH thay đổi (đơn/đổi quà),
+    // thay vì chỉ chờ cron 00:00. Chỉ áp dụng cho nhóm AUTO.
+    isRealtimeUpdate: {
+      type: Boolean,
+      default: false,
+    },
+    // Bộ tiêu chí (chỉ dùng khi mode = AUTO):
+    // các nhóm nối OR, mỗi nhóm chứa các điều kiện nối AND.
+    criteria: {
+      groups: { type: [groupSchema], default: [] },
+    },
+    // Danh sách thành viên đã materialize.
+    // - AUTO: đồng bộ qua cron/sync theo criteria.
+    // - MANUAL: admin chọn tay, không tự đồng bộ.
     memberIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Customer' }],
     memberCount: {
       type: Number,

@@ -57,6 +57,7 @@ const POINT_TRANSACTION_TYPE = {
     BIRTHDAY_GIFT: "BIRTHDAY_GIFT",
     ADJUSTMENT: "ADJUSTMENT",   // Admin điều chỉnh thủ công
     REFUND: "REFUND",           // Trừ điểm do hoàn trả đơn hàng
+    LUCKY_WHEEL: "LUCKY_WHEEL", // Cộng/trừ điểm từ vòng quay may mắn
 };
 
 // Quy đổi điểm tích lũy: 1 điểm cho mỗi POINTS_RATE VND trên tổng hóa đơn
@@ -70,6 +71,29 @@ const CUSTOMER_VOUCHER_SOURCE = {
     POINTS_REDEEM: "POINTS_REDEEM", // Khách đổi điểm lấy voucher
     CAMPAIGN: "CAMPAIGN",           // Campaign phát tự động
     ADMIN: "ADMIN",                 // Admin phát thủ công
+    LUCKY_WHEEL: "LUCKY_WHEEL",     // Trúng voucher từ vòng quay may mắn
+};
+
+// Trạng thái vòng quay may mắn (Module 5)
+const LUCKY_WHEEL_STATUS = {
+    DRAFT: "DRAFT",       // Nháp - đang cấu hình
+    ACTIVE: "ACTIVE",     // Đang mở cho khách quay
+    FINISHED: "FINISHED", // Đã kết thúc
+};
+
+// Phạm vi khách hàng áp dụng vòng quay
+const WHEEL_TARGET_TYPE = {
+    ALL: "ALL",         // Tất cả khách hàng
+    SEGMENT: "SEGMENT", // Theo nhóm khách hàng (Module 3)
+    TIER: "TIER",       // Theo bậc hạng thành viên
+};
+
+// Loại phần thưởng của mỗi ô trên vòng quay
+const PRIZE_TYPE = {
+    VOUCHER: "VOUCHER",   // Trúng voucher (phát vào ví)
+    POINTS: "POINTS",     // Trúng điểm thưởng
+    PHYSICAL: "PHYSICAL", // Quà hiện vật (nhân viên trao tay)
+    NONE: "NONE",         // Không trúng (chúc may mắn lần sau)
 };
 
 const CAMPAIGN_STATUS = {
@@ -97,6 +121,19 @@ const SHIFT_STATUS = {
     CLOSED: "CLOSED",
 };
 
+// Giới tính khách hàng (Module 3 - tiêu chí lọc nhóm)
+const GENDER = {
+    MALE: "male",
+    FEMALE: "female",
+    OTHER: "other",
+};
+
+// Chế độ nhóm khách hàng: tự động theo bộ lọc, hoặc chọn thủ công
+const SEGMENT_MODE = {
+    AUTO: "AUTO",     // Lọc động theo tiêu chí, đồng bộ qua cron
+    MANUAL: "MANUAL", // Danh sách khách hàng chọn tay, không tự đồng bộ
+};
+
 module.exports = {
     ROLE,
     USER_STATUS,
@@ -113,5 +150,10 @@ module.exports = {
     CAMPAIGN_STATUS,
     ORDER_TYPE,
     PAYMENT_METHOD,
-    SHIFT_STATUS
+    SHIFT_STATUS,
+    LUCKY_WHEEL_STATUS,
+    WHEEL_TARGET_TYPE,
+    PRIZE_TYPE,
+    GENDER,
+    SEGMENT_MODE
 };
