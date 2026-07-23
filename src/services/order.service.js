@@ -8,14 +8,13 @@ const CustomerVoucher = require('../models/customerVoucher.model');
 const Customer = require('../models/customer.model');
 const VoucherService = require('./voucher.service');
 const CustomerService = require('./customer.service');
+const CustomerSegmentService = require('./customerSegment.service');
 const { ORDER_STATUS, TABLE_STATUS, IS_ACTIVE, POINT_TRANSACTION_TYPE, POINTS_RATE, PAYMENT_METHOD } = require('../enums');
 const { emitToAll } = require('./socket.service');
 const mongoose = require('mongoose');
 
 class OrderService {
-  /**
-   * Tạo đơn hàng mới
-   */
+
   static async createOrder(data, createdById) {
     const { tableId, customerId, items, voucherCode, customerVoucherId, note } = data;
 
@@ -50,7 +49,6 @@ class OrderService {
       }
     }
 
-    // 1. Kiểm tra bàn (nếu có)
     if (tableId) {
       const table = await Table.findById(tableId);
       if (!table) {
@@ -61,7 +59,6 @@ class OrderService {
       }
     }
 
-    // 2. Xử lý danh sách items
     const orderItemsToCreate = [];
     let subtotalSum = 0;
 
@@ -71,7 +68,6 @@ class OrderService {
         return { status: 404, success: false, message: `Sản phẩm với ID ${item.productId} không tồn tại hoặc đã ngừng kinh doanh` };
       }
 
-      // Lấy biến thể (variants) nếu có
       const itemVariants = [];
       let variantPriceSum = 0;
 
@@ -106,7 +102,6 @@ class OrderService {
       subtotalSum += itemSubtotal;
     }
 
-    // 3. Xử lý Voucher (nếu có)
     let discountAmount = 0;
     let finalAmount = subtotalSum;
     let resolvedVoucherId = null;
@@ -309,7 +304,13 @@ class OrderService {
             order.pointsAwarded = points;
           }
         }
-        await Customer.updateOne({ _id: order.customerId }, { lastVisitAt: new Date() });
+        // Cập nhật realtime số liệu KH: ghi nhận thêm 1 đơn hoàn tất (cho tiêu chí lọc nhóm)
+        await Customer.updateOne(
+          { _id: order.customerId },
+          { $set: { lastVisitAt: new Date() }, $inc: { orderCount: 1 } }
+        );
+        // Đồng bộ ngay các nhóm AUTO bật cập nhật realtime
+        await CustomerSegmentService.resyncRealtimeSegments();
       }
     }
 
@@ -459,6 +460,15 @@ class OrderService {
         }
       }
       order.pointsAwarded = 0;
+    }
+
+    // Cập nhật realtime số liệu KH: trừ lại 1 đơn hoàn tất do hoàn trả
+    if (order.customerId) {
+      await Customer.updateOne(
+        { _id: order.customerId, orderCount: { $gt: 0 } },
+        { $inc: { orderCount: -1 } }
+      );
+      await CustomerSegmentService.resyncRealtimeSegments();
     }
 
     // Hoàn lại voucher đã dùng cho đơn

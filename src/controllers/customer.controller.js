@@ -71,6 +71,11 @@ class CustomerController {
       );
       res.status(result.status).json(result);
     });
+
+  static recomputeCounters = catchAsync(async (req, res, next) => {
+      const result = await CustomerService.recomputeCounters();
+      res.status(result.status).json(result);
+    });
 }
 
 module.exports = CustomerController;

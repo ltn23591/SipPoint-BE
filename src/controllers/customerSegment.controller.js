@@ -29,12 +29,19 @@ class CustomerSegmentController {
     });
 
   static preview = catchAsync(async (req, res, next) => {
-      const result = await CustomerSegmentService.previewSegment(req.body.criteria || req.body);
+      const criteria = req.body.criteria || req.body;
+      const query = { page: req.body.page, limit: req.body.limit };
+      const result = await CustomerSegmentService.previewSegment(criteria, query);
       res.status(result.status).json(result);
     });
 
   static sync = catchAsync(async (req, res, next) => {
       const result = await CustomerSegmentService.syncSegment(req.params.id);
+      res.status(result.status).json(result);
+    });
+
+  static toggleActive = catchAsync(async (req, res, next) => {
+      const result = await CustomerSegmentService.toggleActive(req.params.id);
       res.status(result.status).json(result);
     });
 

@@ -16,6 +16,7 @@ router.route('/:id')
   .put(protect, authorize(ROLE.ADMIN), CustomerSegmentController.update)
   .delete(protect, authorize(ROLE.ADMIN), CustomerSegmentController.remove);
 router.post('/:id/sync', protect, authorize(ROLE.ADMIN), CustomerSegmentController.sync);
+router.patch('/:id/toggle-active', protect, authorize(ROLE.ADMIN), CustomerSegmentController.toggleActive);
 router.get('/:id/members', protect, authorize(ROLE.ADMIN), CustomerSegmentController.getMembers);
 
 module.exports = router;

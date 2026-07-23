@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { GENDER } = require('../enums');
 
 const customerSchema = new mongoose.Schema(
   {
@@ -6,6 +7,12 @@ const customerSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+    },
+    // Giới tính (Module 3 - tiêu chí lọc nhóm). Khách cũ chưa có = null.
+    gender: {
+      type: String,
+      enum: [...Object.values(GENDER), null],
+      default: null,
     },
     email: {
       type: String,
@@ -56,6 +63,16 @@ const customerSchema = new mongoose.Schema(
       type: Date,
     },
     totalSpent: {
+      type: Number,
+      default: 0,
+    },
+    // Số đơn đã hoàn tất (COMPLETED) - cập nhật realtime, dùng cho tiêu chí lọc nhóm.
+    orderCount: {
+      type: Number,
+      default: 0,
+    },
+    // Số lần đổi điểm lấy quà/voucher - cập nhật realtime, dùng cho tiêu chí lọc nhóm.
+    redeemCount: {
       type: Number,
       default: 0,
     },
