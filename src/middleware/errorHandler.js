@@ -2,26 +2,30 @@ const AppError = require('../utils/AppError');
 const logger = require('../config/logger');
 
 const handleCastErrorDB = err => {
-  const message = `Invalid ${err.path}: ${err.value}.`;
+  const message = `Dữ liệu ID hoặc tham số không hợp lệ: ${err.path}.`;
   return new AppError(message, 400);
 };
 
 const handleDuplicateFieldsDB = err => {
   // Trích xuất giá trị gây lỗi duplicate
   const value = err.errmsg ? err.errmsg.match(/(["'])(\\?.)*?\1/)[0] : '';
-  const message = `Duplicate field value: ${value}. Please use another value!`;
+  const message = `Dữ liệu bị trùng lặp: ${value}. Vui lòng sử dụng giá trị khác!`;
   return new AppError(message, 400);
 };
 
 const handleValidationErrorDB = err => {
   const errors = Object.values(err.errors).map(el => el.message);
-  const message = `Invalid input data. ${errors.join('. ')}`;
+  const message = `Dữ liệu đầu vào không hợp lệ. ${errors.join('. ')}`;
   return new AppError(message, 400);
 };
 
-const handleJWTError = () => new AppError('Invalid token. Please log in again!', 401);
+const handleJWTError = () => new AppError('Token không hợp lệ. Vui lòng đăng nhập lại!', 401);
 
-const handleJWTExpiredError = () => new AppError('Your token has expired! Please log in again.', 401);
+const handleJWTExpiredError = () => new AppError('Token đã hết hạn! Vui lòng đăng nhập lại.', 401);
+
+const handleMalformedJSON = () => new AppError('Dữ liệu JSON gửi lên không đúng định dạng.', 400);
+
+const handlePayloadTooLarge = () => new AppError('Dữ liệu gửi lên (payload) quá lớn. Vui lòng giảm kích thước.', 413);
 
 const sendErrorDev = (err, req, res) => {
   res.status(err.statusCode).json({
@@ -52,6 +56,16 @@ const sendErrorProd = (err, req, res) => {
 module.exports = (err, req, res, _next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
+
+  // Handle malformed JSON body parse error from body-parser
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    err = handleMalformedJSON();
+  }
+
+  // Handle Payload Too Large error
+  if (err.type === 'entity.too.large' || err.statusCode === 413) {
+    err = handlePayloadTooLarge();
+  }
 
   if (process.env.NODE_ENV === 'development') {
     sendErrorDev(err, req, res);

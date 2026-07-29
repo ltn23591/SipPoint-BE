@@ -1,21 +1,25 @@
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
 const compression = require('compression');
-const logger = require('./config/logger');
+const cookieParser = require('cookie-parser');
+const session = require('express-session');
+const passport = require('passport');
 
 dotenv.config(); // Load env variables first!
+require('./config/passport');
 
-const cookieParser = require('cookie-parser');
-const path = require('path');
+const logger = require('./config/logger');
 const apiRoutes = require('./api');
 const errorHandler = require('./middleware/errorHandler');
 const setupSwagger = require('./config/swagger');
 const i18n = require('./config/i18n');
 const { generalLimiter } = require('./middleware/rateLimit.middleware');
 const { sanitizeInput, securityHeaders } = require('./middleware/security.middleware');
+const AppError = require('./utils/AppError');
 
 const app = express();
 app.set('trust proxy', 1); // Trust first proxy (Render, Heroku, etc.)
@@ -37,16 +41,12 @@ app.use(
 );
 
 // 2. Parsers
-const session = require('express-session');
-const passport = require('passport');
-require('./config/passport');
-
 app.use(express.json({ limit: '500kb' })); // Giới hạn kích thước JSON body
 app.use(express.urlencoded({ extended: true, limit: '500kb' }));
 app.use(cookieParser());
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'sippoint_session_secret',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -77,7 +77,6 @@ app.get('/', (req, res) => {
 app.use('/api/v1', apiRoutes);
 
 // 5. Route không tồn tại (404)
-const AppError = require('./utils/AppError');
 app.use((req, res, next) => {
   next(new AppError(`Không tìm thấy đường dẫn: ${req.originalUrl}`, 404));
 });

@@ -1,10 +1,11 @@
 const rateLimit = require('express-rate-limit');
 let RedisStore = require('rate-limit-redis');
+const Redis = require('ioredis');
+const logger = require('../config/logger');
+
 if (RedisStore.default) {
   RedisStore = RedisStore.default;
 }
-const Redis = require('ioredis');
-const logger = require('../config/logger');
 
 // ============================================================
 // Rate Limiter Middleware sử dụng Redis
@@ -12,7 +13,7 @@ const logger = require('../config/logger');
 // ============================================================
 
 // Khởi tạo Redis client
-const redisUrl = (process.env.REDIS_URL || 'redis://localhost:6379').trim();
+const redisUrl = (process.env.REDIS_URL || '').trim();
 const redisClient = new Redis(redisUrl, {
   family: 0,
   connectTimeout: 10000

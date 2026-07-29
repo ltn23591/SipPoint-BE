@@ -1,21 +1,40 @@
-const AppError = require('../utils/AppError');
-
-// ============================================================
-// Security Middleware - Tăng cường bảo mật nâng cao
-// ============================================================
+// Simple, effective XSS cleaning for string input without heavy dependencies
+const sanitizeString = (str) => {
+  if (typeof str !== 'string') return str;
+  return str
+    .trim()
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove <script> tags
+    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '') // Remove <iframe> tags
+    .replace(/javascript\s*:/gi, '') // Remove javascript: pseudo-protocols
+    .replace(/on\w+\s*=/gi, ''); // Remove event handler attributes (onload=, onerror=, etc.)
+};
 
 /**
- * Chống tấn công NoSQL Injection.
- * Quét body, query, params và loại bỏ các ký tự đặc biệt MongoDB ($, .).
- * Ví dụ: { "email": { "$gt": "" } } sẽ bị chặn.
+ * Chống tấn công NoSQL Injection, XSS và Tự động làm sạch dữ liệu đầu vào.
+ * Quét body, query, params và loại bỏ các ký tự đặc biệt MongoDB ($, .)
+ * đồng thời loại bỏ các mã độc HTML/Script (XSS).
  */
 const sanitizeInput = (req, res, next) => {
   const sanitize = (obj) => {
     if (typeof obj !== 'object' || obj === null) return obj;
+
+    if (Array.isArray(obj)) {
+      for (let i = 0; i < obj.length; i++) {
+        if (typeof obj[i] === 'string') {
+          obj[i] = sanitizeString(obj[i]);
+        } else if (typeof obj[i] === 'object' && obj[i] !== null) {
+          sanitize(obj[i]);
+        }
+      }
+      return obj;
+    }
+
     for (const key of Object.keys(obj)) {
       if (key.startsWith('$') || key.includes('.')) {
         delete obj[key];
-      } else if (typeof obj[key] === 'object') {
+      } else if (typeof obj[key] === 'string') {
+        obj[key] = sanitizeString(obj[key]);
+      } else if (typeof obj[key] === 'object' && obj[key] !== null) {
         sanitize(obj[key]);
       }
     }
@@ -27,23 +46,6 @@ const sanitizeInput = (req, res, next) => {
   if (req.params) sanitize(req.params);
 
   next();
-};
-
-/**
- * Giới hạn kích thước payload JSON.
- * Chặn các request có body quá lớn để tránh tấn công DoS bằng cách gửi JSON khổng lồ.
- * @param {number} maxSizeKB - Kích thước tối đa tính bằng KB (mặc định: 500KB)
- */
-const limitPayloadSize = (maxSizeKB = 500) => {
-  return (req, res, next) => {
-    const contentLength = parseInt(req.headers['content-length'] || '0', 10);
-    const maxBytes = maxSizeKB * 1024;
-
-    if (contentLength > maxBytes) {
-      return next(new AppError(`Kích thước request vượt quá giới hạn cho phép (${maxSizeKB}KB).`, 413));
-    }
-    next();
-  };
 };
 
 /**
@@ -70,6 +72,5 @@ const securityHeaders = (req, res, next) => {
 
 module.exports = {
   sanitizeInput,
-  limitPayloadSize,
   securityHeaders
 };

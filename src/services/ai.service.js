@@ -14,29 +14,20 @@ const apiKey = process.env.GEMINI_API_KEY;
 if (!apiKey) {
   console.warn('GEMINI_API_KEY chưa được cấu hình. Vui lòng kiểm tra .env');
 }
-if (apiKey) {
-  console.log('[AI Service] API Key loaded:', apiKey.substring(0, 10) + '...');
-}
 const genAI = new GoogleGenerativeAI(apiKey);
 
 // Sử dụng biến môi trường Gemini dự phòng
 const apiKeyBackup = process.env.GEMINI_API_KEY_BACKUP;
 let genAIBackup = null;
 if (apiKeyBackup) {
-  console.log('[AI Service] API Key Backup loaded:', apiKeyBackup.substring(0, 10) + '...');
   genAIBackup = new GoogleGenerativeAI(apiKeyBackup);
-} else {
-  console.warn('GEMINI_API_KEY_BACKUP chưa được cấu hình. Chỉ sử dụng 1 khóa Gemini chính.');
 }
 
 // Sử dụng biến môi trường OpenAI làm dự phòng
 const openaiApiKey = process.env.OPENAI_API_KEY;
 let openai = null;
 if (openaiApiKey) {
-  console.log('[AI Service] OpenAI API Key loaded:', openaiApiKey.substring(0, 10) + '...');
   openai = new OpenAI({ apiKey: openaiApiKey });
-} else {
-  console.warn('OPENAI_API_KEY chưa được cấu hình. Chế độ dự phòng OpenAI sẽ không khả dụng nếu Gemini hết token.');
 }
 
 class AIService {

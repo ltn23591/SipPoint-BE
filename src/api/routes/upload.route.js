@@ -2,11 +2,9 @@ const express = require('express');
 const multer = require('multer');
 const UploadController = require('../../controllers/upload.controller');
 const { protect } = require('../../middleware/auth.middleware');
+const uploadLocal = require('../../middleware/upload.middleware');
 
 const router = express.Router();
-
-// Dùng diskStorage cho Local Upload
-const uploadLocal = require('../../middleware/upload.middleware');
 
 // Dùng memoryStorage cho Cloudinary
 const uploadMemory = multer({ storage: multer.memoryStorage() });
