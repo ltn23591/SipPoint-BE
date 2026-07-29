@@ -1,110 +1,115 @@
 # SipPoint-BE (Backend API)
 
-SipPoint-BE là hệ thống Backend mạnh mẽ được xây dựng bằng Node.js & Express.js dành riêng cho dự án quản lý chuỗi cửa hàng F&B (SipPoint). Hệ thống cung cấp API cho cả trang quản trị (Portal) lẫn trang đặt hàng của khách (Landing Page).
-
-## 🚀 Các Modules & Tính năng chính
-
-Sau quá trình phát triển, dự án đã hoàn thiện các module nghiệp vụ phức tạp:
-
-### 1. Quản lý Sản phẩm (Catalog Management)
-- Quản lý **Sản phẩm (Product)**, **Danh mục (Category)**.
-- Hỗ trợ **Sản phẩm nhiều biến thể (Product Variants)** (Size M, L, Topping...).
-- Quản lý **Giá bán theo cấu hình (Product Price)** linh hoạt.
-
-### 2. Quản lý Bán hàng & Vận hành (Order & Table)
-- Quản lý **Khu vực (Zone)** và **Bàn ăn (Table)** với trạng thái real-time (Trống, Đang phục vụ, Đã đặt).
-- Quản lý **Giỏ hàng (Cart)** và **Đơn hàng (Order/OrderItem)** hỗ trợ ăn tại chỗ và mang đi.
-- **Socket.io Real-time:** Bắn sự kiện tức thì khi có đơn hàng mới (`order_created`) hoặc trạng thái đơn hàng thay đổi (`order_status_updated`) tới thu ngân và bếp.
-
-### 3. CRM & Loyalty (Khách hàng thân thiết)
-- Hồ sơ **Khách hàng (Customer)** với hệ thống **Phân khúc (Customer Segment)** tự động.
-- Hệ thống **Hạng thành viên (Membership Tier/Program)** (Đồng, Bạc, Vàng...).
-- Tích lũy điểm thưởng và lịch sử điểm **(Point History)**.
-- Hệ thống **Mã giảm giá (Voucher / CustomerVoucher)**, **Chiến dịch Marketing (Campaign)** và **Chương trình khuyến mãi (Promotion Program)**.
-
-### 4. Quản lý Nhân sự (HR & Store)
-- Quản lý **Nhân viên (Employee)**, **Vai trò/Phân quyền (Staff Role)**.
-- Quản lý **Ca làm việc (Shift)** của nhân sự.
-- Cấu hình thông tin **Cửa hàng (Store)**.
-
-### 5. Tiện ích & Giao tiếp mở rộng
-- **Thanh toán tự động:** Tích hợp API cổng **SePay Checkout** tự động bắt IPN (Webhook) cập nhật trạng thái đơn hàng thành công, không cần thu ngân can thiệp. (Đã loại bỏ MoMo/VietQR tĩnh).
-- **Hỗ trợ AI:** Tích hợp module **Chat Session** để hỗ trợ tư vấn tự động.
-- **Thông báo & Phản hồi:** Quản lý Notification trong hệ thống và Feedback từ khách hàng.
-- **Activity Log:** Lưu vết mọi thao tác của nhân viên trên hệ thống.
+SipPoint-BE là hệ thống Backend chuyên nghiệp, mạnh mẽ được xây dựng bằng **Node.js, Express.js và MongoDB** phục vụ cho hệ thống quản lý chuỗi quán cà phê / F&B **SipPoint**. Hệ thống cung cấp toàn bộ API RESTful cho các nền tảng: Web Admin / POS Thu ngân, App Màn hình pha chế (KDS), Landing Page Đặt hàng và Trợ lý AI Chatbot.
 
 ---
 
-## 🛠 Nền tảng kỹ thuật (Technical Stack)
+## 🚀 Các Modules & Tính năng Nổi bật
 
-- **Framework:** Express.js (Node.js) + MongoDB (Mongoose).
-- **Bảo mật & Chống tấn công:** 
-  - Xác thực qua JWT (bảo vệ route bằng middleware `auth`), hash mật khẩu bằng `bcrypt`.
-  - Tích hợp **Rate Limiting** sử dụng **Redis** (chống spam/DDoS chia nhiều cấp độ: API thường, Auth, OTP).
-  - Tích hợp Security Middleware chống **NoSQL Injection**, giới hạn kích thước Payload, và `helmet` Security Headers.
-  - Kiểm duyệt chặt chẽ dữ liệu đầu vào (Input Validation) bằng `express-validator`.
-- **Tối ưu Hiệu năng:** Sử dụng middleware `compression` nén GZIP toàn bộ response và dùng `.lean()` ở mức database giúp truy vấn siêu tốc.
-- **Logging & Error Handling:** Dùng `winston` lưu log ra file, cơ chế chặn lỗi tập trung bằng `errorHandler` middleware.
-- **Upload File:** Hỗ trợ Cloudinary (qua `multer` & `multer-storage-cloudinary`).
-- **Gửi Email:** Tích hợp `nodemailer` với template `EJS` (Dùng cho quên mật khẩu / mã OTP).
+### 1. ☕ Quản lý Sản phẩm & POS Đặt hàng (Catalog & Order Management)
+- **Sản phẩm & Biến thể**: Quản lý **Product**, **Category**, hỗ trợ biến thể Size M/L, Topping đi kèm và bảng giá linh hoạt (**ProductPrice**).
+- **Sơ đồ Bàn ăn & Khu vực**: Quản lý **Zone** (Tầng 1, Sân thượng...) và **Table** với trạng thái real-time (`EMPTY`, `OCCUPIED`, `RESERVED`, `CLEANING`).
+- **Xử lý Đơn hàng (POS)**: Hỗ trợ ăn tại chỗ (`DINE_IN`), mang về (`TAKE_AWAY`) và giao hàng (`DELIVERY`).
+- **Real-time Socket.io**: Cập nhật tức thì trạng thái đơn hàng tới màn hình Bếp/Pha chế (KDS) và Thu ngân.
+
+### 2. 💳 Thanh toán & Tự động Đối soát (SePay Webhook Integration)
+- **Thanh toán Tiền mặt & QR Code**: Sinh mã QR động chuẩn VietQR chứa mã đơn hàng.
+- **Tự động Đối soát Webhook**: Tích hợp cổng **SePay Webhook** tự động bắt giao dịch ngân hàng real-time, đối soát mã đơn và số tiền, cập nhật trạng thái `PAID` và bắn thông báo Socket.io tự động mà không cần thủ công.
+
+### 3. 🎯 CRM, Tích điểm & Gamification (Loyalty & Marketing)
+- **Khách hàng & Hạng hội viên**: Tích điểm thưởng (SipPoints) sau mỗi đơn hàng `PAID`, tự động nâng/hạ hạng thẻ (**MembershipTier**: Đồng, Bạc, Vàng, Kim Cương).
+- **Phân khúc Khách hàng (Customer Segment)**: Tự động gom nhóm khách hàng theo tần suất mua và chi tiêu.
+- **Vòng quay May mắn (LuckyWheel)**: Game quay thưởng tương tác với thuật toán quay thưởng ngẫu nhiên theo tỷ lệ %, tự động trao quà/voucher vào ví cá nhân của khách.
+- **Khuyến mãi & Mã giảm giá**: Quản lý **Voucher**, **PromotionProgram** và **Campaign** Marketing theo phân khúc.
+
+### 4. 🤖 Trợ lý AI & Truy vấn Kiến thức RAG (AI & Chatbot Service)
+- **Hỏi đáp thông minh RAG**: Tích hợp **Google Gemini 2.5 Flash AI** kết hợp cơ chế RAG (Retrieval-Augmented Generation) từ tài liệu hệ thống (**Document**).
+- **Cơ chế Fallback đa tầng**: Tự động chuyển đổi mượt mà giữa **Gemini Khóa chính -> Gemini Khóa dự phòng -> OpenAI GPT-4o-mini** nếu hết quota token.
+
+### 5. ⚙️ Tác vụ Chạy ngầm & Báo cáo (Cron Jobs & Analytics)
+- **Daily Cron Jobs (00:00 AM VN)**: Kiểm tra hết hạn hạng thẻ, đồng bộ phân khúc khách hàng, tự động đóng các campaign hết hạn.
+- **Báo cáo & Ca làm việc**: Quản lý chốt két ca làm việc (**Shift**), xuất báo cáo doanh thu ra file Excel / PDF (**Export**).
 
 ---
 
-## 📁 Cấu trúc thư mục (Folder Structure)
+## 🛠 Nền tảng Kỹ thuật & Bảo mật (Technical Stack & Security)
+
+- **Core**: Node.js, Express.js, MongoDB (Mongoose Schema).
+- **Real-time & Background**: Socket.io Server, Node-Cron Scheduler.
+- **Bảo mật & Tối ưu**:
+  - **NoSQL Injection & XSS Protection**: Tự động lọc sạch ký tự đặc biệt MongoDB (`$`, `.`) và triệt tiêu mã độc HTML/Script từ dữ liệu đầu vào.
+  - **Payload Limit & Malformed Rejection**: Giới hạn kích thước payload JSON, từ chối các request sai định dạng syntax mà không làm crash app.
+  - **Rate Limiting (Redis)**: Sử dụng `ioredis` và `rate-limit-redis` chống DDoS/spam API theo cấp độ.
+  - **Authentication**: JWT Access/Refresh token, Google OAuth2 via Passport.js, RBAC phân quyền chặt chẽ.
+  - **Security Headers**: Helmets & HTTP Headers (`nosniff`, `DENY`, `XSS Protection`, `HSTS`).
+- **Logging**: Winston logger lưu log cấu trúc theo cấp độ.
+
+---
+
+## 📁 Cấu trúc Thư mục Dự án
 
 ```
 src/
 ├── api/          # Khai báo các Routes chính (index.js, routes/*.route.js)
-├── config/       # Cấu hình Swagger, Logger, i18n
-├── constants/    # Hằng số, mã lỗi, messages...
-├── controllers/  # Tiếp nhận Request và gọi tầng Service (Controller)
+├── config/       # Cấu hình Swagger, Logger, Passport, Cloudinary, i18n
+├── controllers/  # Tiếp nhận Request, validate và gọi tầng Service
 ├── db/           # Kết nối cơ sở dữ liệu MongoDB
-├── docs/         # Swagger YAML (Tài liệu API)
-├── enums/        # Các ENUM chung của hệ thống (Trạng thái đơn, Role...)
-├── middleware/   # Middleware (xác thực token, xử lý lỗi, validate, upload)
-├── models/       # Định nghĩa Mongoose Schemas (Tất cả entities)
-├── services/     # Chứa logic nghiệp vụ cốt lõi (Business Logic Layer)
-├── utils/        # Hàm tiện ích hỗ trợ (Gửi mail, tạo mã QR, Format...)
-├── app.js        # Khởi tạo và thiết lập các Middleware của Express
-└── server.js     # Điểm khởi chạy (Entry point) của Server
+├── enums/        # Các ENUM dùng chung toàn hệ thống (Role, OrderStatus...)
+├── middleware/   # Middlewares (Auth JWT, Rate Limit, Security, Error Handler, Upload)
+├── models/       # Định nghĩa Mongoose Schemas
+├── services/     # Tầng xử lý logic nghiệp vụ cốt lõi (Business Logic Layer)
+├── utils/        # Utility helpers (Format, Excel, Email, QR Code...)
+├── app.js        # Khởi tạo Express App & cấu hình middlewares
+└── server.js     # Entry point chính của Server
 ```
 
 ---
 
-## 💻 Hướng dẫn chạy dự án
+## 💻 Hướng dẫn Cài đặt & Khởi chạy
 
-**1. Cài đặt các thư viện**
+### 1. Cài đặt Dependencies
 ```bash
 npm install
 ```
 
-**2. Thiết lập biến môi trường (`.env`)**
-Cần có file `.env` với các cấu hình cơ bản:
+### 2. Cấu hình Biến môi trường (`.env`)
+Tạo file `.env` từ mẫu `.env.example`:
 ```env
 PORT=5000
-MONGO_URI=mongodb+srv://<username>:<password>@cluster/database
-JWT_SECRET=your_secret_key
+MONGO_URI=mongodb://localhost:27017/sippoint
+NODE_ENV=development
+JWT_SECRET=your_jwt_secret_key
 ACTIVATION_SECRET=your_activation_secret
+SESSION_SECRET=your_session_secret
 
-# Cấu hình Redis (Bắt buộc để chạy Rate Limiting)
-# Chạy local: redis://localhost:6379, Chạy Upstash Cloud: rediss://...
-REDIS_URL=rediss://default:matkhau@diachi.upstash.io:6379
+# AI & OpenAI
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_API_KEY_BACKUP=your_gemini_api_key_backup
+OPENAI_API_KEY=your_openai_api_key
 
-# Cấu hình SePay Webhook
-SEPAY_MERCHANT_ID=SP-LIVE-...
-SEPAY_SECRET_KEY=spsk_live_...
-# Và các biến Cloudinary, SMTP khác
+# SePay Payment & Redis
+SEPAY_ENV=sandbox
+SEPAY_MERCHANT_ID=your_sepay_merchant_id
+SEPAY_SECRET_KEY=your_sepay_secret_key
+REDIS_URL=redis://localhost:6379
+
+# URLs
+SERVER_URL=http://localhost:5000
+FRONTEND_URL=http://localhost:5173
 ```
 
-**3. Khởi động Server**
+### 3. Chạy ứng dụng
 ```bash
-# Môi trường Development (tự động restart khi code thay đổi)
+# Môi trường Development (tự động restart khi thay đổi code)
 npm run dev
 
 # Môi trường Production
 npm start
 ```
 
-## 📖 API Documentation (Swagger)
-Để tra cứu nhanh danh sách API và test trực tiếp, sau khi khởi chạy truy cập vào:
-👉 **[http://localhost:5000/api-docs](http://localhost:5000/api-docs)**
+---
+
+## 📖 Tài liệu API & Kiến trúc
+
+- **Swagger UI Interactive Docs**: Truy cập **[http://localhost:5000/api-docs](http://localhost:5000/api-docs)** khi server đang chạy.
+- **Tài liệu Chi tiết Luồng Nghiệp vụ (Word .docx)**: [SipPoint_BE_Architecture_and_Flows.docx](file:///d:/Documents/FULLSTACK_MERN/CD2/SipPoint_BE_Architecture_and_Flows.docx)
