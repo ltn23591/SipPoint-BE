@@ -37,7 +37,6 @@ const VARIANT_TYPE = {
 const TABLE_STATUS = {
     AVAILABLE: "available", // Bàn trống
     OCCUPIED: "occupied",  // Đang có khách
-    RESERVED: "reserved",  // Đã đặt trước
     CLEANING: "cleaning",  // Đang dọn dẹp
 };
 

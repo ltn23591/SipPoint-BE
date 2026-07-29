@@ -8,7 +8,7 @@ SipPoint-BE là hệ thống Backend chuyên nghiệp, mạnh mẽ được xây
 
 ### 1. ☕ Quản lý Sản phẩm & POS Đặt hàng (Catalog & Order Management)
 - **Sản phẩm & Biến thể**: Quản lý **Product**, **Category**, hỗ trợ biến thể Size M/L, Topping đi kèm và bảng giá linh hoạt (**ProductPrice**).
-- **Sơ đồ Bàn ăn & Khu vực**: Quản lý **Zone** (Tầng 1, Sân thượng...) và **Table** với trạng thái real-time (`EMPTY`, `OCCUPIED`, `RESERVED`, `CLEANING`).
+- **Sơ đồ Bàn ăn & Khu vực**: Quản lý **Zone** (Tầng 1, Sân thượng...) và **Table** với trạng thái real-time (`AVAILABLE`, `OCCUPIED`, `CLEANING`).
 - **Xử lý Đơn hàng (POS)**: Hỗ trợ ăn tại chỗ (`DINE_IN`), mang về (`TAKE_AWAY`) và giao hàng (`DELIVERY`).
 - **Real-time Socket.io**: Cập nhật tức thì trạng thái đơn hàng tới màn hình Bếp/Pha chế (KDS) và Thu ngân.
 

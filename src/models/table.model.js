@@ -19,7 +19,7 @@ const tableSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: [TABLE_STATUS.AVAILABLE, TABLE_STATUS.OCCUPIED, TABLE_STATUS.RESERVED, TABLE_STATUS.CLEANING],
+      enum: [TABLE_STATUS.AVAILABLE, TABLE_STATUS.OCCUPIED, TABLE_STATUS.CLEANING],
       default: TABLE_STATUS.AVAILABLE,
     },
     qrCode: {

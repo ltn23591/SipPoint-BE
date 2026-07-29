@@ -54,9 +54,6 @@ class OrderService {
       if (!table) {
         return { status: 404, success: false, message: 'Không tìm thấy bàn yêu cầu' };
       }
-      if (table.status === TABLE_STATUS.RESERVED) {
-        return { status: 400, success: false, message: 'Bàn này đã được đặt trước' };
-      }
     }
 
     const orderItemsToCreate = [];
