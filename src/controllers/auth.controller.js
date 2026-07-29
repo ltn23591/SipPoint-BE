@@ -113,7 +113,7 @@ exports.googleCallback = (req, res, next) => {
     console.log(`[OAuth Cache] Google callback double-request handled via cache for code: ${code.substring(0, 10)}...`);
     return res.redirect(global.oauthCache.get(code));
   }
-  passport.authenticate('google', { session: false }, (err, user, info) => {
+  passport.authenticate('google', { session: false }, (err, user) => {
     if (err) {
       console.error("Google OAuth Error:", err);
       return res.redirect(`${process.env.FRONTEND_URL}/login?error=OAuthFailed`);
