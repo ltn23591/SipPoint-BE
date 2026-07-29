@@ -1,3 +1,4 @@
+const AppError = require('../utils/AppError');
 const Customer = require('../models/customer.model');
  const Order = require('../models/order.model');
  const { ORDER_STATUS, CUSTOMER_VOUCHER_SOURCE } = require('../enums');
@@ -29,25 +30,14 @@ class CustomerService {
 
     const total = await Customer.countDocuments(filter);
 
-    return {
-      status: 200,
-      success: true,
-      message: 'Lấy danh sách khách hàng thành công',
-      data: customers,
-      pagination: {
-        total,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(total / limit),
-      },
-    };
+    return { customers, pagination: { total, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(total / limit) } };
   }
 
   // Lấy chi tiết khách hàng (kèm lịch sử điểm và voucher)
   static async getCustomerById(id) {
     const customer = await Customer.findById(id).populate('tierId');
     if (!customer) {
-      return { status: 404, success: false, message: 'Không tìm thấy khách hàng' };
+      throw new AppError('Không tìm thấy khách hàng', 404);
     }
 
     const pointHistories = await PointHistory.find({ customerId: id })
@@ -55,16 +45,7 @@ class CustomerService {
       .limit(10);
     const vouchers = await CustomerVoucher.find({ customerId: id, isUsed: false });
 
-    return {
-      status: 200,
-      success: true,
-      message: 'Lấy thông tin chi tiết khách hàng thành công',
-      data: {
-        customer,
-        pointHistories,
-        vouchers,
-      },
-    };
+    return { customer, pointHistories, vouchers };
   }
 
   // Khách hàng tự lấy lịch sử điểm của mình
@@ -73,19 +54,14 @@ class CustomerService {
       .sort({ createdAt: -1 })
       .limit(20);
 
-    return {
-      status: 200,
-      success: true,
-      message: 'Lấy lịch sử điểm thành công',
-      data: pointHistories,
-    };
+    return pointHistories;
   }
 
   // Thêm mới khách hàng
   static async createCustomer(data) {
     const existing = await Customer.findOne({ phone: data.phone });
     if (existing) {
-      return { status: 400, success: false, message: 'Số điện thoại đã tồn tại' };
+      throw new AppError('Số điện thoại đã tồn tại', 400);
     }
 
     // Tự động gán hạng thấp nhất của MembershipTier
@@ -98,7 +74,7 @@ class CustomerService {
 
     const newCustomer = await Customer.create(data);
     const populated = await Customer.findById(newCustomer._id).populate('tierId');
-    return { status: 201, success: true, message: 'Thêm khách hàng thành công', data: populated };
+    return populated;
   }
 
   // Cập nhật thông tin khách hàng
@@ -109,10 +85,10 @@ class CustomerService {
     }).populate('tierId');
 
     if (!updatedCustomer) {
-      return { status: 404, success: false, message: 'Không tìm thấy khách hàng' };
+      throw new AppError('Không tìm thấy khách hàng', 404);
     }
 
-    return { status: 200, success: true, message: 'Cập nhật thành công', data: updatedCustomer };
+    return updatedCustomer;
   }
 
   // Khách hàng tự cập nhật thông tin cá nhân
@@ -132,10 +108,10 @@ class CustomerService {
     ).select('-password').populate('tierId');
 
     if (!updatedCustomer) {
-      return { status: 404, success: false, message: 'Không tìm thấy khách hàng' };
+      throw new AppError('Không tìm thấy khách hàng', 404);
     }
 
-    return { status: 200, success: true, message: 'Cập nhật thông tin thành công', data: updatedCustomer };
+    return updatedCustomer;
   }
 
   // Lấy danh sách voucher của khách hàng
@@ -144,12 +120,7 @@ class CustomerService {
       .populate('voucherId')
       .sort({ isUsed: 1, expiryDate: 1 });
 
-    return {
-      status: 200,
-      success: true,
-      message: 'Lấy danh sách voucher thành công',
-      data: vouchers,
-    };
+    return vouchers;
   }
 
   // Cộng / Trừ điểm khách hàng
@@ -159,20 +130,16 @@ class CustomerService {
   static async adjustPoints(id, pointsChange, title, description, transactionType, opts = {}) {
     const customer = await Customer.findById(id);
     if (!customer) {
-      return { status: 404, success: false, message: 'Không tìm thấy khách hàng' };
+      throw new AppError('Không tìm thấy khách hàng', 404);
     }
 
     const change = Number(pointsChange);
     if (isNaN(change)) {
-      return { status: 400, success: false, message: 'Số điểm thay đổi không hợp lệ' };
+      throw new AppError('Số điểm thay đổi không hợp lệ', 400);
     }
 
     if (change < 0 && customer.currentPoints + change < 0) {
-      return {
-        status: 400,
-        success: false,
-        message: 'Số điểm trừ vượt quá số điểm tích lũy hiện có của khách hàng',
-      };
+      throw new AppError('Số điểm trừ vượt quá số điểm tích lũy hiện có của khách hàng', 400);
     }
 
     customer.currentPoints += change;
@@ -203,7 +170,7 @@ class CustomerService {
 
     const updatedCustomer = await Customer.findById(customer._id).populate('tierId');
 
-    return { status: 200, success: true, message: 'Điều chỉnh điểm thành công', data: updatedCustomer };
+    return updatedCustomer;
   }
 
   // Xét thăng hạng theo cơ chế cuốn chiếu: cyclePoints chạm ngưỡng tier cao hơn
@@ -312,12 +279,7 @@ class CustomerService {
       await Customer.updateOne({ _id: row._id }, { $set: { redeemCount: row.c } });
     }
 
-    return {
-      status: 200,
-      success: true,
-      message: 'Đối soát số liệu khách hàng thành công',
-      data: { customersWithOrders: orderAgg.length, customersWithRedeems: redeemAgg.length },
-    };
+    return { customersWithOrders: orderAgg.length, customersWithRedeems: redeemAgg.length };
   }
 }
 

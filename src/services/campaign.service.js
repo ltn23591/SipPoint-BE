@@ -3,34 +3,35 @@ const CustomerSegment = require('../models/customerSegment.model');
 const Voucher = require('../models/voucher.model');
 const CustomerVoucher = require('../models/customerVoucher.model');
 const { CAMPAIGN_STATUS, CUSTOMER_VOUCHER_SOURCE } = require('../enums');
+const AppError = require('../utils/AppError');
 
 class CampaignService {
   static async createCampaign(data, createdById) {
     const existing = await Campaign.findOne({ name: data.name });
     if (existing) {
-      return { status: 400, success: false, message: 'Tên chiến dịch đã tồn tại' };
+      throw new AppError('Tên chiến dịch đã tồn tại', 400);
     }
 
     if (!Array.isArray(data.segmentIds) || data.segmentIds.length === 0) {
-      return { status: 400, success: false, message: 'Chiến dịch phải có ít nhất một nhóm khách hàng mục tiêu' };
+      throw new AppError('Chiến dịch phải có ít nhất một nhóm khách hàng mục tiêu', 400);
     }
     const segmentCount = await CustomerSegment.countDocuments({ _id: { $in: data.segmentIds } });
     if (segmentCount !== data.segmentIds.length) {
-      return { status: 404, success: false, message: 'Một hoặc nhiều nhóm khách hàng không tồn tại' };
+      throw new AppError('Một hoặc nhiều nhóm khách hàng không tồn tại', 404);
     }
 
     const voucher = await Voucher.findById(data.voucherId);
     if (!voucher) {
-      return { status: 404, success: false, message: 'Không tìm thấy voucher' };
+      throw new AppError('Không tìm thấy voucher', 404);
     }
 
     if (data.startDate && data.endDate && new Date(data.startDate) >= new Date(data.endDate)) {
-      return { status: 400, success: false, message: 'Ngày bắt đầu phải trước ngày kết thúc' };
+      throw new AppError('Ngày bắt đầu phải trước ngày kết thúc', 400);
     }
 
     const tw = data.conditions && data.conditions.timeWindow;
     if (tw && (tw.startHour === undefined || tw.endHour === undefined)) {
-      return { status: 400, success: false, message: 'Khung giờ áp dụng phải có đủ giờ bắt đầu và giờ kết thúc' };
+      throw new AppError('Khung giờ áp dụng phải có đủ giờ bắt đầu và giờ kết thúc', 400);
     }
 
     const campaign = await Campaign.create({
@@ -44,7 +45,7 @@ class CampaignService {
       createdBy: createdById || undefined,
     });
 
-    return { status: 201, success: true, message: 'Tạo chiến dịch thành công', data: campaign };
+    return campaign;
   }
 
   static async getAllCampaigns(query = {}) {
@@ -65,10 +66,7 @@ class CampaignService {
     const total = await Campaign.countDocuments(filter);
 
     return {
-      status: 200,
-      success: true,
-      message: 'Lấy danh sách chiến dịch thành công',
-      data: campaigns,
+      campaigns,
       pagination: {
         total,
         page: parseInt(page),
@@ -84,18 +82,18 @@ class CampaignService {
       .populate('voucherId')
       .populate('createdBy', 'name email');
     if (!campaign) {
-      return { status: 404, success: false, message: 'Không tìm thấy chiến dịch' };
+      throw new AppError('Không tìm thấy chiến dịch', 404);
     }
-    return { status: 200, success: true, message: 'Lấy chi tiết chiến dịch thành công', data: campaign };
+    return campaign;
   }
 
   static async updateCampaign(id, data) {
     const campaign = await Campaign.findById(id);
     if (!campaign) {
-      return { status: 404, success: false, message: 'Không tìm thấy chiến dịch' };
+      throw new AppError('Không tìm thấy chiến dịch', 404);
     }
     if (campaign.status !== CAMPAIGN_STATUS.DRAFT) {
-      return { status: 400, success: false, message: 'Chỉ có thể chỉnh sửa chiến dịch ở trạng thái nháp' };
+      throw new AppError('Chỉ có thể chỉnh sửa chiến dịch ở trạng thái nháp', 400);
     }
 
     const allowed = ['name', 'description', 'segmentIds', 'voucherId', 'conditions', 'startDate', 'endDate'];
@@ -104,41 +102,39 @@ class CampaignService {
     }
     await campaign.save();
 
-    return { status: 200, success: true, message: 'Cập nhật chiến dịch thành công', data: campaign };
+    return campaign;
   }
 
   static async deleteCampaign(id) {
     const campaign = await Campaign.findById(id);
     if (!campaign) {
-      return { status: 404, success: false, message: 'Không tìm thấy chiến dịch' };
+      throw new AppError('Không tìm thấy chiến dịch', 404);
     }
     if (campaign.status !== CAMPAIGN_STATUS.DRAFT) {
-      return { status: 400, success: false, message: 'Chỉ có thể xóa chiến dịch ở trạng thái nháp' };
+      throw new AppError('Chỉ có thể xóa chiến dịch ở trạng thái nháp', 400);
     }
 
     await Campaign.findByIdAndDelete(id);
-    return { status: 200, success: true, message: 'Xóa chiến dịch thành công' };
+    return {};
   }
 
-  // Kích hoạt chiến dịch: quét thành viên các nhóm mục tiêu và phát voucher vào ví
   static async activateCampaign(id) {
     const campaign = await Campaign.findById(id);
     if (!campaign) {
-      return { status: 404, success: false, message: 'Không tìm thấy chiến dịch' };
+      throw new AppError('Không tìm thấy chiến dịch', 404);
     }
     if (campaign.status !== CAMPAIGN_STATUS.DRAFT) {
-      return { status: 400, success: false, message: 'Chỉ có thể kích hoạt chiến dịch ở trạng thái nháp' };
+      throw new AppError('Chỉ có thể kích hoạt chiến dịch ở trạng thái nháp', 400);
     }
     if (new Date(campaign.endDate) <= new Date()) {
-      return { status: 400, success: false, message: 'Chiến dịch đã quá ngày kết thúc, không thể kích hoạt' };
+      throw new AppError('Chiến dịch đã quá ngày kết thúc, không thể kích hoạt', 400);
     }
 
     const voucher = await Voucher.findById(campaign.voucherId);
     if (!voucher || voucher.isActive !== 'active') {
-      return { status: 400, success: false, message: 'Voucher của chiến dịch không tồn tại hoặc đã bị khóa' };
+      throw new AppError('Voucher của chiến dịch không tồn tại hoặc đã bị khóa', 400);
     }
 
-    // Gom thành viên (union) từ các nhóm mục tiêu
     const segments = await CustomerSegment.find({ _id: { $in: campaign.segmentIds } }).select('memberIds');
     const memberIdSet = new Set();
     for (const segment of segments) {
@@ -149,20 +145,17 @@ class CampaignService {
     const memberIds = [...memberIdSet];
 
     if (memberIds.length === 0) {
-      return { status: 400, success: false, message: 'Các nhóm khách hàng mục tiêu không có thành viên nào' };
+      throw new AppError('Các nhóm khách hàng mục tiêu không có thành viên nào', 400);
     }
 
-    // Kiểm tra kho voucher đủ phát cho toàn bộ thành viên
     const remainingStock = voucher.usageLimit - voucher.issuedCount;
     if (remainingStock < memberIds.length) {
-      return {
-        status: 400,
-        success: false,
-        message: `Kho voucher không đủ: cần ${memberIds.length}, còn lại ${remainingStock}. Vui lòng tăng số lượng phát hành của voucher.`,
-      };
+      throw new AppError(
+        `Kho voucher không đủ: cần ${memberIds.length}, còn lại ${remainingStock}. Vui lòng tăng số lượng phát hành của voucher.`,
+        400
+      );
     }
 
-    // Phát voucher vào ví - unique index (campaignId, customerId) tự bỏ qua khách đã được phát
     const expiryDate = new Date(Math.min(new Date(voucher.endDate).getTime(), new Date(campaign.endDate).getTime()));
     const docs = memberIds.map((customerId) => ({
       customerId,
@@ -178,7 +171,6 @@ class CampaignService {
       const inserted = await CustomerVoucher.insertMany(docs, { ordered: false });
       issuedCount = inserted.length;
     } catch (error) {
-      // insertMany với ordered:false ném lỗi khi có duplicate nhưng vẫn insert các doc hợp lệ
       issuedCount = (error.insertedDocs && error.insertedDocs.length) || 0;
       if (issuedCount === 0 && (!error.writeErrors || error.writeErrors.some((e) => e.code !== 11000))) {
         throw error;
@@ -194,25 +186,18 @@ class CampaignService {
     campaign.activatedAt = new Date();
     await campaign.save();
 
-    return {
-      status: 200,
-      success: true,
-      message: `Kích hoạt chiến dịch thành công. Đã phát ${issuedCount} voucher vào ví khách hàng.`,
-      data: campaign,
-    };
+    return { campaign, issuedCount };
   }
 
-  // Hủy chiến dịch đang chạy: thu hồi các voucher đã phát nhưng chưa sử dụng
   static async deactivateCampaign(id) {
     const campaign = await Campaign.findById(id);
     if (!campaign) {
-      return { status: 404, success: false, message: 'Không tìm thấy chiến dịch' };
+      throw new AppError('Không tìm thấy chiến dịch', 404);
     }
     if (campaign.status !== CAMPAIGN_STATUS.ACTIVE) {
-      return { status: 400, success: false, message: 'Chỉ có thể hủy chiến dịch đang hoạt động' };
+      throw new AppError('Chỉ có thể hủy chiến dịch đang hoạt động', 400);
     }
 
-    // Thu hồi: hết hạn ngay lập tức các voucher chưa dùng của chiến dịch
     const revoked = await CustomerVoucher.updateMany(
       { campaignId: campaign._id, isUsed: false },
       { expiryDate: new Date() }
@@ -221,15 +206,9 @@ class CampaignService {
     campaign.status = CAMPAIGN_STATUS.CANCELLED;
     await campaign.save();
 
-    return {
-      status: 200,
-      success: true,
-      message: `Hủy chiến dịch thành công. Đã thu hồi ${revoked.modifiedCount} voucher chưa sử dụng.`,
-      data: campaign,
-    };
+    return { campaign, revokedCount: revoked.modifiedCount };
   }
 
-  // Cron 00:00: tự động kết thúc các chiến dịch đã quá hạn
   static async finishExpiredCampaigns() {
     const result = await Campaign.updateMany(
       { status: CAMPAIGN_STATUS.ACTIVE, endDate: { $lt: new Date() } },

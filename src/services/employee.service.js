@@ -2,30 +2,20 @@ const Employee = require('../models/employee.model');
 const StaffRole = require('../models/staffRole.model');
 const bcrypt = require('bcrypt');
 const validator = require('validator');
+const AppError = require('../utils/AppError');
 
 class EmployeeService {
   static async getAllEmployees() {
     const employees = await Employee.find({ isDeleted: false }).select('-password').populate('roleId');
-    return {
-      status: 200,
-      success: true,
-      count: employees.length,
-      message: 'Lấy danh sách nhân viên thành công',
-      data: employees,
-    };
+    return employees;
   }
 
   static async getEmployeeById(id) {
     const employee = await Employee.findOne({ _id: id, isDeleted: false }).select('-password').populate('roleId');
     if (!employee) {
-      return { status: 404, success: false, message: `Không tìm thấy nhân viên với ID: ${id}` };
+      throw new AppError(`Không tìm thấy nhân viên với ID: ${id}`, 404);
     }
-    return {
-      status: 200,
-      success: true,
-      data: employee,
-      message: 'Lấy thông tin nhân viên thành công',
-    };
+    return employee;
   }
 
   static async getEmployeeByEmail(email) {
@@ -36,30 +26,29 @@ class EmployeeService {
     let { name, email, password, roleId } = employeeData;
 
     if (!name || !name.toString().trim()) {
-      return { status: 400, success: false, message: 'Tên là bắt buộc' };
+      throw new AppError('Tên là bắt buộc', 400);
     }
 
     if (!email || !validator.isEmail(email)) {
-      return { status: 400, success: false, message: 'Email không hợp lệ' };
+      throw new AppError('Email không hợp lệ', 400);
     }
 
     if (!password || password.length < 6) {
-      return { status: 400, success: false, message: 'Mật khẩu phải từ 6 ký tự trở lên' };
+      throw new AppError('Mật khẩu phải từ 6 ký tự trở lên', 400);
     }
 
     if (!roleId) {
-      return { status: 400, success: false, message: 'Vui lòng phân quyền cho nhân viên (roleId)' };
+      throw new AppError('Vui lòng phân quyền cho nhân viên (roleId)', 400);
     }
 
-    // Kiểm tra roleId hợp lệ
     const staffRole = await StaffRole.findById(roleId);
     if (!staffRole) {
-      return { status: 400, success: false, message: 'Role không hợp lệ' };
+      throw new AppError('Role không hợp lệ', 400);
     }
 
     const employeeExists = await this.getEmployeeByEmail(email);
     if (employeeExists) {
-      return { status: 400, success: false, message: 'Email đã được sử dụng' };
+      throw new AppError('Email đã được sử dụng', 400);
     }
 
     const salt = await bcrypt.genSalt(10);
@@ -68,26 +57,21 @@ class EmployeeService {
     const employee = await Employee.create({ name, email, password: hashedPassword, roleId });
     const populated = await Employee.findById(employee._id).select('-password').populate('roleId');
 
-    return {
-      status: 201,
-      success: true,
-      message: 'Tạo tài khoản nhân viên thành công',
-      data: populated,
-    };
+    return populated;
   }
 
   static async updateEmployee(id, updateData) {
     if (updateData.email) {
       const existEmail = await this.getEmployeeByEmail(updateData.email);
       if (existEmail && existEmail._id.toString() !== id) {
-        return { status: 400, success: false, message: 'Email đã được sử dụng' };
+        throw new AppError('Email đã được sử dụng', 400);
       }
     }
 
     if (updateData.roleId) {
       const staffRole = await StaffRole.findById(updateData.roleId);
       if (!staffRole) {
-        return { status: 400, success: false, message: 'Role không hợp lệ' };
+        throw new AppError('Role không hợp lệ', 400);
       }
     }
 
@@ -103,14 +87,9 @@ class EmployeeService {
         if (updateData.status !== undefined) employee.status = updateData.status;
         await employee.save();
         const populated = await Employee.findById(employee._id).select('-password').populate('roleId');
-        return {
-          status: 200,
-          success: true,
-          data: populated,
-          message: 'Cập nhật thông tin nhân viên thành công',
-        };
+        return populated;
       }
-      return { status: 404, success: false, message: `Không tìm thấy nhân viên với ID: ${id}` };
+      throw new AppError(`Không tìm thấy nhân viên với ID: ${id}`, 404);
     }
 
     const employee = await Employee.findOneAndUpdate({ _id: id, isDeleted: false }, updateData, {
@@ -119,15 +98,10 @@ class EmployeeService {
     }).select('-password').populate('roleId');
 
     if (!employee) {
-      return { status: 404, success: false, message: `Không tìm thấy nhân viên với ID: ${id}` };
+      throw new AppError(`Không tìm thấy nhân viên với ID: ${id}`, 404);
     }
 
-    return {
-      status: 200,
-      success: true,
-      data: employee,
-      message: 'Cập nhật thông tin nhân viên thành công',
-    };
+    return employee;
   }
 
   static async deleteEmployee(id) {
@@ -137,10 +111,10 @@ class EmployeeService {
       { new: true },
     );
     if (!employee) {
-      return { status: 404, success: false, message: `Không tìm thấy nhân viên với ID: ${id}` };
+      throw new AppError(`Không tìm thấy nhân viên với ID: ${id}`, 404);
     }
 
-    return { status: 200, success: true, data: {}, message: 'Đã xóa nhân viên thành công' };
+    return {};
   }
 }
 

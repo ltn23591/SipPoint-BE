@@ -1,3 +1,4 @@
+const AppError = require('../utils/AppError');
 const Order = require('../models/order.model');
 const { OrderItem } = require('../models/orderItem.model');
 const Product = require('../models/product.model');
@@ -19,7 +20,7 @@ class OrderService {
     const { tableId, customerId, items, voucherCode, customerVoucherId, note } = data;
 
     if (voucherCode && customerVoucherId) {
-      return { status: 400, success: false, message: 'Chỉ được áp dụng một loại voucher cho mỗi đơn hàng' };
+      throw new AppError('Chỉ được áp dụng một loại voucher cho mỗi đơn hàng', 400);
     }
 
     let resolvedCustomerId = null;
@@ -31,28 +32,28 @@ class OrderService {
         if (customerObj) {
           resolvedCustomerId = customerObj._id;
         } else {
-          return { status: 404, success: false, message: `Không tìm thấy khách hàng với mã số ${customerId}` };
+          throw new AppError(`Không tìm thấy khách hàng với mã số ${customerId}`, 404);
         }
       }
     }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
-      return { status: 400, success: false, message: 'Đơn hàng phải chứa ít nhất một món ăn/đồ uống' };
+      throw new AppError('Đơn hàng phải chứa ít nhất một món ăn/đồ uống', 400);
     }
 
     for (const item of items) {
       if (!item.productId) {
-        return { status: 400, success: false, message: 'Mã sản phẩm (productId) là bắt buộc' };
+        throw new AppError('Mã sản phẩm (productId) là bắt buộc', 400);
       }
       if (item.qty === undefined || item.qty === null || isNaN(item.qty) || parseInt(item.qty) < 1) {
-        return { status: 400, success: false, message: 'Số lượng món ăn/đồ uống phải lớn hơn hoặc bằng 1' };
+        throw new AppError('Số lượng món ăn/đồ uống phải lớn hơn hoặc bằng 1', 400);
       }
     }
 
     if (tableId) {
       const table = await Table.findById(tableId);
       if (!table) {
-        return { status: 404, success: false, message: 'Không tìm thấy bàn yêu cầu' };
+        throw new AppError('Không tìm thấy bàn yêu cầu', 404);
       }
     }
 
@@ -62,7 +63,7 @@ class OrderService {
     for (const item of items) {
       const product = await Product.findById(item.productId);
       if (!product || product.isDeleted || product.isActive === 0) {
-        return { status: 404, success: false, message: `Sản phẩm với ID ${item.productId} không tồn tại hoặc đã ngừng kinh doanh` };
+        throw new AppError(`Sản phẩm với ID ${item.productId} không tồn tại hoặc đã ngừng kinh doanh`, 404);
       }
 
       const itemVariants = [];
@@ -72,7 +73,7 @@ class OrderService {
         for (const v of item.variants) {
           const variant = await ProductVariant.findById(v.variantId);
           if (!variant || variant.isActive === 0) {
-            return { status: 404, success: false, message: `Biến thể với ID ${v.variantId} không tồn tại hoặc đã ngừng hoạt động` };
+            throw new AppError(`Biến thể với ID ${v.variantId} không tồn tại hoặc đã ngừng hoạt động`, 404);
           }
           itemVariants.push({
             variantId: variant._id,
@@ -106,7 +107,7 @@ class OrderService {
     if (voucherCode) {
       const voucherObj = await Voucher.findOne({ code: voucherCode.toUpperCase() });
       if (!voucherObj) {
-        return { status: 404, success: false, message: 'Voucher không tồn tại' };
+        throw new AppError('Voucher không tồn tại', 404);
       }
       resolvedVoucherId = voucherObj._id;
 
@@ -118,7 +119,7 @@ class OrderService {
           status: { $nin: [ORDER_STATUS.CANCELLED, ORDER_STATUS.REFUNDED] },
         });
         if (usedByCustomer >= voucherObj.perCustomerLimit) {
-          return { status: 400, success: false, message: 'Bạn đã đạt giới hạn sử dụng mã giảm giá này' };
+          throw new AppError('Bạn đã đạt giới hạn sử dụng mã giảm giá này', 400);
         }
       }
 
@@ -140,7 +141,7 @@ class OrderService {
         { new: true }
       );
       if (!claimed) {
-        return { status: 400, success: false, message: 'Mã giảm giá đã hết lượt sử dụng' };
+        throw new AppError('Mã giảm giá đã hết lượt sử dụng', 400);
       }
     }
 
@@ -148,7 +149,7 @@ class OrderService {
     let claimedWalletVoucherId = null;
     if (customerVoucherId) {
       if (!resolvedCustomerId) {
-        return { status: 400, success: false, message: 'Đơn hàng phải gắn với khách hàng để dùng voucher trong ví' };
+        throw new AppError('Đơn hàng phải gắn với khách hàng để dùng voucher trong ví', 400);
       }
 
       const walletRes = await VoucherService.validateWalletVoucher(customerVoucherId, resolvedCustomerId, subtotalSum);
@@ -166,7 +167,7 @@ class OrderService {
         { new: true }
       );
       if (!claimedWallet) {
-        return { status: 400, success: false, message: 'Voucher đã được sử dụng, vui lòng thử lại' };
+        throw new AppError('Voucher đã được sử dụng, vui lòng thử lại', 400);
       }
       claimedWalletVoucherId = claimedWallet._id;
     }
@@ -241,12 +242,7 @@ class OrderService {
     // 8. Gửi sự kiện Socket.io real-time thông báo đơn hàng mới
     emitToAll('order_created', populatedOrder);
 
-    return {
-      status: 201,
-      success: true,
-      message: 'Đặt đơn hàng thành công',
-      data: populatedOrder,
-    };
+    return populatedOrder;
   }
 
   /**
@@ -254,30 +250,30 @@ class OrderService {
    */
   static async updateOrderStatus(orderId, newStatus, updatedById) {
     if (!newStatus || typeof newStatus !== 'string') {
-      return { status: 400, success: false, message: 'Trạng thái đơn hàng không hợp lệ' };
+      throw new AppError('Trạng thái đơn hàng không hợp lệ', 400);
     }
 
     const order = await Order.findById(orderId);
     if (!order || order.isActive === IS_ACTIVE.FALSE) {
-      return { status: 404, success: false, message: 'Không tìm thấy đơn hàng' };
+      throw new AppError('Không tìm thấy đơn hàng', 404);
     }
 
     const currentStatus = order.status;
 
     if (currentStatus === ORDER_STATUS.COMPLETED) {
-      return { status: 400, success: false, message: 'Đơn hàng đã hoàn thành, không thể thay đổi trạng thái' };
+      throw new AppError('Đơn hàng đã hoàn thành, không thể thay đổi trạng thái', 400);
     }
     if (currentStatus === ORDER_STATUS.CANCELLED) {
-      return { status: 400, success: false, message: 'Đơn hàng đã bị hủy, không thể thay đổi trạng thái' };
+      throw new AppError('Đơn hàng đã bị hủy, không thể thay đổi trạng thái', 400);
     }
     if (currentStatus === ORDER_STATUS.REFUNDED) {
-      return { status: 400, success: false, message: 'Đơn hàng đã hoàn trả, không thể thay đổi trạng thái' };
+      throw new AppError('Đơn hàng đã hoàn trả, không thể thay đổi trạng thái', 400);
     }
 
     // Đảm bảo trạng thái mới hợp lệ (REFUNDED phải đi qua endpoint hoàn trả riêng)
     const validStatuses = Object.values(ORDER_STATUS);
     if (!validStatuses.includes(newStatus) || newStatus === ORDER_STATUS.REFUNDED) {
-      return { status: 400, success: false, message: 'Trạng thái đơn hàng không hợp lệ' };
+      throw new AppError('Trạng thái đơn hàng không hợp lệ', 400);
     }
 
     order.status = newStatus;
@@ -335,12 +331,7 @@ class OrderService {
     // Gửi sự kiện Socket.io real-time
     emitToAll('order_status_updated', populatedOrder);
 
-    return {
-      status: 200,
-      success: true,
-      message: 'Cập nhật trạng thái đơn hàng thành công',
-      data: populatedOrder,
-    };
+    return populatedOrder;
   }
 
   /**
@@ -348,19 +339,19 @@ class OrderService {
    */
   static async cancelOrder(orderId, reason, updatedById) {
     if (!reason || typeof reason !== 'string' || !reason.trim()) {
-      return { status: 400, success: false, message: 'Lý do hủy đơn hàng là bắt buộc' };
+      throw new AppError('Lý do hủy đơn hàng là bắt buộc', 400);
     }
 
     const order = await Order.findById(orderId);
     if (!order || order.isActive === IS_ACTIVE.FALSE) {
-      return { status: 404, success: false, message: 'Không tìm thấy đơn hàng' };
+      throw new AppError('Không tìm thấy đơn hàng', 404);
     }
 
     if (order.status === ORDER_STATUS.COMPLETED) {
-      return { status: 400, success: false, message: 'Không thể hủy đơn hàng đã hoàn thành' };
+      throw new AppError('Không thể hủy đơn hàng đã hoàn thành', 400);
     }
     if (order.status === ORDER_STATUS.CANCELLED) {
-      return { status: 400, success: false, message: 'Đơn hàng đã được hủy trước đó' };
+      throw new AppError('Đơn hàng đã được hủy trước đó', 400);
     }
 
     order.status = ORDER_STATUS.CANCELLED;
@@ -409,12 +400,7 @@ class OrderService {
     // Gửi sự kiện Socket.io real-time
     emitToAll('order_status_updated', populatedOrder);
 
-    return {
-      status: 200,
-      success: true,
-      message: 'Hủy đơn hàng thành công',
-      data: populatedOrder,
-    };
+    return populatedOrder;
   }
 
   /**
@@ -422,16 +408,16 @@ class OrderService {
    */
   static async refundOrder(orderId, reason, updatedById) {
     if (!reason || typeof reason !== 'string' || !reason.trim()) {
-      return { status: 400, success: false, message: 'Lý do hoàn trả đơn hàng là bắt buộc' };
+      throw new AppError('Lý do hoàn trả đơn hàng là bắt buộc', 400);
     }
 
     const order = await Order.findById(orderId);
     if (!order || order.isActive === IS_ACTIVE.FALSE) {
-      return { status: 404, success: false, message: 'Không tìm thấy đơn hàng' };
+      throw new AppError('Không tìm thấy đơn hàng', 404);
     }
 
     if (order.status !== ORDER_STATUS.COMPLETED) {
-      return { status: 400, success: false, message: 'Chỉ có thể hoàn trả đơn hàng đã hoàn thành' };
+      throw new AppError('Chỉ có thể hoàn trả đơn hàng đã hoàn thành', 400);
     }
 
     order.status = ORDER_STATUS.REFUNDED;
@@ -499,12 +485,7 @@ class OrderService {
     // Gửi sự kiện Socket.io real-time
     emitToAll('order_status_updated', populatedOrder);
 
-    return {
-      status: 200,
-      success: true,
-      message: 'Hoàn trả đơn hàng thành công',
-      data: populatedOrder,
-    };
+    return populatedOrder;
   }
 
   /**
@@ -521,10 +502,10 @@ class OrderService {
       .lean();
 
     if (!order || order.isActive === IS_ACTIVE.FALSE) {
-      return { status: 404, success: false, message: 'Không tìm thấy đơn hàng' };
+      throw new AppError('Không tìm thấy đơn hàng', 404);
     }
 
-    return { status: 200, success: true, data: order };
+    return order;
   }
 
   /**
@@ -570,19 +551,7 @@ class OrderService {
 
     const total = await Order.countDocuments(filter);
 
-    return {
-      status: 200,
-      success: true,
-      data: {
-        orders,
-        pagination: {
-          total,
-          page: parseInt(page),
-          limit: parseInt(limit),
-          totalPages: Math.ceil(total / parseInt(limit)),
-        },
-      },
-    };
+    return { orders, pagination: { total, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(total / parseInt(limit)) } };
   }
 
   /**

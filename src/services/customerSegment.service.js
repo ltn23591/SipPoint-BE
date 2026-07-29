@@ -2,18 +2,16 @@ const CustomerSegment = require('../models/customerSegment.model');
 const Customer = require('../models/customer.model');
 const Campaign = require('../models/campaign.model');
 const { IS_ACTIVE, SEGMENT_MODE } = require('../enums');
+const AppError = require('../utils/AppError');
 
-// Số select dùng chung khi trả về khách hàng (preview / members)
 const CUSTOMER_SELECT = 'fullName phone email gender currentPoints orderCount redeemCount tierId dateOfBirth lastVisitAt';
 
-// Ngày cách hiện tại `years` năm (dùng cho tiêu chí tuổi)
 const dateYearsAgo = (years) => {
   const d = new Date();
   d.setFullYear(d.getFullYear() - Number(years));
   return d;
 };
 
-// Bộ lọc số cho eq/gt/lt/between
 const numFilter = (field, operator, value) => {
   switch (operator) {
     case 'eq':
@@ -31,16 +29,15 @@ const numFilter = (field, operator, value) => {
   }
 };
 
-// Bộ lọc theo tuổi (quy đổi ra khoảng dateOfBirth)
 const ageFilter = (operator, value) => {
   switch (operator) {
     case 'eq': {
       const n = Number(value);
       return { dateOfBirth: { $ne: null, $gt: dateYearsAgo(n + 1), $lte: dateYearsAgo(n) } };
     }
-    case 'gt': // tuổi > N  ⟺ sinh trước mốc (N+1) năm
+    case 'gt':
       return { dateOfBirth: { $ne: null, $lte: dateYearsAgo(Number(value) + 1) } };
-    case 'lt': // tuổi < N  ⟺ sinh sau mốc N năm
+    case 'lt':
       return { dateOfBirth: { $ne: null, $gt: dateYearsAgo(Number(value)) } };
     case 'between': {
       const [min, max] = Array.isArray(value) ? value : [value?.min, value?.max];
@@ -52,7 +49,6 @@ const ageFilter = (operator, value) => {
 };
 
 class CustomerSegmentService {
-  // Một điều kiện -> một filter con trên collection customers (null nếu không hợp lệ)
   static buildCondition(cond) {
     if (!cond || !cond.field) return null;
     const { field, operator, value } = cond;
@@ -105,7 +101,6 @@ class CustomerSegmentService {
     }
   }
 
-  // Một nhóm (AND) -> { $and: [...] } (null nếu không có điều kiện hợp lệ)
   static buildGroup(group) {
     const conds = (group?.conditions || [])
       .map((c) => CustomerSegmentService.buildCondition(c))
@@ -114,7 +109,6 @@ class CustomerSegmentService {
     return { $and: conds };
   }
 
-  // criteria { groups } -> Mongo filter (các nhóm nối OR)
   static buildFilter(criteria = {}) {
     const groups = (criteria.groups || [])
       .map((g) => CustomerSegmentService.buildGroup(g))
@@ -126,22 +120,19 @@ class CustomerSegmentService {
     return { filter: { isActive: true, $or: groups }, hasCriteria: true };
   }
 
-  // Materialize memberIds theo mode
   static async resolveMembers(data) {
     if (data.mode === SEGMENT_MODE.MANUAL) {
       const provided = (data.memberIds || []).filter(Boolean);
       if (provided.length === 0) {
-        return { error: { status: 400, success: false, message: 'Nhóm thủ công phải chọn ít nhất một khách hàng' } };
+        throw new AppError('Nhóm thủ công phải chọn ít nhất một khách hàng', 400);
       }
-      // Chỉ giữ khách hàng tồn tại & đang hoạt động
       const memberIds = await Customer.find({ _id: { $in: provided }, isActive: true }).distinct('_id');
       return { memberIds };
     }
 
-    // AUTO
     const { filter, hasCriteria } = CustomerSegmentService.buildFilter(data.criteria);
     if (!hasCriteria) {
-      return { error: { status: 400, success: false, message: 'Phải thiết lập ít nhất một tiêu chí lọc' } };
+      throw new AppError('Phải thiết lập ít nhất một tiêu chí lọc', 400);
     }
     const memberIds = await Customer.find(filter).distinct('_id');
     return { memberIds };
@@ -150,12 +141,11 @@ class CustomerSegmentService {
   static async createSegment(data, createdById) {
     const existing = await CustomerSegment.findOne({ name: data.name });
     if (existing) {
-      return { status: 400, success: false, message: 'Tên nhóm khách hàng đã tồn tại' };
+      throw new AppError('Tên nhóm khách hàng đã tồn tại', 400);
     }
 
     const mode = data.mode === SEGMENT_MODE.MANUAL ? SEGMENT_MODE.MANUAL : SEGMENT_MODE.AUTO;
     const resolved = await CustomerSegmentService.resolveMembers({ ...data, mode });
-    if (resolved.error) return resolved.error;
 
     const segment = await CustomerSegment.create({
       name: data.name,
@@ -169,7 +159,7 @@ class CustomerSegmentService {
       createdBy: createdById || undefined,
     });
 
-    return { status: 201, success: true, message: 'Tạo nhóm khách hàng thành công', data: segment };
+    return segment;
   }
 
   static async getAllSegments(query = {}) {
@@ -188,10 +178,7 @@ class CustomerSegmentService {
     const total = await CustomerSegment.countDocuments(filter);
 
     return {
-      status: 200,
-      success: true,
-      message: 'Lấy danh sách nhóm khách hàng thành công',
-      data: segments,
+      segments,
       pagination: { total, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(total / limit) },
     };
   }
@@ -199,15 +186,15 @@ class CustomerSegmentService {
   static async getSegmentById(id) {
     const segment = await CustomerSegment.findById(id).select('-memberIds');
     if (!segment) {
-      return { status: 404, success: false, message: 'Không tìm thấy nhóm khách hàng' };
+      throw new AppError('Không tìm thấy nhóm khách hàng', 404);
     }
-    return { status: 200, success: true, message: 'Lấy chi tiết nhóm khách hàng thành công', data: segment };
+    return segment;
   }
 
   static async updateSegment(id, data) {
     const segment = await CustomerSegment.findById(id);
     if (!segment) {
-      return { status: 404, success: false, message: 'Không tìm thấy nhóm khách hàng' };
+      throw new AppError('Không tìm thấy nhóm khách hàng', 404);
     }
 
     if (data.name !== undefined) segment.name = data.name;
@@ -216,10 +203,8 @@ class CustomerSegmentService {
     if (data.mode !== undefined) segment.mode = data.mode;
     if (data.isRealtimeUpdate !== undefined) segment.isRealtimeUpdate = !!data.isRealtimeUpdate;
     if (data.criteria !== undefined) segment.criteria = data.criteria;
-    // Nhóm thủ công không dùng cập nhật realtime
     if (segment.mode === SEGMENT_MODE.MANUAL) segment.isRealtimeUpdate = false;
 
-    // Nếu đổi tiêu chí / mode / danh sách tay -> materialize lại thành viên
     const touchesMembers =
       data.criteria !== undefined || data.mode !== undefined || data.memberIds !== undefined;
     if (touchesMembers) {
@@ -228,7 +213,6 @@ class CustomerSegmentService {
         criteria: segment.criteria,
         memberIds: data.memberIds,
       });
-      if (resolved.error) return resolved.error;
       segment.memberIds = resolved.memberIds;
       segment.memberCount = resolved.memberIds.length;
       segment.lastSyncedAt = new Date();
@@ -236,34 +220,28 @@ class CustomerSegmentService {
 
     await segment.save();
 
-    const updated = await CustomerSegment.findById(id).select('-memberIds');
-    return { status: 200, success: true, message: 'Cập nhật nhóm khách hàng thành công', data: updated };
+    return await CustomerSegment.findById(id).select('-memberIds');
   }
 
   static async deleteSegment(id) {
     const segment = await CustomerSegment.findById(id);
     if (!segment) {
-      return { status: 404, success: false, message: 'Không tìm thấy nhóm khách hàng' };
+      throw new AppError('Không tìm thấy nhóm khách hàng', 404);
     }
 
     const activeCampaign = await Campaign.findOne({ segmentIds: id, status: 'ACTIVE' });
     if (activeCampaign) {
-      return {
-        status: 400,
-        success: false,
-        message: `Không thể xóa: nhóm đang được sử dụng bởi chiến dịch "${activeCampaign.name}"`,
-      };
+      throw new AppError(`Không thể xóa: nhóm đang được sử dụng bởi chiến dịch "${activeCampaign.name}"`, 400);
     }
 
     await CustomerSegment.findByIdAndDelete(id);
-    return { status: 200, success: true, message: 'Xóa nhóm khách hàng thành công' };
+    return {};
   }
 
-  // Xem trước khách hàng thỏa bộ tiêu chí (có phân trang cho modal)
   static async previewSegment(criteria, query = {}) {
     const { filter, hasCriteria } = CustomerSegmentService.buildFilter(criteria);
     if (!hasCriteria) {
-      return { status: 400, success: false, message: 'Phải thiết lập ít nhất một tiêu chí lọc' };
+      throw new AppError('Phải thiết lập ít nhất một tiêu chí lọc', 400);
     }
 
     const { page = 1, limit = 20 } = query;
@@ -278,35 +256,30 @@ class CustomerSegmentService {
       .limit(parseInt(limit));
 
     return {
-      status: 200,
-      success: true,
-      message: `Có ${count.toLocaleString('vi-VN')} khách hàng phù hợp`,
-      data: { count, members },
+      count,
+      members,
       pagination: { total: count, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(count / limit) },
     };
   }
 
-  // Đồng bộ lại thành viên của 1 nhóm (chỉ có ý nghĩa với AUTO)
   static async syncSegment(id) {
     const segment = await CustomerSegment.findById(id);
     if (!segment) {
-      return { status: 404, success: false, message: 'Không tìm thấy nhóm khách hàng' };
+      throw new AppError('Không tìm thấy nhóm khách hàng', 404);
     }
 
     if (segment.mode === SEGMENT_MODE.MANUAL) {
-      // Nhóm thủ công: chỉ lọc bỏ khách đã ngừng hoạt động, không đổi tiêu chí
       const memberIds = await Customer.find({ _id: { $in: segment.memberIds }, isActive: true }).distinct('_id');
       segment.memberIds = memberIds;
       segment.memberCount = memberIds.length;
       segment.lastSyncedAt = new Date();
       await segment.save();
-      return { status: 200, success: true, message: 'Đồng bộ nhóm (thủ công) thành công', data: { memberCount: memberIds.length } };
+      return { memberCount: memberIds.length };
     }
 
     const { filter, hasCriteria } = CustomerSegmentService.buildFilter(segment.criteria);
-    // An toàn: nhóm không có tiêu chí hợp lệ (vd dữ liệu cũ) -> giữ nguyên, KHÔNG quét toàn bộ KH
     if (!hasCriteria) {
-      return { status: 200, success: true, message: 'Nhóm chưa có tiêu chí hợp lệ, bỏ qua đồng bộ', data: { memberCount: segment.memberCount } };
+      return { memberCount: segment.memberCount };
     }
     const memberIds = await Customer.find(filter).distinct('_id');
     segment.memberIds = memberIds;
@@ -314,15 +287,9 @@ class CustomerSegmentService {
     segment.lastSyncedAt = new Date();
     await segment.save();
 
-    return {
-      status: 200,
-      success: true,
-      message: 'Đồng bộ nhóm khách hàng thành công',
-      data: { memberCount: segment.memberCount, lastSyncedAt: segment.lastSyncedAt },
-    };
+    return { memberCount: segment.memberCount, lastSyncedAt: segment.lastSyncedAt };
   }
 
-  // Cron 00:00: chỉ đồng bộ các nhóm AUTO đang hoạt động
   static async syncAllSegments() {
     const segments = await CustomerSegment.find({ isActive: IS_ACTIVE.TRUE, mode: SEGMENT_MODE.AUTO }).select('_id');
     let synced = 0;
@@ -333,8 +300,6 @@ class CustomerSegmentService {
     return { synced };
   }
 
-  // Gọi khi dữ liệu KH vừa thay đổi (đơn hoàn tất / đổi quà):
-  // đồng bộ ngay các nhóm AUTO có bật cập nhật realtime. Best-effort, không chặn luồng chính.
   static async resyncRealtimeSegments() {
     try {
       const segments = await CustomerSegment.find({
@@ -352,20 +317,14 @@ class CustomerSegmentService {
     }
   }
 
-  // Bật/tắt trạng thái hoạt động của nhóm
   static async toggleActive(id) {
     const segment = await CustomerSegment.findById(id);
     if (!segment) {
-      return { status: 404, success: false, message: 'Không tìm thấy nhóm khách hàng' };
+      throw new AppError('Không tìm thấy nhóm khách hàng', 404);
     }
     segment.isActive = segment.isActive === IS_ACTIVE.TRUE ? IS_ACTIVE.FALSE : IS_ACTIVE.TRUE;
     await segment.save();
-    return {
-      status: 200,
-      success: true,
-      message: segment.isActive === IS_ACTIVE.TRUE ? 'Đã kích hoạt nhóm' : 'Đã tạm ngưng nhóm',
-      data: { isActive: segment.isActive },
-    };
+    return { isActive: segment.isActive };
   }
 
   static async getSegmentMembers(id, query = {}) {
@@ -374,10 +333,9 @@ class CustomerSegmentService {
 
     const segment = await CustomerSegment.findById(id).select('memberIds memberCount name');
     if (!segment) {
-      return { status: 404, success: false, message: 'Không tìm thấy nhóm khách hàng' };
+      throw new AppError('Không tìm thấy nhóm khách hàng', 404);
     }
 
-    // Có tìm kiếm: lọc trong tập thành viên theo tên/SĐT/email (query + phân trang trên DB)
     if (search && String(search).trim()) {
       const rx = { $regex: String(search).trim(), $options: 'i' };
       const filter = {
@@ -391,10 +349,7 @@ class CustomerSegmentService {
         .skip(skip)
         .limit(parseInt(limit));
       return {
-        status: 200,
-        success: true,
-        message: 'Lấy danh sách thành viên nhóm thành công',
-        data: members,
+        members,
         pagination: { total, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(total / limit) },
       };
     }
@@ -405,10 +360,7 @@ class CustomerSegmentService {
       .populate('tierId', 'name');
 
     return {
-      status: 200,
-      success: true,
-      message: 'Lấy danh sách thành viên nhóm thành công',
-      data: members,
+      members,
       pagination: {
         total: segment.memberCount,
         page: parseInt(page),
