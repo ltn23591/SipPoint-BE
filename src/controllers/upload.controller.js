@@ -6,7 +6,7 @@ const CloudinaryService = require('../services/cloudinary.service');
 // @access  Private
 exports.uploadFromUrl = catchAsync(async (req, res, next) => {
   const result = await CloudinaryService.uploadFromUrl(req.body.url, req.body.folder);
-    return res.status(result.status).json(result);
+    return res.status(result.status || 200).json(result);
 });;
 
 // @desc    Upload ảnh từ file lên Cloudinary
@@ -15,5 +15,5 @@ exports.uploadFromUrl = catchAsync(async (req, res, next) => {
 exports.uploadFromFile = catchAsync(async (req, res, next) => {
   const buffer = req.file ? req.file.buffer : null;
     const result = await CloudinaryService.uploadFromBuffer(buffer, req.body.folder);
-    return res.status(result.status).json(result);
+    return res.status(result.status || 200).json(result);
 });;
