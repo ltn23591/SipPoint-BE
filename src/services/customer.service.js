@@ -1,4 +1,6 @@
 const Customer = require('../models/customer.model');
+ const Order = require('../models/order.model');
+ const { ORDER_STATUS, CUSTOMER_VOUCHER_SOURCE } = require('../enums');
 const PointHistory = require('../models/pointHistory.model');
 const CustomerVoucher = require('../models/customerVoucher.model');
 const MembershipTier = require('../models/membershipTier.model');
@@ -288,8 +290,6 @@ class CustomerService {
   // Backfill số liệu lọc nhóm (orderCount/redeemCount) từ dữ liệu lịch sử.
   // Chạy 1 lần sau khi thêm 2 field, hoặc khi cần đối soát lại.
   static async recomputeCounters() {
-    const Order = require('../models/order.model');
-    const { ORDER_STATUS, CUSTOMER_VOUCHER_SOURCE } = require('../enums');
 
     // Reset về 0 rồi tính lại từ nguồn
     await Customer.updateMany({}, { $set: { orderCount: 0, redeemCount: 0 } });
