@@ -6,7 +6,7 @@ const EmployeeService = require('../services/employee.service');
 // @access  Private/Admin
 exports.getEmployees = catchAsync(async (req, res, next) => {
   const result = await EmployeeService.getAllEmployees();
-    return res.status(result.status || 200).json(result);
+    return res.status(result.status).json(result);
 });;
 
 // @desc    Lấy thông tin một nhân viên
@@ -14,7 +14,7 @@ exports.getEmployees = catchAsync(async (req, res, next) => {
 // @access  Private/Admin
 exports.getEmployee = catchAsync(async (req, res, next) => {
   const result = await EmployeeService.getEmployeeById(req.params.id);
-    return res.status(result.status || 200).json(result);
+    return res.status(result.status).json(result);
 });;
 
 // @desc    Tạo mới một nhân viên (Admin thêm tài khoản)
@@ -22,7 +22,7 @@ exports.getEmployee = catchAsync(async (req, res, next) => {
 // @access  Private/Admin
 exports.createEmployee = catchAsync(async (req, res, next) => {
   const result = await EmployeeService.createEmployee(req.body);
-    return res.status(result.status || 200).json(result);
+    return res.status(result.status).json(result);
 });;
 
 // @desc    Cập nhật thông tin nhân viên (phân quyền / đổi thông tin)
@@ -30,7 +30,7 @@ exports.createEmployee = catchAsync(async (req, res, next) => {
 // @access  Private/Admin
 exports.updateEmployee = catchAsync(async (req, res, next) => {
   const result = await EmployeeService.updateEmployee(req.params.id, req.body);
-    return res.status(result.status || 200).json(result);
+    return res.status(result.status).json(result);
 });;
 
 // @desc    Xóa nhân viên
@@ -38,5 +38,5 @@ exports.updateEmployee = catchAsync(async (req, res, next) => {
 // @access  Private/Admin
 exports.deleteEmployee = catchAsync(async (req, res, next) => {
   const result = await EmployeeService.deleteEmployee(req.params.id);
-    return res.status(result.status || 200).json(result);
+    return res.status(result.status).json(result);
 });;

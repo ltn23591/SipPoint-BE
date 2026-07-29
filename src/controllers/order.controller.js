@@ -4,19 +4,19 @@ const { ORDER_STATUS, ROLE } = require('../enums');
 class OrderController {
   static getAll = catchAsync(async (req, res, next) => {
       const result = await OrderService.getAllOrders(req.query);
-      res.status(result.status || 200).json(result);
+      res.status(result.status).json(result);
     });
 
   static getById = catchAsync(async (req, res, next) => {
       const result = await OrderService.getOrderById(req.params.id);
-      res.status(result.status || 200).json(result);
+      res.status(result.status).json(result);
     });
 
   static create = catchAsync(async (req, res, next) => {
       // Lấy id của nhân viên thực hiện (từ auth middleware)
       const createdById = req.user ? req.user._id : null;
       const result = await OrderService.createOrder(req.body, createdById);
-      res.status(result.status || 200).json(result);
+      res.status(result.status).json(result);
     });
 
   static updateStatus = catchAsync(async (req, res, next) => {
@@ -37,13 +37,13 @@ class OrderController {
       } else {
         result = await OrderService.updateOrderStatus(targetId, status, updatedById);
       }
-      res.status(result.status || 200).json(result);
+      res.status(result.status).json(result);
     });
 
   static refund = catchAsync(async (req, res, next) => {
       const updatedById = req.user ? req.user._id : null;
       const result = await OrderService.refundOrder(req.params.id, req.body.reason, updatedById);
-      res.status(result.status || 200).json(result);
+      res.status(result.status).json(result);
     });
 }
 
