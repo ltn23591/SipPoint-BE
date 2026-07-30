@@ -4,7 +4,7 @@ const AppError = require('../utils/AppError');
 
 exports.getAll = catchAsync(async (req, res, next) => {
   const items = await CategoryService.getAll();
-    res.json({
+    res.status(200).json({
       success: true,
       count: items.length,
       data: items,
@@ -17,7 +17,7 @@ exports.getById = catchAsync(async (req, res, next) => {
     if (!item) {
       return next(new AppError(`Không tìm thấy danh mục với ID: ${req.params.id}`, 404));
     }
-    res.json({
+    res.status(200).json({
       success: true,
       data: item,
       message: 'Lấy chi tiết danh mục thành công'
@@ -38,7 +38,7 @@ exports.update = catchAsync(async (req, res, next) => {
     if (!item) {
       return next(new AppError(`Không tìm thấy danh mục với ID: ${req.params.id}`, 404));
     }
-    res.json({
+    res.status(200).json({
       success: true,
       data: item,
       message: 'Cập nhật danh mục thành công'
@@ -50,7 +50,7 @@ exports.remove = catchAsync(async (req, res, next) => {
     if (!item) {
       return next(new AppError(`Không tìm thấy danh mục với ID: ${req.params.id}`, 404));
     }
-    res.json({
+    res.status(200).json({
       success: true,
       data: {},
       message: 'Đã xóa danh mục thành công'

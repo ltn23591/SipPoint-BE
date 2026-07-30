@@ -1,5 +1,6 @@
 const ProductPrice = require('../models/productPrice.model');
 const Product = require('../models/product.model');
+const AppError = require('../utils/AppError');
 
 class ProductPriceService {
   static async searchProductPrices(payload) {
@@ -43,7 +44,7 @@ class ProductPriceService {
   static async createOrUpdateProductPrice(data) {
     const { productId, price, sizePriceMap, notes } = data;
     if (!productId) {
-      throw new Error('Thiếu productId');
+      throw new AppError('Thiếu productId', 400);
     }
 
     let productPrice = await ProductPrice.findOne({ productId });

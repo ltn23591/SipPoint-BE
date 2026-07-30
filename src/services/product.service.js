@@ -3,6 +3,7 @@ const ProductVariant = require('../models/productVariant.model');
 const Category = require('../models/category.model');
 const cloudinary = require('../config/cloudinary');
 const exceljs = require('exceljs');
+const AppError = require('../utils/AppError');
 
 class ProductService {
   /**
@@ -179,7 +180,7 @@ class ProductService {
    * Import sản phẩm từ file Excel
    */
   static async importExcel(file) {
-    if (!file) throw new Error('Vui lòng tải lên file Excel');
+    if (!file) throw new AppError('Vui lòng tải lên file Excel', 400);
 
     const workbook = new exceljs.Workbook();
     if (file.path) {
@@ -187,7 +188,7 @@ class ProductService {
     } else if (file.buffer) {
       await workbook.xlsx.load(file.buffer);
     } else {
-      throw new Error('Định dạng file không được hỗ trợ');
+      throw new AppError('Định dạng file không được hỗ trợ', 400);
     }
 
     const worksheet = workbook.worksheets[0];

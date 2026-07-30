@@ -1,7 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-
+const AppError = require('../utils/AppError');
 
 // Đảm bảo thư mục upload tồn tại
 const uploadDir = path.join(__dirname, '../../public/uploads');
@@ -30,7 +30,7 @@ const checkFileType = (file, cb) => {
   if (extname && mimetype) {
     return cb(null, true);
   } else {
-    cb(new Error('Chỉ cho phép tải lên hình ảnh!'));
+    cb(new AppError('Chỉ cho phép tải lên hình ảnh!', 400));
   }
 };
 

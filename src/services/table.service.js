@@ -1,5 +1,6 @@
 const Table = require('../models/table.model');
 const { generateQRCode } = require('../utils/qrcode');
+const AppError = require('../utils/AppError');
 
 class TableService {
   static async getAll(filter = {}) {
@@ -17,7 +18,7 @@ class TableService {
         zoneId: data.zoneId,
       });
       if (existingTable) {
-        throw new Error('Tên bàn này đã tồn tại trong khu vực này!');
+        throw new AppError('Tên bàn này đã tồn tại trong khu vực này!', 400);
       }
     }
 
@@ -48,7 +49,7 @@ class TableService {
         _id: { $ne: id },
       });
       if (duplicateTable) {
-        throw new Error('Tên bàn này đã tồn tại trong khu vực này!');
+        throw new AppError('Tên bàn này đã tồn tại trong khu vực này!', 400);
       }
     }
 
@@ -70,7 +71,7 @@ class TableService {
 
   static async generateTableQRCode(id) {
     const table = await Table.findById(id);
-    if (!table) throw new Error('Không tìm thấy bàn');
+    if (!table) throw new AppError('Không tìm thấy bàn', 404);
 
     const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/+$/, '');
     const qrText = `${frontendUrl}/menu?tableId=${table._id}&zoneId=${table.zoneId}`;

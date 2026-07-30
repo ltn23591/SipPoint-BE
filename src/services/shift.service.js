@@ -1,6 +1,7 @@
 const Shift = require('../models/shift.model');
 const Order = require('../models/order.model');
 const { SHIFT_STATUS } = require('../enums');
+const AppError = require('../utils/AppError');
 
 class ShiftService {
   static async getAll() {
@@ -14,15 +15,15 @@ class ShiftService {
   static async openShift(employeeId, startingCash = 0) {
     const existingShift = await Shift.findOne({ employeeId, status: SHIFT_STATUS.OPEN });
     if (existingShift) {
-      throw new Error('Bạn đang có một ca làm việc chưa đóng.');
+      throw new AppError('Bạn đang có một ca làm việc chưa đóng.', 400);
     }
     return await Shift.create({ employeeId, startingCash, status: SHIFT_STATUS.OPEN });
   }
 
   static async closeShift(id, actualEndingCash, note) {
     const shift = await Shift.findById(id);
-    if (!shift) throw new Error('Không tìm thấy ca làm việc.');
-    if (shift.status === SHIFT_STATUS.CLOSED) throw new Error('Ca làm việc này đã được đóng.');
+    if (!shift) throw new AppError('Không tìm thấy ca làm việc.', 404);
+    if (shift.status === SHIFT_STATUS.CLOSED) throw new AppError('Ca làm việc này đã được đóng.', 400);
 
     const endTime = new Date();
 
