@@ -56,6 +56,19 @@ class MembershipTierService {
   }
 
   static async createTier(data) {
+    if (!data.programId) {
+      let currentProgram = await MembershipProgramService.getCurrentProgram();
+      if (!currentProgram) {
+        const MembershipProgram = require('../models/membershipProgram.model');
+        currentProgram = await MembershipProgram.create({
+          name: 'Chương trình Thành viên SipPoint',
+          description: 'Chương trình tích điểm mặc định',
+          status: 'active',
+          isApproved: true,
+        });
+      }
+      data.programId = currentProgram._id;
+    }
     return await MembershipTier.create(data);
   }
 
