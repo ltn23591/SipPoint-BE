@@ -1,8 +1,6 @@
 const express = require('express');
 const NotificationController = require('../../controllers/notification.controller');
 const { protect } = require('../../middleware/auth.middleware');
-const { authorize } = require('../../middleware/authorize.middleware');
-const { ROLE } = require('../../enums');
 
 const router = express.Router();
 
