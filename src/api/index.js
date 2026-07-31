@@ -24,7 +24,6 @@ const feedbackRoutes = require('./routes/feedback.route');
 const activityLogRoutes = require('./routes/activityLog.route');
 const documentRoutes = require('./routes/document.route');
 const reportRoutes = require('./routes/report.route');
-const shiftRoutes = require('./routes/shift.route');
 const aiRoutes = require('./routes/ai.route');
 const paymentRoutes = require('./routes/payment.route');
 
@@ -64,7 +63,6 @@ router.use('/feedback', feedbackRoutes);
 router.use('/activity-log', activityLogRoutes);
 router.use('/document', documentRoutes);
 router.use('/report', reportRoutes);
-router.use('/shifts', shiftRoutes);
 router.use('/ai', aiRoutes);
 router.use('/payment', paymentRoutes);
 
