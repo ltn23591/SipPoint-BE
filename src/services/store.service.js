@@ -5,10 +5,14 @@ class StoreService {
     let config = await Store.findOne();
     if (!config) {
       config = await Store.create({
-        name: 'Tên cửa hàng mặc định',
+        name: 'SipPoint Coffee',
         address: 'Địa chỉ mặc định',
         phone: '0123456789',
+        paymentMethods: ['CASH', 'TRANSFER'],
       });
+    } else if (!config.paymentMethods || config.paymentMethods.length === 0) {
+      config.paymentMethods = ['CASH', 'TRANSFER'];
+      await config.save();
     }
     return config;
   }
