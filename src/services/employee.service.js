@@ -2,6 +2,7 @@ const Employee = require('../models/employee.model');
 const StaffRole = require('../models/staffRole.model');
 const bcrypt = require('bcrypt');
 const validator = require('validator');
+const mongoose = require('mongoose');
 const AppError = require('../utils/AppError');
 
 class EmployeeService {
@@ -23,7 +24,8 @@ class EmployeeService {
   }
 
   static async createEmployee(employeeData) {
-    let { name, email, password, roleId } = employeeData;
+    let { name, email, password, roleId, role } = employeeData;
+    const targetRole = roleId || role;
 
     if (!name || !name.toString().trim()) {
       throw new AppError('Tên là bắt buộc', 400);
@@ -37,14 +39,23 @@ class EmployeeService {
       throw new AppError('Mật khẩu phải từ 6 ký tự trở lên', 400);
     }
 
-    if (!roleId) {
+    if (!targetRole) {
       throw new AppError('Vui lòng phân quyền cho nhân viên (roleId)', 400);
     }
 
-    const staffRole = await StaffRole.findById(roleId);
+    let staffRole = null;
+    if (mongoose.Types.ObjectId.isValid(targetRole)) {
+      staffRole = await StaffRole.findById(targetRole);
+    }
+    if (!staffRole) {
+      staffRole = await StaffRole.findOne({ code: targetRole.toString().toLowerCase() });
+    }
+
     if (!staffRole) {
       throw new AppError('Role không hợp lệ', 400);
     }
+
+    roleId = staffRole._id;
 
     const employeeExists = await this.getEmployeeByEmail(email);
     if (employeeExists) {
@@ -68,11 +79,19 @@ class EmployeeService {
       }
     }
 
-    if (updateData.roleId) {
-      const staffRole = await StaffRole.findById(updateData.roleId);
+    const targetRole = updateData.roleId || updateData.role;
+    if (targetRole) {
+      let staffRole = null;
+      if (mongoose.Types.ObjectId.isValid(targetRole)) {
+        staffRole = await StaffRole.findById(targetRole);
+      }
+      if (!staffRole) {
+        staffRole = await StaffRole.findOne({ code: targetRole.toString().toLowerCase() });
+      }
       if (!staffRole) {
         throw new AppError('Role không hợp lệ', 400);
       }
+      updateData.roleId = staffRole._id;
     }
 
     if (updateData.password) {
