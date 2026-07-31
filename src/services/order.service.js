@@ -124,11 +124,8 @@ class OrderService {
       }
 
       const voucherRes = await VoucherService.validateVoucher(voucherCode, subtotalSum);
-      if (!voucherRes.success) {
-        return voucherRes;
-      }
-      discountAmount = voucherRes.data.discountAmount;
-      finalAmount = voucherRes.data.finalAmount;
+      discountAmount = voucherRes.discountAmount;
+      finalAmount = voucherRes.finalAmount;
 
       // Cập nhật lượt sử dụng atomic - thất bại nghĩa là voucher vừa hết lượt (race)
       const claimed = await Voucher.findOneAndUpdate(
@@ -153,12 +150,9 @@ class OrderService {
       }
 
       const walletRes = await VoucherService.validateWalletVoucher(customerVoucherId, resolvedCustomerId, subtotalSum);
-      if (!walletRes.success) {
-        return walletRes;
-      }
-      discountAmount = walletRes.data.discountAmount;
-      finalAmount = walletRes.data.finalAmount;
-      resolvedVoucherId = walletRes.data.voucherId;
+      discountAmount = walletRes.discountAmount;
+      finalAmount = walletRes.finalAmount;
+      resolvedVoucherId = walletRes.voucherId;
 
       // Claim atomic - chống dùng cùng lúc trên 2 đơn (kho voucher đã trừ lúc phát, KHÔNG tăng usedCount)
       const claimedWallet = await CustomerVoucher.findOneAndUpdate(
