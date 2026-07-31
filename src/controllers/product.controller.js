@@ -4,13 +4,14 @@ const ProductService = require('../services/product.service');
 const { sendSuccess, sendCreated } = require('../utils/response');
 
 // funcion for list product
-exports.getAll = catchAsync(async (req, res, next) => {
+class ProductController {
+  static getAll = catchAsync(async (req, res, next) => {
   const data = await ProductService.getAll(req.query);
   return sendSuccess(res, data, 'Lấy danh sách sản phẩm thành công', data.length);
 });
 
 // funcion for single product info
-exports.getById = catchAsync(async (req, res, next) => {
+  static getById = catchAsync(async (req, res, next) => {
   const data = await ProductService.getById(req.params.id);
   if (!data) {
     return next(new AppError('Không tìm thấy sản phẩm', 404));
@@ -19,14 +20,14 @@ exports.getById = catchAsync(async (req, res, next) => {
 });
 
 // funcion for add product
-exports.create = catchAsync(async (req, res, next) => {
+  static create = catchAsync(async (req, res, next) => {
   const files = req.files && req.files.length > 0 ? req.files : null;
   const data = await ProductService.create(req.body, files);
   return sendCreated(res, data, 'Đã thêm sản phẩm thành công');
 });
 
 // funcion for update product
-exports.update = catchAsync(async (req, res, next) => {
+  static update = catchAsync(async (req, res, next) => {
   const files = req.files && req.files.length > 0 ? req.files : null;
   const data = await ProductService.update(req.params.id, req.body, files);
   
@@ -38,7 +39,7 @@ exports.update = catchAsync(async (req, res, next) => {
 });
 
 // funcion for removing product
-exports.remove = catchAsync(async (req, res, next) => {
+  static remove = catchAsync(async (req, res, next) => {
   const deleted = await ProductService.delete(req.params.id);
   if (!deleted) {
     return next(new AppError('Không tìm thấy sản phẩm', 404));
@@ -47,7 +48,7 @@ exports.remove = catchAsync(async (req, res, next) => {
 });
 
 // function for restoring soft-deleted product
-exports.restore = catchAsync(async (req, res, next) => {
+  static restore = catchAsync(async (req, res, next) => {
   const restored = await ProductService.restore(req.params.id);
   if (!restored) {
     return next(new AppError('Không tìm thấy sản phẩm', 404));
@@ -56,7 +57,7 @@ exports.restore = catchAsync(async (req, res, next) => {
 });
 
 // function for importing products from Excel
-exports.importExcel = catchAsync(async (req, res, next) => {
+  static importExcel = catchAsync(async (req, res, next) => {
   const file = req.files && req.files.length > 0 ? req.files[0] : null;
   
   const data = await ProductService.importExcel(file);
@@ -65,9 +66,13 @@ exports.importExcel = catchAsync(async (req, res, next) => {
 });
 
 // function for validating cart items
-exports.validateCart = catchAsync(async (req, res, next) => {
+  static validateCart = catchAsync(async (req, res, next) => {
   const items = req.body.items || [];
   const result = await ProductService.validateCart(items);
   return sendSuccess(res, result, 'Kiểm tra giỏ hàng hoàn tất');
 });
 
+
+}
+
+module.exports = ProductController;

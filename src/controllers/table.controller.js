@@ -3,7 +3,8 @@ const catchAsync = require('../utils/catchAsync');
 const TableService = require('../services/table.service');
 const { emitToAll } = require('../services/socket.service');
 
-exports.getAll = catchAsync(async (req, res, next) => {
+class TableController {
+  static getAll = catchAsync(async (req, res, next) => {
   const filter = {};
     if (req.query.zoneId) {
       filter.zoneId = req.query.zoneId;
@@ -17,7 +18,7 @@ exports.getAll = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.getById = catchAsync(async (req, res, next) => {
+  static getById = catchAsync(async (req, res, next) => {
   const item = await TableService.getById(req.params.id);
     if (!item) {
       return next(new AppError(`Không tìm thấy bàn với ID: ${req.params.id}`, 404));
@@ -29,7 +30,7 @@ exports.getById = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.create = catchAsync(async (req, res, next) => {
+  static create = catchAsync(async (req, res, next) => {
   const item = await TableService.create(req.body);
     
     // Emit real-time event for table creation
@@ -42,7 +43,7 @@ exports.create = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.update = catchAsync(async (req, res, next) => {
+  static update = catchAsync(async (req, res, next) => {
   const item = await TableService.update(req.params.id, req.body);
     if (!item) {
       return next(new AppError(`Không tìm thấy bàn với ID: ${req.params.id}`, 404));
@@ -58,7 +59,7 @@ exports.update = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.remove = catchAsync(async (req, res, next) => {
+  static remove = catchAsync(async (req, res, next) => {
   const item = await TableService.delete(req.params.id);
     if (!item) {
       return next(new AppError(`Không tìm thấy bàn với ID: ${req.params.id}`, 404));
@@ -70,7 +71,11 @@ exports.remove = catchAsync(async (req, res, next) => {
     res.status(200).json({ success: true, data: {}, message: 'Đã xóa bàn thành công' });
 });;
 
-exports.generateQRCode = catchAsync(async (req, res, next) => {
+  static generateQRCode = catchAsync(async (req, res, next) => {
   const item = await TableService.generateTableQRCode(req.params.id);
     res.status(200).json({ success: true, data: item, message: 'Đã tạo lại mã QR thành công' });
 });;
+
+}
+
+module.exports = TableController;

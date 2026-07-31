@@ -2,7 +2,8 @@ const AppError = require('../utils/AppError');
 const catchAsync = require('../utils/catchAsync');
 const MembershipProgramService = require('../services/membershipProgram.service');
 
-exports.getCurrent = catchAsync(async (req, res, next) => {
+class MembershipProgramController {
+  static getCurrent = catchAsync(async (req, res, next) => {
   const item = await MembershipProgramService.getCurrentProgram();
     res.status(200).json({
       success: true,
@@ -11,7 +12,7 @@ exports.getCurrent = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.getById = catchAsync(async (req, res, next) => {
+  static getById = catchAsync(async (req, res, next) => {
   const item = await MembershipProgramService.getProgramById(req.params.id);
     if (!item) {
       return next(new AppError(`Không tìm thấy chương trình thành viên với ID: ${req.params.id}`, 404));
@@ -23,7 +24,7 @@ exports.getById = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.create = catchAsync(async (req, res, next) => {
+  static create = catchAsync(async (req, res, next) => {
   const employeeId = req.user ? req.user._id : null;
     const item = await MembershipProgramService.createProgram(req.body, employeeId);
     res.status(201).json({
@@ -33,7 +34,7 @@ exports.create = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.update = catchAsync(async (req, res, next) => {
+  static update = catchAsync(async (req, res, next) => {
   const id = req.body.id || req.body._id;
     if (!id) {
       return next(new AppError('Thiếu ID chương trình cần cập nhật', 400));
@@ -49,12 +50,12 @@ exports.update = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.search = catchAsync(async (req, res, next) => {
+  static search = catchAsync(async (req, res, next) => {
   const result = await MembershipProgramService.searchPrograms(req.body);
     res.status(200).json(result);
 });;
 
-exports.approve = catchAsync(async (req, res, next) => {
+  static approve = catchAsync(async (req, res, next) => {
   const id = req.body.id || req.body._id;
     if (!id) {
       return next(new AppError('Thiếu ID chương trình cần phê duyệt', 400));
@@ -70,3 +71,7 @@ exports.approve = catchAsync(async (req, res, next) => {
       message: 'Phê duyệt chương trình thành viên thành công'
     });
 });;
+
+}
+
+module.exports = MembershipProgramController;

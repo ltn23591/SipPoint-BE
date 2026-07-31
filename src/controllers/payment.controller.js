@@ -140,3 +140,9 @@ module.exports = {
   sepayIPN,
   confirmPayment
 };
+
+class PaymentController {
+
+}
+
+module.exports = PaymentController;

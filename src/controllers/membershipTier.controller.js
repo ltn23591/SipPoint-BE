@@ -2,7 +2,8 @@ const AppError = require('../utils/AppError');
 const catchAsync = require('../utils/catchAsync');
 const MembershipTierService = require('../services/membershipTier.service');
 
-exports.getByProgramId = catchAsync(async (req, res, next) => {
+class MembershipTierController {
+  static getByProgramId = catchAsync(async (req, res, next) => {
   const items = await MembershipTierService.getTiersByProgramId(req.params.programId);
     res.status(200).json({
       success: true,
@@ -12,7 +13,7 @@ exports.getByProgramId = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.getCurrentTiers = catchAsync(async (req, res, next) => {
+  static getCurrentTiers = catchAsync(async (req, res, next) => {
   const items = await MembershipTierService.getCurrentProgramTiers();
     res.status(200).json({
       success: true,
@@ -22,12 +23,12 @@ exports.getCurrentTiers = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.search = catchAsync(async (req, res, next) => {
+  static search = catchAsync(async (req, res, next) => {
   const result = await MembershipTierService.searchTiers(req.body);
     res.status(200).json(result);
 });;
 
-exports.create = catchAsync(async (req, res, next) => {
+  static create = catchAsync(async (req, res, next) => {
   const item = await MembershipTierService.createTier(req.body);
     res.status(201).json({
       success: true,
@@ -36,7 +37,7 @@ exports.create = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.update = catchAsync(async (req, res, next) => {
+  static update = catchAsync(async (req, res, next) => {
   const id = req.body.id || req.body._id;
     if (!id) {
       return next(new AppError('Thiếu ID hạng thành viên cần cập nhật', 400));
@@ -52,7 +53,7 @@ exports.update = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.getById = catchAsync(async (req, res, next) => {
+  static getById = catchAsync(async (req, res, next) => {
   const item = await MembershipTierService.getTierById(req.params.id);
     if (!item) {
       return next(new AppError(`Không tìm thấy hạng thành viên với ID: ${req.params.id}`, 404));
@@ -63,3 +64,7 @@ exports.getById = catchAsync(async (req, res, next) => {
       message: 'Lấy chi tiết hạng thành viên thành công'
     });
 });;
+
+}
+
+module.exports = MembershipTierController;

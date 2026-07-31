@@ -1,7 +1,8 @@
 const catchAsync = require('../utils/catchAsync');
 const AIService = require('../services/ai.service');
 
-exports.chatWithProducts = catchAsync(async (req, res, next) => {
+class AiController {
+  static chatWithProducts = catchAsync(async (req, res, next) => {
   const { message, sessionId, cart } = req.body;
 
     if (!message) {
@@ -28,8 +29,12 @@ exports.chatWithProducts = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.recommendTopProduct = catchAsync(async (req, res, next) => {
+  static recommendTopProduct = catchAsync(async (req, res, next) => {
   const result = await AIService.recommendTopProduct();
     res.status(200).json(result);
 });;
 
+
+}
+
+module.exports = AiController;

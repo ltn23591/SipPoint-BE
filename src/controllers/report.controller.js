@@ -1,7 +1,8 @@
 const catchAsync = require('../utils/catchAsync');
 const ReportService = require('../services/report.service');
 
-exports.dashboard = catchAsync(async (req, res, next) => {
+class ReportController {
+  static dashboard = catchAsync(async (req, res, next) => {
   const data = await ReportService.getDashboardData();
     res.status(200).json({
       success: true,
@@ -10,7 +11,7 @@ exports.dashboard = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.revenue = catchAsync(async (req, res, next) => {
+  static revenue = catchAsync(async (req, res, next) => {
   const data = await ReportService.getRevenueReport(req.query);
     res.status(200).json({
       success: true,
@@ -19,7 +20,7 @@ exports.revenue = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.topProducts = catchAsync(async (req, res, next) => {
+  static topProducts = catchAsync(async (req, res, next) => {
   const data = await ReportService.getTopProducts(req.query);
     res.status(200).json({
       success: true,
@@ -28,18 +29,22 @@ exports.topProducts = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.exportRevenue = catchAsync(async (req, res, next) => {
+  static exportRevenue = catchAsync(async (req, res, next) => {
   await ReportService.exportRevenue(req.body, res);
 });;
 
-exports.exportOrders = catchAsync(async (req, res, next) => {
+  static exportOrders = catchAsync(async (req, res, next) => {
   await ReportService.exportOrders(req.body, res);
 });;
 
-exports.exportCustomers = catchAsync(async (req, res, next) => {
+  static exportCustomers = catchAsync(async (req, res, next) => {
   await ReportService.exportCustomers(req.body, res);
 });;
 
-exports.exportShifts = catchAsync(async (req, res, next) => {
+  static exportShifts = catchAsync(async (req, res, next) => {
   await ReportService.exportShifts(req.body, res);
 });;
+
+}
+
+module.exports = ReportController;

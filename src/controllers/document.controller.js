@@ -2,7 +2,8 @@ const AppError = require('../utils/AppError');
 const catchAsync = require('../utils/catchAsync');
 const DocumentService = require('../services/document.service');
 
-exports.uploadFile = catchAsync(async (req, res, next) => {
+class DocumentController {
+  static uploadFile = catchAsync(async (req, res, next) => {
   const file = req.file;
     if (!file) {
       return next(new AppError('Vui lòng tải lên một file', 400));
@@ -15,7 +16,7 @@ exports.uploadFile = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.uploadMultipleFile = catchAsync(async (req, res, next) => {
+  static uploadMultipleFile = catchAsync(async (req, res, next) => {
   const files = req.files;
     if (!files || files.length === 0) {
       return next(new AppError('Vui lòng tải lên ít nhất một file', 400));
@@ -28,7 +29,7 @@ exports.uploadMultipleFile = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.deleteFile = catchAsync(async (req, res, next) => {
+  static deleteFile = catchAsync(async (req, res, next) => {
   const publicId = req.body.publicId || req.body.public_id || req.query.publicId || req.query.public_id;
     if (!publicId) {
       return next(new AppError('Thiếu publicId của file cần xóa', 400));
@@ -40,3 +41,7 @@ exports.deleteFile = catchAsync(async (req, res, next) => {
       message: 'Xóa file thành công'
     });
 });;
+
+}
+
+module.exports = DocumentController;

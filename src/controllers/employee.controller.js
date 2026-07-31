@@ -4,7 +4,8 @@ const EmployeeService = require('../services/employee.service');
 // @desc    Lấy danh sách tất cả nhân viên
 // @route   GET /api/v1/employees
 // @access  Private/Admin
-exports.getEmployees = catchAsync(async (req, res, next) => {
+class EmployeeController {
+  static getEmployees = catchAsync(async (req, res, next) => {
   const data = await EmployeeService.getAllEmployees();
   return res.status(200).json({
     success: true,
@@ -17,7 +18,7 @@ exports.getEmployees = catchAsync(async (req, res, next) => {
 // @desc    Lấy thông tin một nhân viên
 // @route   GET /api/v1/employees/:id
 // @access  Private/Admin
-exports.getEmployee = catchAsync(async (req, res, next) => {
+  static getEmployee = catchAsync(async (req, res, next) => {
   const data = await EmployeeService.getEmployeeById(req.params.id);
   return res.status(200).json({
     success: true,
@@ -29,7 +30,7 @@ exports.getEmployee = catchAsync(async (req, res, next) => {
 // @desc    Tạo mới một nhân viên (Admin thêm tài khoản)
 // @route   POST /api/v1/employees
 // @access  Private/Admin
-exports.createEmployee = catchAsync(async (req, res, next) => {
+  static createEmployee = catchAsync(async (req, res, next) => {
   const data = await EmployeeService.createEmployee(req.body);
   return res.status(201).json({
     success: true,
@@ -41,7 +42,7 @@ exports.createEmployee = catchAsync(async (req, res, next) => {
 // @desc    Cập nhật thông tin nhân viên (phân quyền / đổi thông tin)
 // @route   PUT /api/v1/employees/:id
 // @access  Private/Admin
-exports.updateEmployee = catchAsync(async (req, res, next) => {
+  static updateEmployee = catchAsync(async (req, res, next) => {
   const data = await EmployeeService.updateEmployee(req.params.id, req.body);
   return res.status(200).json({
     success: true,
@@ -53,7 +54,7 @@ exports.updateEmployee = catchAsync(async (req, res, next) => {
 // @desc    Xóa nhân viên
 // @route   DELETE /api/v1/employees/:id
 // @access  Private/Admin
-exports.deleteEmployee = catchAsync(async (req, res, next) => {
+  static deleteEmployee = catchAsync(async (req, res, next) => {
   const data = await EmployeeService.deleteEmployee(req.params.id);
   return res.status(200).json({
     success: true,
@@ -61,3 +62,7 @@ exports.deleteEmployee = catchAsync(async (req, res, next) => {
     message: 'Đã xóa nhân viên thành công',
   });
 });
+
+}
+
+module.exports = EmployeeController;

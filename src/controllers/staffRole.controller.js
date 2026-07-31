@@ -2,7 +2,8 @@ const AppError = require('../utils/AppError');
 const catchAsync = require('../utils/catchAsync');
 const StaffRoleService = require('../services/staffRole.service');
 
-exports.getAll = catchAsync(async (req, res, next) => {
+class StaffRoleController {
+  static getAll = catchAsync(async (req, res, next) => {
   const items = await StaffRoleService.getAllRoles();
     res.status(200).json({
       success: true,
@@ -12,7 +13,7 @@ exports.getAll = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.create = catchAsync(async (req, res, next) => {
+  static create = catchAsync(async (req, res, next) => {
   const item = await StaffRoleService.createRole(req.body);
     res.status(201).json({
       success: true,
@@ -21,7 +22,7 @@ exports.create = catchAsync(async (req, res, next) => {
     });
 });;
 
-exports.update = catchAsync(async (req, res, next) => {
+  static update = catchAsync(async (req, res, next) => {
   const id = req.body.id || req.body._id;
     if (!id) {
       return next(new AppError('Thiếu ID vai trò cần cập nhật', 400));
@@ -36,3 +37,7 @@ exports.update = catchAsync(async (req, res, next) => {
       message: 'Cập nhật vai trò thành công'
     });
 });;
+
+}
+
+module.exports = StaffRoleController;
