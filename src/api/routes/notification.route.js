@@ -10,9 +10,9 @@ router.post('/search', protect, NotificationController.search);
 router.get('/details/:id', protect, NotificationController.getById);
 
 // Admin / Managers / Staff can manage notifications
-router.post('/create', protect, authorize(ROLE.ADMIN), NotificationController.create);
-router.put('/update', protect, authorize(ROLE.ADMIN), NotificationController.update);
-router.delete('/delete/:id', protect, authorize(ROLE.ADMIN), NotificationController.remove);
+router.post('/create', protect, NotificationController.create);
+router.put('/update', protect, NotificationController.update);
+router.delete('/delete/:id', protect, NotificationController.remove);
 router.put('/update-status', protect, NotificationController.updateStatus);
 
 module.exports = router;
