@@ -5,7 +5,7 @@ const { sendSuccess, sendCreated } = require('../utils/response');
 
 // funcion for list product
 exports.getAll = catchAsync(async (req, res, next) => {
-  const data = await ProductService.getAll();
+  const data = await ProductService.getAll(req.query);
   return sendSuccess(res, data, 'Lấy danh sách sản phẩm thành công', data.length);
 });
 
@@ -46,6 +46,15 @@ exports.remove = catchAsync(async (req, res, next) => {
   return sendSuccess(res, {}, 'Đã xóa sản phẩm thành công');
 });
 
+// function for restoring soft-deleted product
+exports.restore = catchAsync(async (req, res, next) => {
+  const restored = await ProductService.restore(req.params.id);
+  if (!restored) {
+    return next(new AppError('Không tìm thấy sản phẩm', 404));
+  }
+  return sendSuccess(res, restored, 'Đã khôi phục sản phẩm thành công');
+});
+
 // function for importing products from Excel
 exports.importExcel = catchAsync(async (req, res, next) => {
   const file = req.files && req.files.length > 0 ? req.files[0] : null;
@@ -54,3 +63,11 @@ exports.importExcel = catchAsync(async (req, res, next) => {
   
   return sendSuccess(res, data, `Đã import xong. Thành công: ${data.successCount}, Lỗi: ${data.errorCount}`);
 });
+
+// function for validating cart items
+exports.validateCart = catchAsync(async (req, res, next) => {
+  const items = req.body.items || [];
+  const result = await ProductService.validateCart(items);
+  return sendSuccess(res, result, 'Kiểm tra giỏ hàng hoàn tất');
+});
+

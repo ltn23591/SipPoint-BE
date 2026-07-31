@@ -21,5 +21,7 @@ router.route('/:id')
   .delete(protect, authorize(ROLE.ADMIN), productValidation.getById, validate, ProductController.remove);
 
 router.post('/import', protect, authorize(ROLE.ADMIN), upload.any(), ProductController.importExcel);
+router.post('/validate-cart', ProductController.validateCart);
+router.patch('/:id/restore', protect, authorize(ROLE.ADMIN), ProductController.restore);
 
 module.exports = router;

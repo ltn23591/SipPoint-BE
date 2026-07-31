@@ -9,8 +9,25 @@ class ProductService {
   /**
    * Lấy danh sách sản phẩm
    */
-  static async getAll() {
-    const products = await Product.find({}).sort({ createdAt: -1 }).populate('category', 'name').lean();
+  static async getAll(query = {}) {
+    const filter = {};
+    if (query.status === 'deleted' || query.isDeleted === 'true' || query.isDeleted === true) {
+      filter.isDeleted = true;
+    } else if (query.includeDeleted === 'true' || query.includeDeleted === true) {
+      // Bao gồm cả món đã xóa
+    } else {
+      filter.isDeleted = { $ne: true };
+    }
+
+    if (query.category && query.category !== '__all__') {
+      filter.category = query.category;
+    }
+
+    if (query.keyword) {
+      filter.name = { $regex: query.keyword, $options: 'i' };
+    }
+
+    const products = await Product.find(filter).sort({ createdAt: -1 }).populate('category', 'name').lean();
     return products.map(p => {
       p.status = p.isActive;
       return p;
@@ -22,7 +39,7 @@ class ProductService {
    */
   static async getById(id) {
     const product = await Product.findById(id).populate('category', 'name').lean();
-    if (!product) return null;
+    if (!product || product.isDeleted) return null;
 
     const variants = await ProductVariant.find({ product: product._id }).lean();
     return {
@@ -166,14 +183,82 @@ class ProductService {
   }
 
   /**
-   * Xóa sản phẩm
+   * Xóa sản phẩm (Soft Delete)
    */
   static async delete(id) {
-    const deletedProduct = await Product.findByIdAndDelete(id);
+    const deletedProduct = await Product.findByIdAndUpdate(
+      id,
+      { isDeleted: true, isActive: 'inactive' },
+      { new: true }
+    );
     if (deletedProduct) {
-      await ProductVariant.deleteMany({ product: id });
+      await ProductVariant.updateMany({ product: id }, { isActive: 'inactive' });
     }
     return deletedProduct;
+  }
+
+  /**
+   * Khôi phục sản phẩm đã bị Soft Delete
+   */
+  static async restore(id) {
+    const restoredProduct = await Product.findByIdAndUpdate(
+      id,
+      { isDeleted: false, isActive: 'active' },
+      { new: true }
+    );
+    if (restoredProduct) {
+      await ProductVariant.updateMany({ product: id }, { isActive: 'active' });
+    }
+    return restoredProduct;
+  }
+
+  /**
+   * Kiểm tra tính hợp lệ của danh sách món trong giỏ hàng
+   */
+  static async validateCart(items = []) {
+    if (!Array.isArray(items) || items.length === 0) {
+      return { valid: true, validItems: [], invalidItems: [] };
+    }
+
+    const validItems = [];
+    const invalidItems = [];
+
+    for (const item of items) {
+      const productId = item.productId || item._id;
+      if (!productId) continue;
+
+      const product = await Product.findById(productId).lean();
+      if (!product || product.isDeleted || product.isActive === 'inactive' || product.isActive === 0) {
+        invalidItems.push({
+          ...item,
+          productId,
+          name: product ? product.name : (item.name || 'Sản phẩm'),
+          reason: 'discontinued',
+          message: `Món "${product ? product.name : (item.name || 'Sản phẩm')}" hiện đã ngừng bán.`
+        });
+      } else if (product.stock !== undefined && product.stock <= 0) {
+        invalidItems.push({
+          ...item,
+          productId,
+          name: product.name,
+          reason: 'out_of_stock',
+          message: `Món "${product.name}" hiện đã hết hàng.`
+        });
+      } else {
+        validItems.push({
+          ...item,
+          productName: product.name,
+          currentPrice: product.price,
+          stock: product.stock
+        });
+      }
+    }
+
+    return {
+      valid: invalidItems.length === 0,
+      validItems,
+      invalidItems
+    };
   }
 
   /**

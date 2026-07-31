@@ -62,8 +62,8 @@ class OrderService {
 
     for (const item of items) {
       const product = await Product.findById(item.productId);
-      if (!product || product.isDeleted || product.isActive === 0) {
-        throw new AppError(`Sản phẩm với ID ${item.productId} không tồn tại hoặc đã ngừng kinh doanh`, 404);
+      if (!product || product.isDeleted || product.isActive === 'inactive' || product.isActive === 0) {
+        throw new AppError(`Món "${product ? product.name : 'không xác định'}" hiện đã ngừng kinh doanh. Vui lòng cập nhật lại giỏ hàng.`, 400);
       }
 
       const itemVariants = [];
