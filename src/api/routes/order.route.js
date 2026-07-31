@@ -10,6 +10,7 @@ router.route('/')
   .get(protect, authorize(ROLE.ADMIN, ROLE.CASHIER, ROLE.BARISTA, ROLE.WAITER), OrderController.getAll)
   .post(protect, authorize(ROLE.ADMIN, ROLE.CASHIER, ROLE.WAITER), OrderController.create);
 
+router.get('/public/:id/status', OrderController.getOrderStatus);
 router.get('/public/:id', OrderController.getById);
 router.post('/public', OrderController.create);
 

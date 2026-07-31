@@ -58,12 +58,36 @@ class OrderController {
   });
 
   static refund = catchAsync(async (req, res, next) => {
-    const updatedById = req.user ? req.user._id : null;
-    const data = await OrderService.refundOrder(req.params.id, req.body.reason, updatedById);
+    const { reason } = req.body;
+    const refundedById = req.user ? req.user._id : null;
+    const data = await OrderService.refundOrder(req.params.id, reason, refundedById);
     res.status(200).json({
       success: true,
       message: 'Hoàn trả đơn hàng thành công',
       data,
+    });
+  });
+
+  static getOrderStatus = catchAsync(async (req, res, next) => {
+    const Order = require('../models/order.model');
+    let order = null;
+    const target = req.params.id;
+    if (target.match(/^[0-9a-fA-F]{24}$/)) {
+      order = await OrderService.getOrderById(target);
+    } else {
+      order = await Order.findOne({ code: target });
+    }
+    if (!order) throw new AppError('Không tìm thấy đơn hàng', 404);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        _id: order._id,
+        code: order.code,
+        status: order.status,
+        isPaid: order.isPaid,
+        total: order.total,
+      },
     });
   });
 }

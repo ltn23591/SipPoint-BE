@@ -62,10 +62,14 @@ const sepayIPN = catchAsync(async (req, res) => {
     
     if (order) {
       order.isPaid = true;
-      order.status = ORDER_STATUS.CONFIRMED; // Chuyển khoản thành công -> Đã nhận đơn (CONFIRMED)
+      order.status = ORDER_STATUS.CONFIRMED;
       await order.save();
+
+      if (order.customerId) {
+        const CustomerService = require('../services/customer.service');
+        await CustomerService.addPointsForOrder(order._id).catch(err => console.error('Lỗi tích điểm tự động:', err));
+      }
       
-      // Lấy lại đơn hàng đầy đủ để đẩy socket thông báo thời gian thực cho Portal
       const populatedOrder = await Order.findById(order._id)
         .populate('tableId', 'name zoneId')
         .populate('customerId', 'fullName phone')
