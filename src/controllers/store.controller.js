@@ -11,7 +11,8 @@ exports.getConfig = catchAsync(async (req, res, next) => {
 });;
 
 exports.updateConfig = catchAsync(async (req, res, next) => {
-  const config = await StoreService.updateConfig(req.body);
+  const employeeId = req.user ? req.user._id : null;
+  const config = await StoreService.updateConfig(req.body, employeeId);
     res.status(200).json({
       success: true,
       data: config,

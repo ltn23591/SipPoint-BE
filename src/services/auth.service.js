@@ -178,6 +178,9 @@ class AuthService {
       };
     }
 
+    const ActivityLogService = require('./activityLog.service');
+    ActivityLogService.logActivity(employee._id, 'LOGIN', 'Admin Portal', `Nhân viên ${employee.name} (${employee.email}) đăng nhập thành công`);
+
     return { message: 'Đăng nhập thành công', user: employee, userType: 'employee' };
   }
 

@@ -17,15 +17,24 @@ class StoreService {
     return config;
   }
 
-  static async updateConfig(data) {
+  static async updateConfig(data, employeeId) {
+    const ActivityLogService = require('./activityLog.service');
     let config = await Store.findOne();
+    let updated;
     if (!config) {
-      return await Store.create(data);
+      updated = await Store.create(data);
+    } else {
+      updated = await Store.findByIdAndUpdate(config._id, data, {
+        new: true,
+        runValidators: true,
+      });
     }
-    return await Store.findByIdAndUpdate(config._id, data, {
-      new: true,
-      runValidators: true,
-    });
+
+    if (data.paymentMethods) {
+      ActivityLogService.logActivity(employeeId || null, 'UPDATE_PAYMENTS', 'Phương thức thanh toán', `Cấu hình phương thức thanh toán: ${data.paymentMethods.join(', ')}`);
+    }
+
+    return updated;
   }
 }
 
