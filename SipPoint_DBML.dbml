@@ -1,0 +1,323 @@
+// SipPoint Database Schema for dbdiagram.io (No Feedback)
+
+Table staff_roles {
+  _id varchar [pk]
+  name varchar [not null]
+  description text
+  status varchar
+  createdBy varchar
+  updatedBy varchar
+}
+
+Table employees {
+  _id varchar [pk]
+  fullName varchar [not null]
+  phone varchar
+  email varchar
+  password varchar
+  roleId varchar [ref: > staff_roles._id]
+  isActive boolean [default: true]
+}
+
+Table membership_tiers {
+  _id varchar [pk]
+  name varchar [not null]
+  code varchar [unique]
+  minSpend decimal
+  pointsMultiplier decimal
+  discountPercentage decimal
+  benefits text
+  icon varchar
+  minPoints int
+  isActive boolean [default: true]
+}
+
+Table customers {
+  _id varchar [pk]
+  fullName varchar [not null]
+  gender varchar
+  email varchar
+  phone varchar [unique]
+  googleId varchar [unique]
+  avatar varchar
+  dateOfBirth datetime
+  tierId varchar [ref: > membership_tiers._id]
+  currentPoints int [default: 0]
+  cyclePoints int [default: 0]
+  tierAchievedAt datetime
+  tierExpiresAt datetime
+  lastVisitAt datetime
+  totalSpent decimal [default: 0]
+  orderCount int [default: 0]
+  redeemCount int [default: 0]
+  isActive boolean [default: true]
+  isVerified boolean [default: false]
+}
+
+Table customer_segments {
+  _id varchar [pk]
+  name varchar [not null]
+  description text
+  isSystem boolean [default: false]
+  criteria text
+  customerCount int [default: 0]
+  isActive boolean [default: true]
+  createdBy varchar [ref: > employees._id]
+  updatedBy varchar [ref: > employees._id]
+}
+
+Table stores {
+  _id varchar [pk]
+  code varchar [unique, not null]
+  name varchar [not null]
+  address text
+  phone varchar
+  status varchar
+}
+
+Table zones {
+  _id varchar [pk]
+  name varchar [not null]
+  description text
+  isActive varchar
+  storeId varchar [ref: > stores._id]
+}
+
+Table tables {
+  _id varchar [pk]
+  name varchar [not null]
+  zoneId varchar [ref: > zones._id]
+  capacity int [default: 4]
+  status varchar
+  qrCode text
+  isActive varchar
+}
+
+Table shifts {
+  _id varchar [pk]
+  name varchar [not null]
+  startTime varchar
+  endTime varchar
+  status varchar
+  notes text
+}
+
+Table categories {
+  _id varchar [pk]
+  name varchar [not null]
+  description text
+  image varchar
+  isActive varchar
+}
+
+Table products {
+  _id varchar [pk]
+  name varchar [not null]
+  description text
+  categoryId varchar [ref: > categories._id]
+  image varchar
+  basePrice decimal [default: 0]
+  isAvailable boolean [default: true]
+  isActive varchar
+}
+
+Table product_variants {
+  _id varchar [pk]
+  productId varchar [not null, ref: > products._id]
+  size varchar [not null]
+  priceAdjustment decimal [default: 0]
+  isAvailable boolean [default: true]
+}
+
+Table product_prices {
+  _id varchar [pk]
+  productId varchar [not null, ref: > products._id]
+  variantId varchar [ref: > product_variants._id]
+  price decimal [not null]
+  effectiveDate datetime
+}
+
+Table vouchers {
+  _id varchar [pk]
+  code varchar [unique, not null]
+  title varchar [not null]
+  description text
+  discountType varchar
+  discountValue decimal [default: 0]
+  minOrderAmount decimal [default: 0]
+  maxDiscountAmount decimal [default: 0]
+  maxGlobalUsage int [default: 0]
+  maxUsagePerCustomer int [default: 1]
+  pointsCost int [default: 0]
+  startDate datetime
+  endDate datetime
+  isActive boolean [default: true]
+}
+
+Table customer_vouchers {
+  _id varchar [pk]
+  customerId varchar [not null, ref: > customers._id]
+  voucherId varchar [not null, ref: > vouchers._id]
+  status varchar
+  redeemedAt datetime
+  usedAt datetime
+  orderId varchar
+}
+
+Table orders {
+  _id varchar [pk]
+  code varchar [unique, not null]
+  orderNumber varchar
+  tableId varchar [ref: > tables._id]
+  customerId varchar [ref: > customers._id]
+  voucherId varchar [ref: > vouchers._id]
+  customerVoucherId varchar [ref: > customer_vouchers._id]
+  subtotal decimal [default: 0]
+  discount decimal [default: 0]
+  total decimal [default: 0]
+  pointsAwarded int [default: 0]
+  isUrgent boolean [default: false]
+  isPaid boolean [default: false]
+  paymentMethod varchar
+  isPickup boolean [default: false]
+  type varchar
+  status varchar
+  note text
+  isActive varchar
+  createdBy varchar [ref: > employees._id]
+  updatedBy varchar [ref: > employees._id]
+}
+
+Ref: customer_vouchers.orderId > orders._id
+
+Table order_items {
+  _id varchar [pk]
+  orderId varchar [not null, ref: > orders._id]
+  productId varchar [not null, ref: > products._id]
+  variantId varchar [ref: > product_variants._id]
+  quantity int [default: 1]
+  price decimal [default: 0]
+  subtotal decimal [default: 0]
+  itemStatus varchar
+  note text
+  preparedBy varchar [ref: > employees._id]
+}
+
+Table membership_programs {
+  _id varchar [pk]
+  name varchar [not null]
+  description text
+  earnedPointsRate decimal [default: 1]
+  redeemPointsRate decimal [default: 1]
+  isActive boolean [default: true]
+}
+
+Table point_histories {
+  _id varchar [pk]
+  customerId varchar [not null, ref: > customers._id]
+  points int [not null]
+  type varchar
+  orderId varchar [ref: > orders._id]
+  note text
+  expiresAt datetime
+}
+
+Table campaigns {
+  _id varchar [pk]
+  code varchar
+  name varchar [not null]
+  description text
+  startDate datetime
+  endDate datetime
+  status varchar
+  targetSegmentId varchar [ref: > customer_segments._id]
+  createdBy varchar [ref: > employees._id]
+  updatedBy varchar [ref: > employees._id]
+}
+
+Table promotion_programs {
+  _id varchar [pk]
+  code varchar
+  title varchar [not null]
+  description text
+  startDate datetime
+  endDate datetime
+  isActive boolean [default: true]
+}
+
+Table lucky_wheels {
+  _id varchar [pk]
+  name varchar [not null]
+  description text
+  spinCost int [default: 0]
+  startDate datetime
+  endDate datetime
+  isActive boolean [default: true]
+}
+
+Table lucky_wheel_slots {
+  _id varchar [pk]
+  wheelId varchar [not null, ref: > lucky_wheels._id]
+  slotIndex int [not null]
+  prizeType varchar
+  prizeName varchar
+  voucherId varchar [ref: > vouchers._id]
+  pointsValue int [default: 0]
+  probability decimal [default: 0]
+  totalQuantity int [default: 0]
+  remainingQuantity int [default: 0]
+}
+
+Table spin_histories {
+  _id varchar [pk]
+  customerId varchar [not null, ref: > customers._id]
+  wheelId varchar [not null, ref: > lucky_wheels._id]
+  slotId varchar [not null, ref: > lucky_wheel_slots._id]
+  prizeType varchar
+  prizeName varchar
+  voucherId varchar [ref: > vouchers._id]
+  pointsEarned int [default: 0]
+  customerVoucherId varchar [ref: > customer_vouchers._id]
+}
+
+Table activity_logs {
+  _id varchar [pk]
+  userId varchar [ref: > employees._id]
+  action varchar
+  module varchar
+  details text
+  ipAddress varchar
+}
+
+Table banners {
+  _id varchar [pk]
+  title varchar
+  imageUrl varchar
+  linkUrl varchar
+  position int [default: 0]
+  isActive boolean [default: true]
+}
+
+Table chat_sessions {
+  _id varchar [pk]
+  customerId varchar [ref: > customers._id]
+  sessionId varchar
+  status varchar
+}
+
+Table notifications {
+  _id varchar [pk]
+  customerId varchar [ref: > customers._id]
+  title varchar
+  body text
+  type varchar
+  isRead boolean [default: false]
+}
+
+Table otps {
+  _id varchar [pk]
+  email varchar [not null]
+  otp varchar [not null]
+  type varchar
+  expiresAt datetime
+}
