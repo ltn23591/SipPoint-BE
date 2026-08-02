@@ -295,15 +295,6 @@ Table chat_sessions {
   status varchar
 }
 
-Table feedbacks {
-  _id varchar [pk]
-  customerId varchar [ref: > customers._id]
-  orderId varchar [ref: > orders._id]
-  rating int
-  comment text
-  status varchar
-}
-
 Table notifications {
   _id varchar [pk]
   customerId varchar [ref: > customers._id]
