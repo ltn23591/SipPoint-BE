@@ -1,4 +1,4 @@
-// SipPoint Database Schema for dbdiagram.io (No Feedback)
+﻿// SipPoint Database Schema for dbdiagram.io
 
 Table staff_roles {
   _id varchar [pk]
@@ -116,25 +116,20 @@ Table products {
   description text
   categoryId varchar [ref: > categories._id]
   image varchar
-  basePrice decimal [default: 0]
-  isAvailable boolean [default: true]
+  price decimal [default: 0]
+  stock int [default: 0]
+  rating decimal [default: 0]
+  numReviews int [default: 0]
   isActive varchar
 }
 
 Table product_variants {
   _id varchar [pk]
   productId varchar [not null, ref: > products._id]
-  size varchar [not null]
+  name varchar [not null]
   priceAdjustment decimal [default: 0]
-  isAvailable boolean [default: true]
-}
-
-Table product_prices {
-  _id varchar [pk]
-  productId varchar [not null, ref: > products._id]
-  variantId varchar [ref: > product_variants._id]
-  price decimal [not null]
-  effectiveDate datetime
+  variantType varchar [default: "size"]
+  isActive varchar
 }
 
 Table vouchers {
@@ -142,12 +137,12 @@ Table vouchers {
   code varchar [unique, not null]
   title varchar [not null]
   description text
-  discountType varchar
+  discountType int
   discountValue decimal [default: 0]
-  minOrderAmount decimal [default: 0]
-  maxDiscountAmount decimal [default: 0]
-  maxGlobalUsage int [default: 0]
-  maxUsagePerCustomer int [default: 1]
+  minOrderValue decimal [default: 0]
+  maxDiscountLimit decimal [default: 0]
+  maxUsage int [default: 0]
+  currentUsage int [default: 0]
   pointsCost int [default: 0]
   startDate datetime
   endDate datetime
@@ -158,9 +153,15 @@ Table customer_vouchers {
   _id varchar [pk]
   customerId varchar [not null, ref: > customers._id]
   voucherId varchar [not null, ref: > vouchers._id]
-  status varchar
-  redeemedAt datetime
+  code varchar [not null]
+  title varchar [not null]
+  discountType int
+  discountValue decimal
+  minOrderValue decimal
+  maxDiscountLimit decimal
+  isUsed boolean [default: false]
   usedAt datetime
+  expiryDate datetime
   orderId varchar
 }
 
@@ -194,13 +195,12 @@ Table order_items {
   _id varchar [pk]
   orderId varchar [not null, ref: > orders._id]
   productId varchar [not null, ref: > products._id]
-  variantId varchar [ref: > product_variants._id]
-  quantity int [default: 1]
-  price decimal [default: 0]
-  subtotal decimal [default: 0]
-  itemStatus varchar
+  name varchar [not null]
+  unitPrice decimal [default: 0]
+  qty int [default: 1]
+  variants text
   note text
-  preparedBy varchar [ref: > employees._id]
+  subtotal decimal [default: 0]
 }
 
 Table membership_programs {
@@ -233,16 +233,6 @@ Table campaigns {
   targetSegmentId varchar [ref: > customer_segments._id]
   createdBy varchar [ref: > employees._id]
   updatedBy varchar [ref: > employees._id]
-}
-
-Table promotion_programs {
-  _id varchar [pk]
-  code varchar
-  title varchar [not null]
-  description text
-  startDate datetime
-  endDate datetime
-  isActive boolean [default: true]
 }
 
 Table lucky_wheels {
@@ -305,6 +295,15 @@ Table chat_sessions {
   status varchar
 }
 
+Table feedbacks {
+  _id varchar [pk]
+  customerId varchar [ref: > customers._id]
+  orderId varchar [ref: > orders._id]
+  rating int
+  comment text
+  status varchar
+}
+
 Table notifications {
   _id varchar [pk]
   customerId varchar [ref: > customers._id]
@@ -321,3 +320,4 @@ Table otps {
   type varchar
   expiresAt datetime
 }
+
