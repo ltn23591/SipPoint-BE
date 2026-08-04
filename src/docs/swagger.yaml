@@ -2919,6 +2919,33 @@ paths:
       responses:
         "200":
           description: Thành công
+  /api/v1/report/material-consumption:
+    get:
+      summary: Báo cáo tiêu hao nguyên liệu
+      description: |
+        ### Cách kiểm thử (How to test):
+        1. Bắt buộc quyền Admin.
+        2. Nhấp **Try it out**.
+        3. Nhập khoảng thời gian `startDate`, `endDate` (tùy chọn) tại Query parameters.
+        4. Nhấp **Execute** để nhận tổng hợp lượng nhập, lượng tiêu hao, tồn hiện tại và giá trị tồn theo từng nguyên liệu.
+      tags:
+        - Report
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: startDate
+          schema:
+            type: string
+          description: Ngày bắt đầu (YYYY-MM-DD)
+        - in: query
+          name: endDate
+          schema:
+            type: string
+          description: Ngày kết thúc (YYYY-MM-DD)
+      responses:
+        "200":
+          description: Thành công
   /api/v1/report/export/revenue:
     post:
       summary: Xuất Excel báo cáo doanh thu
@@ -3729,6 +3756,340 @@ paths:
           description: Hủy thành công - trả về số voucher đã thu hồi
         "400":
           description: Chiến dịch không ở trạng thái ACTIVE
+  /api/v1/materials:
+    get:
+      summary: Lấy danh sách nguyên liệu (lọc + tìm kiếm + phân trang)
+      tags:
+        - Material
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+          description: Số trang
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+          description: Số item mỗi trang
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: Tìm kiếm theo tên nguyên liệu
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [in_stock, low, out_of_stock]
+          description: Lọc theo trạng thái tồn kho
+        - in: query
+          name: isActive
+          schema:
+            type: string
+            enum: [active, inactive]
+          description: Lọc theo trạng thái hoạt động
+      responses:
+        "200":
+          description: Danh sách nguyên liệu
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp **Try it out**, có thể nhập tham số lọc/phân trang tại Query parameters.
+        2. Nhấp **Execute** để nhận kết quả.
+    post:
+      summary: Tạo mới nguyên liệu (Cần quyền Admin)
+      tags:
+        - Material
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaterialInput"
+      responses:
+        "201":
+          description: Tạo thành công
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token Admin** (dán vào nút **Authorize**).
+        2. Nhấp **Try it out**, nhập thông tin nguyên liệu trong Request Body.
+        3. Nhấp **Execute**. Nếu `onHand` > 0 sẽ tự sinh một bút toán nhập kho.
+  /api/v1/materials/low-stock:
+    get:
+      summary: Danh sách nguyên liệu sắp hết / đã hết
+      tags:
+        - Material
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Danh sách nguyên liệu có trạng thái low hoặc out_of_stock
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. Nhấp **Try it out** -> **Execute** để nhận danh sách nguyên liệu cần nhập thêm.
+  /api/v1/materials/{id}:
+    get:
+      summary: Lấy chi tiết một nguyên liệu
+      tags:
+        - Material
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của nguyên liệu
+      responses:
+        "200":
+          description: Chi tiết nguyên liệu
+        "404":
+          description: Không tìm thấy
+    put:
+      summary: Cập nhật thông tin nguyên liệu (Cần quyền Admin)
+      description: |-
+        Chỉ cập nhật thông tin (tên, đơn vị, ngưỡng cảnh báo, giá vốn...). Để thay đổi tồn kho hãy dùng `/import` hoặc `/adjust`.
+      tags:
+        - Material
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của nguyên liệu
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MaterialInput"
+      responses:
+        "200":
+          description: Cập nhật thành công
+        "404":
+          description: Không tìm thấy
+    delete:
+      summary: Xóa mềm nguyên liệu (Cần quyền Admin)
+      tags:
+        - Material
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của nguyên liệu
+      responses:
+        "200":
+          description: Đã xóa
+        "404":
+          description: Không tìm thấy
+  /api/v1/materials/{id}/movements:
+    get:
+      summary: Lịch sử biến động tồn kho của nguyên liệu
+      tags:
+        - Material
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của nguyên liệu
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [IMPORT, ADJUSTMENT, HOLD, RELEASE, CONSUME, RESTOCK]
+          description: Lọc theo loại biến động
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Danh sách bút toán biến động (sổ cái)
+  /api/v1/materials/{id}/import:
+    post:
+      summary: Nhập kho nguyên liệu (Cần quyền Admin)
+      tags:
+        - Material
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của nguyên liệu
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - quantity
+              properties:
+                quantity:
+                  type: number
+                  description: Số lượng nhập (> 0)
+                  example: 10
+                cost:
+                  type: number
+                  description: Giá vốn/đơn vị (tùy chọn, sẽ cập nhật lại giá vốn)
+                note:
+                  type: string
+                  description: Ghi chú nhập kho
+      responses:
+        "200":
+          description: Nhập kho thành công
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token Admin**.
+        2. Nhập `quantity` (> 0) trong Request Body, nhấp **Execute**. Tồn kho `onHand` tăng và ghi một bút toán IMPORT.
+  /api/v1/materials/{id}/adjust:
+    patch:
+      summary: Điều chỉnh tồn kho thủ công (kiểm kê / hao hụt - Cần quyền Admin)
+      tags:
+        - Material
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của nguyên liệu
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - quantityChange
+              properties:
+                quantityChange:
+                  type: number
+                  description: Lượng điều chỉnh, dương để tăng, âm để giảm (khác 0)
+                  example: -3
+                note:
+                  type: string
+                  description: Lý do điều chỉnh
+      responses:
+        "200":
+          description: Điều chỉnh thành công
+        "400":
+          description: Tồn kho không đủ để trừ (chống âm kho)
+      description: |-
+        ### Cách kiểm thử (How to test):
+        1. **Yêu cầu Token Admin**.
+        2. Nhập `quantityChange` (âm để giảm). Nếu trừ vượt tồn hiện có sẽ trả lỗi 400.
+  /api/v1/materials/{id}/restore:
+    patch:
+      summary: Khôi phục nguyên liệu đã xóa mềm (Cần quyền Admin)
+      tags:
+        - Material
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: ID của nguyên liệu
+      responses:
+        "200":
+          description: Đã khôi phục
+        "404":
+          description: Không tìm thấy
+  /api/v1/recipes/product/{productId}:
+    get:
+      summary: Lấy công thức của một sản phẩm
+      tags:
+        - Recipe
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          schema:
+            type: string
+          required: true
+          description: ID của sản phẩm
+      responses:
+        "200":
+          description: Công thức của sản phẩm (kèm thông tin nguyên liệu)
+        "404":
+          description: Sản phẩm chưa có công thức
+    put:
+      summary: Tạo mới / cập nhật công thức cho sản phẩm (Cần quyền Admin)
+      description: |-
+        Mỗi sản phẩm gắn với đúng một công thức duy nhất. Gọi lại API này để ghi đè danh sách nguyên liệu & định mức.
+      tags:
+        - Recipe
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          schema:
+            type: string
+          required: true
+          description: ID của sản phẩm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecipeInput"
+      responses:
+        "200":
+          description: Lưu công thức thành công
+        "404":
+          description: Không tìm thấy sản phẩm hoặc nguyên liệu
+    delete:
+      summary: Xóa công thức của sản phẩm (Cần quyền Admin)
+      tags:
+        - Recipe
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          schema:
+            type: string
+          required: true
+          description: ID của sản phẩm
+      responses:
+        "200":
+          description: Đã xóa công thức
+        "404":
+          description: Sản phẩm chưa có công thức
 tags:
   - name: Product
     description: API Quản lý Sản Phẩm (Món ăn / Đồ uống)
@@ -3762,6 +4123,10 @@ tags:
     description: API Quản lý Nhóm khách hàng mục tiêu (Segmentation) - Cần quyền Admin
   - name: Campaign
     description: API Quản lý Chiến dịch khuyến mãi - Phát voucher vào ví theo nhóm khách hàng (Cần quyền Admin)
+  - name: Material
+    description: API Quản lý Nguyên liệu & Kho (tồn kho, nhập kho, điều chỉnh, cảnh báo, sổ cái biến động)
+  - name: Recipe
+    description: API Quản lý Công thức sản phẩm (định mức nguyên liệu - mỗi sản phẩm một công thức)
 
 components:
   securitySchemes:
@@ -3770,6 +4135,63 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    MaterialInput:
+      type: object
+      required:
+        - name
+        - unit
+      properties:
+        name:
+          type: string
+          description: Tên nguyên liệu
+          example: Sữa tươi
+        code:
+          type: string
+          description: Mã nguyên liệu / SKU (tùy chọn, không trùng)
+          example: MILK-01
+        unit:
+          type: string
+          description: Đơn vị tính riêng (kg, g, l, ml, chai, gói...)
+          example: l
+        onHand:
+          type: number
+          description: Tồn kho ban đầu (chỉ dùng khi tạo mới)
+          example: 20
+        minThreshold:
+          type: number
+          description: Ngưỡng cảnh báo sắp hết / điểm đặt lại hàng
+          example: 5
+        cost:
+          type: number
+          description: Giá vốn trên một đơn vị
+          example: 25000
+        isActive:
+          type: string
+          enum: [active, inactive]
+          default: active
+    RecipeItemInput:
+      type: object
+      required:
+        - materialId
+        - quantity
+      properties:
+        materialId:
+          type: string
+          description: ID nguyên liệu
+        quantity:
+          type: number
+          description: Định mức tiêu hao cho 1 đơn vị sản phẩm (> 0)
+          example: 0.2
+    RecipeInput:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          description: Danh sách nguyên liệu và định mức (mỗi nguyên liệu chỉ khai báo một lần)
+          items:
+            $ref: "#/components/schemas/RecipeItemInput"
     SegmentCriteria:
       type: object
       description: Bộ tiêu chí lọc nhóm khách hàng (kết hợp AND giữa các tiêu chí có giá trị, phải có ít nhất 1)

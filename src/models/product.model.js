@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { PRODUCT_STOCK_STATUS } = require('../enums');
 
 const product = new mongoose.Schema(
   {
@@ -38,6 +39,13 @@ const product = new mongoose.Schema(
     stock: {
       type: Number,
       default: 0,
+    },
+    // Trạng thái còn/hết hàng do hệ thống tự cập nhật theo tồn nguyên liệu (Giai đoạn 2).
+    // Tách biệt với isActive (bật/tắt bán thủ công).
+    stockStatus: {
+      type: String,
+      enum: Object.values(PRODUCT_STOCK_STATUS),
+      default: PRODUCT_STOCK_STATUS.IN_STOCK,
     },
     rating: {
       type: Number,
@@ -89,5 +97,6 @@ product.index({ category: 1 });
 product.index({ price: 1 });
 product.index({ isActive: 1 });
 product.index({ isDeleted: 1 });
+product.index({ stockStatus: 1 });
 
 module.exports = mongoose.model('Product', product);

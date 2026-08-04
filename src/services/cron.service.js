@@ -2,6 +2,9 @@ const cron = require('node-cron');
 const CustomerService = require('./customer.service');
 const CustomerSegmentService = require('./customerSegment.service');
 const CampaignService = require('./campaign.service');
+const MaterialService = require('./material.service');
+const NotificationService = require('./notification.service');
+const { emitToAll } = require('./socket.service');
 
 // Job nghiệp vụ 00:00 hằng ngày (giờ VN): duy trì / hạ hạng thành viên hết chu kỳ
 const scheduleDailyJobs = () => {
@@ -29,11 +32,54 @@ const scheduleDailyJobs = () => {
       } catch (error) {
         console.error('❌ [Cron] Error during daily campaign expiration job:', error.message);
       }
+
+      try {
+        const count = await scanLowStockMaterials();
+        console.log(`✅ [Cron] Inventory scan done. Low/out-of-stock material(s): ${count}`);
+      } catch (error) {
+        console.error('❌ [Cron] Error during daily inventory scan job:', error.message);
+      }
     },
     { timezone: 'Asia/Ho_Chi_Minh' }
   );
 
   console.log('⏱️ [Cron] Daily jobs scheduled at 00:00 (Asia/Ho_Chi_Minh)');
+};
+
+// Quét nguyên liệu sắp hết / đã hết và gửi một thông báo tổng hợp cho nhân viên
+const scanLowStockMaterials = async () => {
+  const materials = await MaterialService.getLowStockMaterials();
+  if (!materials || materials.length === 0) return 0;
+
+  const lines = materials.map(
+    (m) => `- ${m.name}: còn ${m.onHand} ${m.unit} (ngưỡng ${m.minThreshold})`
+  );
+  const content = `Có ${materials.length} nguyên liệu sắp hết/đã hết cần nhập thêm:\n${lines.join('\n')}`;
+
+  try {
+    await NotificationService.createNotification({
+      title: `Cảnh báo tồn kho: ${materials.length} nguyên liệu cần nhập thêm`,
+      content,
+      type: 'inventory',
+      recipientType: 'staff',
+    });
+  } catch (error) {
+    console.error('❌ [Cron] Lỗi lưu thông báo tổng hợp tồn kho:', error.message);
+  }
+
+  emitToAll('low_stock_digest', {
+    count: materials.length,
+    materials: materials.map((m) => ({
+      materialId: m._id,
+      name: m.name,
+      unit: m.unit,
+      onHand: m.onHand,
+      minThreshold: m.minThreshold,
+      status: m.status,
+    })),
+  });
+
+  return materials.length;
 };
 
 const scheduleSelfPing = () => {

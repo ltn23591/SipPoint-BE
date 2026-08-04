@@ -171,6 +171,7 @@ CREATE TABLE products (
     images NVARCHAR(MAX),
     categoryId VARCHAR(24) NOT NULL,
     stock INT DEFAULT 0,
+    stockStatus VARCHAR(20) DEFAULT 'in_stock',
     rating DECIMAL(3,2) DEFAULT 0,
     numReviews INT DEFAULT 0,
     isActive VARCHAR(20) DEFAULT 'active',
@@ -182,6 +183,62 @@ CREATE TABLE products (
     FOREIGN KEY (categoryId) REFERENCES categories(_id),
     FOREIGN KEY (createdBy) REFERENCES employees(_id),
     FOREIGN KEY (updatedBy) REFERENCES employees(_id)
+);
+
+-- =====================================================
+-- Nguyen lieu, Cong thuc & So cai ton kho (Inventory)
+-- =====================================================
+
+CREATE TABLE materials (
+    _id VARCHAR(24) PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    code VARCHAR(50) UNIQUE,
+    unit VARCHAR(50) NOT NULL,
+    onHand DECIMAL(15,3) DEFAULT 0,
+    reserved DECIMAL(15,3) DEFAULT 0,
+    minThreshold DECIMAL(15,3) DEFAULT 0,
+    cost DECIMAL(15,2) DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'in_stock',
+    isActive VARCHAR(20) DEFAULT 'active',
+    isDeleted BIT DEFAULT 0,
+    createdBy VARCHAR(24),
+    updatedBy VARCHAR(24),
+    createdAt DATETIME2 DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME2 DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (createdBy) REFERENCES employees(_id),
+    FOREIGN KEY (updatedBy) REFERENCES employees(_id)
+);
+
+-- Moi san pham gan voi dung mot cong thuc (items luu dang JSON: [{ materialId, quantity }])
+CREATE TABLE product_recipes (
+    _id VARCHAR(24) PRIMARY KEY,
+    productId VARCHAR(24) NOT NULL UNIQUE,
+    items NVARCHAR(MAX),
+    isActive VARCHAR(20) DEFAULT 'active',
+    createdBy VARCHAR(24),
+    updatedBy VARCHAR(24),
+    createdAt DATETIME2 DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME2 DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (productId) REFERENCES products(_id),
+    FOREIGN KEY (createdBy) REFERENCES employees(_id),
+    FOREIGN KEY (updatedBy) REFERENCES employees(_id)
+);
+
+-- So cai bien dong ton kho (append-only) - nguon du lieu bao cao tieu hao
+CREATE TABLE stock_movements (
+    _id VARCHAR(24) PRIMARY KEY,
+    materialId VARCHAR(24) NOT NULL,
+    type VARCHAR(20) NOT NULL, -- IMPORT/ADJUSTMENT/HOLD/RELEASE/CONSUME/RESTOCK
+    quantityChange DECIMAL(15,3) NOT NULL,
+    balanceAfter DECIMAL(15,3) NOT NULL,
+    orderId VARCHAR(24),
+    note TEXT,
+    createdBy VARCHAR(24),
+    createdAt DATETIME2 DEFAULT CURRENT_TIMESTAMP,
+    updatedAt DATETIME2 DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (materialId) REFERENCES materials(_id),
+    FOREIGN KEY (orderId) REFERENCES orders(_id),
+    FOREIGN KEY (createdBy) REFERENCES employees(_id)
 );
 
 CREATE TABLE product_variants (

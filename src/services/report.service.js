@@ -2,6 +2,7 @@ const Order = require('../models/order.model');
 const { OrderItem } = require('../models/orderItem.model');
 const Customer = require('../models/customer.model');
 const Shift = require('../models/shift.model');
+const StockMovement = require('../models/stockMovement.model');
 const exceljs = require('exceljs');
 
 class ReportService {
@@ -93,6 +94,55 @@ class ReportService {
     ]);
 
     return topProducts;
+  }
+
+  /**
+   * Báo cáo tiêu hao nguyên liệu: tổng hợp biến động tồn kho theo từng nguyên liệu
+   * trong khoảng thời gian, kèm tồn hiện tại và giá trị tồn.
+   */
+  static async getMaterialConsumption(query = {}) {
+    const { startDate, endDate } = query;
+
+    const match = {};
+    if (startDate || endDate) {
+      match.createdAt = {};
+      if (startDate) match.createdAt.$gte = new Date(startDate);
+      if (endDate) match.createdAt.$lte = new Date(endDate);
+    }
+
+    const rows = await StockMovement.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: '$materialId',
+          // Tổng nhập (biến động dương)
+          imported: { $sum: { $cond: [{ $gt: ['$quantityChange', 0] }, '$quantityChange', 0] } },
+          // Tổng tiêu hao / giảm (biến động âm, lấy trị tuyệt đối)
+          consumed: { $sum: { $cond: [{ $lt: ['$quantityChange', 0] }, { $abs: '$quantityChange' }, 0] } },
+          movementCount: { $sum: 1 },
+        },
+      },
+      { $lookup: { from: 'materials', localField: '_id', foreignField: '_id', as: 'material' } },
+      { $unwind: '$material' },
+      {
+        $project: {
+          _id: 0,
+          materialId: '$_id',
+          name: '$material.name',
+          unit: '$material.unit',
+          onHand: '$material.onHand',
+          cost: '$material.cost',
+          status: '$material.status',
+          imported: 1,
+          consumed: 1,
+          movementCount: 1,
+          stockValue: { $multiply: ['$material.onHand', '$material.cost'] },
+        },
+      },
+      { $sort: { consumed: -1 } },
+    ]);
+
+    return rows;
   }
 
   static async exportRevenue(query, res) {

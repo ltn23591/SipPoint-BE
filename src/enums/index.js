@@ -133,6 +133,42 @@ const SEGMENT_MODE = {
     MANUAL: "MANUAL", // Danh sách khách hàng chọn tay, không tự đồng bộ
 };
 
+// ==== Module Quản lý Nguyên liệu & Kho ====
+
+// Trạng thái tồn kho của một nguyên liệu (hệ thống tự cập nhật)
+const MATERIAL_STOCK_STATUS = {
+    IN_STOCK: "in_stock",         // Còn đủ hàng
+    LOW: "low",                   // Sắp hết (dưới/bằng ngưỡng cảnh báo)
+    OUT_OF_STOCK: "out_of_stock", // Đã hết hàng
+};
+
+// Trạng thái còn/hết hàng của sản phẩm bán ra (tách biệt với isActive bật/tắt bán thủ công)
+const PRODUCT_STOCK_STATUS = {
+    IN_STOCK: "in_stock",
+    OUT_OF_STOCK: "out_of_stock",
+};
+
+// Loại biến động tồn kho (ledger). GĐ1 dùng IMPORT/ADJUSTMENT;
+// HOLD/RELEASE/CONSUME/RESTOCK dành cho luồng Hold/Commit/Rollback (GĐ2)
+const STOCK_MOVEMENT_TYPE = {
+    IMPORT: "IMPORT",         // Nhập kho
+    ADJUSTMENT: "ADJUSTMENT", // Điều chỉnh thủ công (kiểm kê, hao hụt...)
+    HOLD: "HOLD",             // Tạm giữ khi tạo đơn
+    RELEASE: "RELEASE",       // Nhả tạm giữ khi hủy đơn
+    CONSUME: "CONSUME",       // Trừ kho chính thức khi đơn hoàn tất
+    RESTOCK: "RESTOCK",       // Hoàn kho khi hoàn trả đơn đã trừ
+};
+
+// Gợi ý đơn vị tính phổ biến (field unit trên model để String tự do, cho phép tùy chọn khác)
+const MATERIAL_UNIT = {
+    KG: "kg",
+    GRAM: "g",
+    LITER: "l",
+    ML: "ml",
+    PIECE: "pcs",
+    PACK: "pack",
+};
+
 module.exports = {
     ROLE,
     USER_STATUS,
@@ -154,5 +190,9 @@ module.exports = {
     WHEEL_TARGET_TYPE,
     PRIZE_TYPE,
     GENDER,
-    SEGMENT_MODE
+    SEGMENT_MODE,
+    MATERIAL_STOCK_STATUS,
+    PRODUCT_STOCK_STATUS,
+    STOCK_MOVEMENT_TYPE,
+    MATERIAL_UNIT
 };

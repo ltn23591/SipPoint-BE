@@ -23,6 +23,8 @@ const documentRoutes = require('./routes/document.route');
 const reportRoutes = require('./routes/report.route');
 const aiRoutes = require('./routes/ai.route');
 const paymentRoutes = require('./routes/payment.route');
+const materialRoutes = require('./routes/material.route');
+const recipeRoutes = require('./routes/recipe.route');
 
 const bannerRoutes = require('./routes/banner.route');
 
@@ -61,6 +63,8 @@ router.use('/document', documentRoutes);
 router.use('/report', reportRoutes);
 router.use('/ai', aiRoutes);
 router.use('/payment', paymentRoutes);
+router.use('/materials', materialRoutes);
+router.use('/recipes', recipeRoutes);
 router.use('/banners', bannerRoutes);
 
 module.exports = router;

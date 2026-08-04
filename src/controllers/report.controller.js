@@ -29,6 +29,15 @@ class ReportController {
     });
 });;
 
+  static materialConsumption = catchAsync(async (req, res, next) => {
+  const data = await ReportService.getMaterialConsumption(req.query);
+    res.status(200).json({
+      success: true,
+      data,
+      message: 'Lấy báo cáo tiêu hao nguyên liệu thành công'
+    });
+});;
+
   static exportRevenue = catchAsync(async (req, res, next) => {
   await ReportService.exportRevenue(req.body, res);
 });;

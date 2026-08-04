@@ -118,9 +118,42 @@ Table products {
   image varchar
   price decimal [default: 0]
   stock int [default: 0]
+  stockStatus varchar [default: "in_stock"]
   rating decimal [default: 0]
   numReviews int [default: 0]
   isActive varchar
+}
+
+Table materials {
+  _id varchar [pk]
+  name varchar [not null]
+  code varchar [unique]
+  unit varchar [not null]
+  onHand decimal [default: 0]
+  reserved decimal [default: 0]
+  minThreshold decimal [default: 0]
+  cost decimal [default: 0]
+  status varchar [default: "in_stock"]
+  isActive varchar
+  isDeleted boolean [default: false]
+}
+
+Table product_recipes {
+  _id varchar [pk]
+  productId varchar [unique, not null, ref: > products._id]
+  items json [note: "[{ materialId, quantity }] - định mức nguyên liệu"]
+  isActive varchar
+}
+
+Table stock_movements {
+  _id varchar [pk]
+  materialId varchar [not null, ref: > materials._id]
+  type varchar [not null, note: "IMPORT/ADJUSTMENT/HOLD/RELEASE/CONSUME/RESTOCK"]
+  quantityChange decimal [not null]
+  balanceAfter decimal [not null]
+  orderId varchar [ref: > orders._id]
+  note text
+  createdAt datetime
 }
 
 Table product_variants {

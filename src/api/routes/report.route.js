@@ -9,6 +9,7 @@ const router = express.Router();
 router.get('/dashboard', protect, authorize(ROLE.ADMIN), ReportController.dashboard);
 router.get('/revenue', protect, authorize(ROLE.ADMIN), ReportController.revenue);
 router.get('/top-products', protect, authorize(ROLE.ADMIN), ReportController.topProducts);
+router.get('/material-consumption', protect, authorize(ROLE.ADMIN), ReportController.materialConsumption);
 
 router.post('/export/revenue', protect, authorize(ROLE.ADMIN), ReportController.exportRevenue);
 router.post('/export/orders', protect, authorize(ROLE.ADMIN), ReportController.exportOrders);
