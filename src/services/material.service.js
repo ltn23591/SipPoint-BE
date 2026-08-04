@@ -1,9 +1,11 @@
 const Material = require('../models/material.model');
 const StockMovement = require('../models/stockMovement.model');
+const Product = require('../models/product.model');
+const ProductRecipe = require('../models/productRecipe.model');
 const AppError = require('../utils/AppError');
 const NotificationService = require('./notification.service');
 const { emitToAll } = require('./socket.service');
-const { MATERIAL_STOCK_STATUS, STOCK_MOVEMENT_TYPE } = require('../enums');
+const { MATERIAL_STOCK_STATUS, PRODUCT_STOCK_STATUS, STOCK_MOVEMENT_TYPE } = require('../enums');
 
 // Thứ tự mức độ nghiêm trọng của trạng thái tồn kho (dùng để quyết định có cảnh báo hay không)
 const STATUS_SEVERITY = {
@@ -200,6 +202,9 @@ class MaterialService {
     }
     await this.maybeAlert(updated, prevStatus, employeeId);
 
+    // Đồng bộ trạng thái còn/hết hàng của các sản phẩm dùng nguyên liệu này
+    await this.recomputeProductsForMaterial(updated._id);
+
     return updated;
   }
 
@@ -264,6 +269,308 @@ class MaterialService {
       isActive: 'active',
       status: { $in: [MATERIAL_STOCK_STATUS.LOW, MATERIAL_STOCK_STATUS.OUT_OF_STOCK] },
     }).sort({ status: -1, onHand: 1 });
+  }
+
+  // ==== Xử lý đơn hàng: Hold / Commit / Rollback (Giai đoạn 2) ====
+
+  /**
+   * Tập hợp các productId có công thức đang hoạt động
+   */
+  static async getRecipeProductIdSet(productIds = []) {
+    const ids = [...new Set(productIds.map((id) => String(id)))];
+    if (ids.length === 0) return new Set();
+    const recipes = await ProductRecipe.find({
+      productId: { $in: ids },
+      isActive: 'active',
+    })
+      .select('productId')
+      .lean();
+    return new Set(recipes.map((r) => String(r.productId)));
+  }
+
+  /**
+   * Bản đồ productId -> danh sách nguyên liệu công thức (kèm tên & đơn vị) để snapshot vào OrderItem.
+   */
+  static async getRecipeMaterialsMap(productIds = []) {
+    const ids = [...new Set(productIds.map((id) => String(id)))];
+    const map = new Map();
+    if (ids.length === 0) return map;
+
+    const recipes = await ProductRecipe.find({
+      productId: { $in: ids },
+      isActive: 'active',
+    }).lean();
+    const matIds = [
+      ...new Set(recipes.flatMap((r) => r.items.map((i) => String(i.materialId)))),
+    ];
+    const materials = await Material.find({ _id: { $in: matIds } })
+      .select('name unit')
+      .lean();
+    const matById = new Map(materials.map((m) => [String(m._id), m]));
+
+    for (const recipe of recipes) {
+      map.set(
+        String(recipe.productId),
+        recipe.items.map((line) => {
+          const m = matById.get(String(line.materialId));
+          return {
+            materialId: line.materialId,
+            name: m ? m.name : '',
+            unit: m ? m.unit : '',
+            quantityPerUnit: line.quantity,
+          };
+        })
+      );
+    }
+    return map;
+  }
+
+  /**
+   * TẠM GIỮ (HOLD) nguyên liệu cho đơn hàng theo công thức - nguyên tử, all-or-nothing.
+   * items: [{ productId, qty }].
+   * Trả về { holds: [{ materialId, quantity }], recipeProductIds: [...] }.
+   * Nếu thiếu nguyên liệu: nhả các phần đã giữ, đánh dấu sản phẩm liên quan "Hết hàng",
+   * gửi cảnh báo và ném AppError.
+   */
+  static async holdForOrder(items = [], employeeId) {
+    const productIds = [...new Set(items.map((i) => String(i.productId)))];
+    const recipes = await ProductRecipe.find({
+      productId: { $in: productIds },
+      isActive: 'active',
+    }).lean();
+
+    const recipeByProduct = new Map(recipes.map((r) => [String(r.productId), r]));
+    const recipeProductIds = recipes.map((r) => String(r.productId));
+
+    // Gộp nhu cầu nguyên liệu toàn đơn + ghi nhận sản phẩm nào phụ thuộc nguyên liệu nào
+    const needByMaterial = new Map();
+    const productsByMaterial = new Map();
+    for (const item of items) {
+      const recipe = recipeByProduct.get(String(item.productId));
+      if (!recipe) continue; // Sản phẩm không công thức -> xử lý qua product.stock
+      const qty = Number(item.qty) || 0;
+      for (const line of recipe.items) {
+        const mId = String(line.materialId);
+        needByMaterial.set(mId, (needByMaterial.get(mId) || 0) + line.quantity * qty);
+        if (!productsByMaterial.has(mId)) productsByMaterial.set(mId, new Set());
+        productsByMaterial.get(mId).add(String(item.productId));
+      }
+    }
+
+    if (needByMaterial.size === 0) {
+      return { holds: [], recipeProductIds };
+    }
+
+    // Giữ chỗ nguyên tử từng nguyên liệu; nếu một cái thiếu -> rollback toàn bộ
+    const held = [];
+    for (const [materialId, need] of needByMaterial.entries()) {
+      const updated = await Material.findOneAndUpdate(
+        {
+          _id: materialId,
+          isDeleted: false,
+          isActive: 'active',
+          $expr: { $gte: [{ $subtract: ['$onHand', '$reserved'] }, need] },
+        },
+        { $inc: { reserved: need } },
+        { new: true }
+      );
+
+      if (!updated) {
+        // Nhả các nguyên liệu đã giữ trong lần thử này
+        for (const h of held) {
+          await Material.updateOne({ _id: h.materialId }, { $inc: { reserved: -h.quantity } });
+        }
+        // Đánh dấu sản phẩm liên quan là Hết hàng + cảnh báo
+        const material = await Material.findById(materialId).lean();
+        const affectedProductIds = [...(productsByMaterial.get(materialId) || [])];
+        await this.markProductsOutOfStock(affectedProductIds, material, employeeId);
+        throw new AppError(
+          `Không đủ nguyên liệu${material ? ` "${material.name}"` : ''} để phục vụ đơn hàng. Một số món đã được chuyển sang trạng thái Hết hàng.`,
+          400
+        );
+      }
+
+      held.push({ materialId, quantity: need });
+    }
+
+    // Giữ chỗ thành công -> đảm bảo các sản phẩm vừa đặt đang ở trạng thái Còn hàng
+    await this.markProductsInStock(recipeProductIds);
+
+    return { holds: held, recipeProductIds };
+  }
+
+  /**
+   * TRỪ KHO CHÍNH THỨC (COMMIT) khi đơn hoàn tất: onHand -= q, reserved -= q, ghi CONSUME.
+   */
+  static async commitHolds(holds = [], orderId, employeeId) {
+    for (const h of holds) {
+      // Trừ tồn thực tế + ghi sổ cái + cập nhật trạng thái/cảnh báo (tái dùng adjustStock)
+      await this.adjustStock(
+        h.materialId,
+        -h.quantity,
+        STOCK_MOVEMENT_TYPE.CONSUME,
+        'Trừ kho khi hoàn tất đơn hàng',
+        employeeId,
+        { orderId }
+      );
+      // Nhả phần tạm giữ tương ứng
+      const res = await Material.updateOne(
+        { _id: h.materialId, reserved: { $gte: h.quantity } },
+        { $inc: { reserved: -h.quantity } }
+      );
+      if (res.modifiedCount === 0) {
+        await Material.updateOne({ _id: h.materialId }, { reserved: 0 });
+      }
+    }
+  }
+
+  /**
+   * HOÀN TÁC (RELEASE) khi hủy đơn chưa trừ kho: chỉ nhả phần tạm giữ (onHand không đổi).
+   */
+  static async releaseHolds(holds = []) {
+    for (const h of holds) {
+      const res = await Material.updateOne(
+        { _id: h.materialId, reserved: { $gte: h.quantity } },
+        { $inc: { reserved: -h.quantity } }
+      );
+      if (res.modifiedCount === 0) {
+        await Material.updateOne({ _id: h.materialId, reserved: { $gt: 0 } }, { reserved: 0 });
+      }
+    }
+  }
+
+  /**
+   * HOÀN KHO (RESTOCK) khi hoàn trả đơn đã trừ kho: onHand += q, ghi RESTOCK.
+   */
+  static async restockHolds(holds = [], orderId, employeeId) {
+    for (const h of holds) {
+      await this.adjustStock(
+        h.materialId,
+        h.quantity,
+        STOCK_MOVEMENT_TYPE.RESTOCK,
+        'Hoàn kho khi hoàn trả đơn hàng',
+        employeeId,
+        { orderId }
+      );
+    }
+  }
+
+  /**
+   * Đánh dấu sản phẩm "Hết hàng" (do thiếu nguyên liệu) + gửi cảnh báo
+   */
+  static async markProductsOutOfStock(productIds = [], material, employeeId) {
+    if (!productIds || productIds.length === 0) return;
+
+    await Product.updateMany(
+      { _id: { $in: productIds }, stockStatus: { $ne: PRODUCT_STOCK_STATUS.OUT_OF_STOCK } },
+      { stockStatus: PRODUCT_STOCK_STATUS.OUT_OF_STOCK }
+    );
+
+    const products = await Product.find({ _id: { $in: productIds } }).select('name').lean();
+    for (const p of products) {
+      try {
+        await NotificationService.createNotification(
+          {
+            title: `Món hết hàng: ${p.name}`,
+            content: `Món "${p.name}" đã chuyển sang trạng thái Hết hàng do không đủ nguyên liệu${material ? ` "${material.name}"` : ''}. Vui lòng nhập thêm nguyên liệu.`,
+            type: 'inventory',
+            recipientType: 'staff',
+          },
+          employeeId
+        );
+      } catch (error) {
+        console.error('❌ [Inventory] Lỗi lưu thông báo món hết hàng:', error.message);
+      }
+    }
+
+    emitToAll('product_out_of_stock', {
+      productIds,
+      materialId: material ? material._id : null,
+      materialName: material ? material.name : null,
+    });
+  }
+
+  /**
+   * Đưa sản phẩm trở lại trạng thái "Còn hàng" (chỉ với sản phẩm đang bị đánh dấu hết hàng)
+   */
+  static async markProductsInStock(productIds = []) {
+    if (!productIds || productIds.length === 0) return;
+    await Product.updateMany(
+      { _id: { $in: productIds }, stockStatus: PRODUCT_STOCK_STATUS.OUT_OF_STOCK },
+      { stockStatus: PRODUCT_STOCK_STATUS.IN_STOCK }
+    );
+  }
+
+  /**
+   * Tính số phần còn làm được (max makeable) cho từng sản phẩm theo công thức & tồn khả dụng.
+   * productIds: danh sách ObjectId/string. Trả về [{ productId, hasRecipe, makeable, stockStatus }].
+   * SP không công thức -> hasRecipe=false, makeable=null (tồn kho quản lý qua product.stock).
+   */
+  static async getProductsAvailability(productIds = []) {
+    const ids = [...new Set(productIds.map((id) => String(id)))];
+    if (ids.length === 0) return [];
+
+    const recipes = await ProductRecipe.find({
+      productId: { $in: ids },
+      isActive: 'active',
+    }).lean();
+    const recipeByProduct = new Map(recipes.map((r) => [String(r.productId), r]));
+
+    const matIds = [
+      ...new Set(recipes.flatMap((r) => r.items.map((i) => String(i.materialId)))),
+    ];
+    const materials = await Material.find({ _id: { $in: matIds } }).lean();
+    const matById = new Map(materials.map((m) => [String(m._id), m]));
+
+    return ids.map((pid) => {
+      const recipe = recipeByProduct.get(pid);
+      if (!recipe || recipe.items.length === 0) {
+        return { productId: pid, hasRecipe: false, makeable: null, stockStatus: null };
+      }
+      let makeable = Infinity;
+      for (const line of recipe.items) {
+        const m = matById.get(String(line.materialId));
+        if (!m || m.isDeleted || m.isActive !== 'active') {
+          makeable = 0;
+          break;
+        }
+        const available = Math.max(0, (m.onHand || 0) - (m.reserved || 0));
+        const per = line.quantity || 0;
+        const canMake = per > 0 ? Math.floor(available / per) : Infinity;
+        makeable = Math.min(makeable, canMake);
+      }
+      if (!isFinite(makeable)) makeable = 0;
+      return {
+        productId: pid,
+        hasRecipe: true,
+        makeable,
+        stockStatus: makeable > 0 ? PRODUCT_STOCK_STATUS.IN_STOCK : PRODUCT_STOCK_STATUS.OUT_OF_STOCK,
+      };
+    });
+  }
+
+  /**
+   * Đồng bộ lại stockStatus của các sản phẩm dùng nguyên liệu này theo khả năng làm được.
+   * Gọi sau mỗi biến động tồn kho: tự đưa SP về in_stock khi nhập đủ, hoặc out_of_stock khi cạn.
+   */
+  static async recomputeProductsForMaterial(materialId) {
+    const recipes = await ProductRecipe.find({
+      'items.materialId': materialId,
+      isActive: 'active',
+    })
+      .select('productId')
+      .lean();
+    const productIds = recipes.map((r) => String(r.productId));
+    if (productIds.length === 0) return;
+
+    const availability = await this.getProductsAvailability(productIds);
+    for (const a of availability) {
+      if (!a.hasRecipe) continue;
+      await Product.updateOne(
+        { _id: a.productId, stockStatus: { $ne: a.stockStatus } },
+        { stockStatus: a.stockStatus }
+      );
+    }
   }
 
   // ==== Helpers ====

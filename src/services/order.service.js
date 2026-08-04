@@ -10,6 +10,7 @@ const Customer = require('../models/customer.model');
 const VoucherService = require('./voucher.service');
 const CustomerService = require('./customer.service');
 const CustomerSegmentService = require('./customerSegment.service');
+const MaterialService = require('./material.service');
 const { ORDER_STATUS, TABLE_STATUS, IS_ACTIVE, POINT_TRANSACTION_TYPE, POINTS_RATE, PAYMENT_METHOD } = require('../enums');
 const { emitToAll } = require('./socket.service');
 const mongoose = require('mongoose');
@@ -166,6 +167,29 @@ class OrderService {
       claimedWalletVoucherId = claimedWallet._id;
     }
 
+    // 3c. TẠM GIỮ (HOLD) nguyên liệu theo công thức - kiểm tra đủ hàng & lock trước khi tạo đơn.
+    // Nếu thiếu nguyên liệu: bù trừ voucher đã claim rồi ném lỗi (hệ thống tự đánh dấu món Hết hàng).
+    let heldMaterials = [];
+    let recipeProductIds = new Set();
+    try {
+      const holdResult = await MaterialService.holdForOrder(orderItemsToCreate, createdById);
+      heldMaterials = holdResult.holds;
+      recipeProductIds = new Set(holdResult.recipeProductIds);
+    } catch (holdError) {
+      if (claimedWalletVoucherId) {
+        await CustomerVoucher.updateOne(
+          { _id: claimedWalletVoucherId },
+          { isUsed: false, $unset: { usedAt: 1, orderId: 1 } }
+        );
+      } else if (voucherCode && resolvedVoucherId) {
+        await Voucher.updateOne(
+          { _id: resolvedVoucherId, usedCount: { $gt: 0 } },
+          { $inc: { usedCount: -1 } }
+        );
+      }
+      throw holdError;
+    }
+
     // 4. Sinh mã đơn hàng ngẫu nhiên duy nhất
     const code = `OD-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`.toUpperCase();
 
@@ -190,18 +214,35 @@ class OrderService {
         paymentMethod: data.paymentMethod || PAYMENT_METHOD.CASH,
         isPickup: data.isPickup || false,
         type: data.type || 'dine_in',
+        materialHolds: heldMaterials,
       });
 
-      // 6. Tạo các OrderItem liên kết tới order._id
+      // 6. Tạo các OrderItem liên kết tới order._id (kèm snapshot định mức nguyên liệu)
+      const recipeMaterialsMap = await MaterialService.getRecipeMaterialsMap(
+        orderItemsToCreate.map((i) => i.productId)
+      );
       for (const itemData of orderItemsToCreate) {
         itemData.orderId = order._id;
+        const recipeMaterials = recipeMaterialsMap.get(String(itemData.productId));
+        if (recipeMaterials) {
+          itemData.materials = recipeMaterials.map((m) => ({
+            materialId: m.materialId,
+            name: m.name,
+            unit: m.unit,
+            quantityPerUnit: m.quantityPerUnit,
+            totalQuantity: m.quantityPerUnit * itemData.qty,
+          }));
+        }
         await OrderItem.create(itemData);
-        
-        // Trừ tồn kho
-        await Product.findByIdAndUpdate(itemData.productId, { $inc: { stock: -itemData.qty } });
+
+        // Trừ tồn kho: chỉ với sản phẩm KHÔNG công thức (SP có công thức đã tạm giữ nguyên liệu)
+        if (!recipeProductIds.has(String(itemData.productId))) {
+          await Product.findByIdAndUpdate(itemData.productId, { $inc: { stock: -itemData.qty } });
+        }
       }
     } catch (error) {
-      // Bù trừ: hoàn lại voucher đã claim nếu tạo đơn thất bại
+      // Bù trừ: nhả nguyên liệu đã tạm giữ + hoàn lại voucher đã claim nếu tạo đơn thất bại
+      await MaterialService.releaseHolds(heldMaterials);
       if (claimedWalletVoucherId) {
         await CustomerVoucher.updateOne(
           { _id: claimedWalletVoucherId },
@@ -276,6 +317,12 @@ class OrderService {
     // Tích điểm tự động khi đơn hoàn thành: 1 điểm / POINTS_RATE VND
     if (newStatus === ORDER_STATUS.COMPLETED) {
       order.isPaid = true;
+
+      // Trừ kho chính thức (COMMIT) số nguyên liệu đã tạm giữ
+      if (order.materialHolds && order.materialHolds.length > 0) {
+        await MaterialService.commitHolds(order.materialHolds, order._id, updatedById);
+      }
+
       if (order.customerId) {
         const points = Math.floor(order.total / POINTS_RATE);
         if (points > 0 && order.pointsAwarded === 0) {
@@ -366,10 +413,18 @@ class OrderService {
       );
     }
 
-    // Hoàn lại số lượng tồn kho
+    // HOÀN TÁC (ROLLBACK) nguyên liệu đang tạm giữ (đơn chưa trừ kho vì chưa COMPLETED)
+    if (order.materialHolds && order.materialHolds.length > 0) {
+      await MaterialService.releaseHolds(order.materialHolds);
+    }
+
+    // Hoàn lại tồn kho product.stock: chỉ với sản phẩm KHÔNG công thức
     const orderItems = await OrderItem.find({ orderId: order._id });
+    const recipeSet = await MaterialService.getRecipeProductIdSet(orderItems.map((i) => i.productId));
     for (const item of orderItems) {
-      await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.qty } });
+      if (!recipeSet.has(String(item.productId))) {
+        await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.qty } });
+      }
     }
 
     // Giải phóng bàn nếu không còn đơn hàng nào hoạt động
@@ -461,10 +516,18 @@ class OrderService {
       );
     }
 
-    // Hoàn lại số lượng tồn kho
+    // HOÀN KHO (RESTOCK) nguyên liệu đã trừ khi đơn hoàn tất
+    if (order.materialHolds && order.materialHolds.length > 0) {
+      await MaterialService.restockHolds(order.materialHolds, order._id, updatedById);
+    }
+
+    // Hoàn lại tồn kho product.stock: chỉ với sản phẩm KHÔNG công thức
     const refundOrderItems = await OrderItem.find({ orderId: order._id });
+    const refundRecipeSet = await MaterialService.getRecipeProductIdSet(refundOrderItems.map((i) => i.productId));
     for (const item of refundOrderItems) {
-      await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.qty } });
+      if (!refundRecipeSet.has(String(item.productId))) {
+        await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.qty } });
+      }
     }
 
     await order.save();

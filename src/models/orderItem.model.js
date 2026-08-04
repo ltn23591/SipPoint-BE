@@ -54,6 +54,21 @@ const orderItemSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    // Snapshot định mức nguyên liệu tại thời điểm đặt (audit/đối soát nếu công thức thay đổi sau này).
+    // quantityPerUnit: định mức cho 1 phần; totalQuantity = quantityPerUnit * qty.
+    materials: [
+      {
+        _id: false,
+        materialId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Material',
+        },
+        name: { type: String, trim: true },
+        unit: { type: String, trim: true },
+        quantityPerUnit: { type: Number, default: 0 },
+        totalQuantity: { type: Number, default: 0 },
+      },
+    ],
   },
   { 
     timestamps: true,

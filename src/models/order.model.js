@@ -58,6 +58,18 @@ const orderSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    // Snapshot lượng nguyên liệu đã tạm giữ (hold) cho đơn - dùng để commit/rollback tồn kho.
+    // Chỉ phát sinh với sản phẩm có công thức; sản phẩm không công thức vẫn dùng product.stock.
+    materialHolds: [
+      {
+        _id: false,
+        materialId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Material',
+        },
+        quantity: { type: Number, default: 0 },
+      },
+    ],
     isUrgent: {
       type: Boolean,
       default: false,
