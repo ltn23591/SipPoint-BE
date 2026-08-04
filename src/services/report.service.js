@@ -3,6 +3,7 @@ const { OrderItem } = require('../models/orderItem.model');
 const Customer = require('../models/customer.model');
 const Shift = require('../models/shift.model');
 const StockMovement = require('../models/stockMovement.model');
+const Material = require('../models/material.model');
 const exceljs = require('exceljs');
 
 class ReportService {
@@ -143,6 +144,98 @@ class ReportService {
     ]);
 
     return rows;
+  }
+
+  /**
+   * Tổng quan tồn kho: số nguyên liệu, giá trị tồn, số sắp/hết hàng, danh sách cần nhập.
+   */
+  static async getInventoryDashboard() {
+    const materials = await Material.find({ isDeleted: { $ne: true } }).lean();
+
+    let stockValue = 0;
+    let lowCount = 0;
+    let outCount = 0;
+    for (const m of materials) {
+      stockValue += (m.onHand || 0) * (m.cost || 0);
+      if (m.status === 'low') lowCount++;
+      else if (m.status === 'out_of_stock') outCount++;
+    }
+
+    const lowStockList = materials
+      .filter((m) => m.status === 'low' || m.status === 'out_of_stock')
+      .sort((a, b) => (a.onHand || 0) - (b.onHand || 0))
+      .slice(0, 20)
+      .map((m) => ({
+        _id: m._id,
+        name: m.name,
+        unit: m.unit,
+        onHand: m.onHand,
+        minThreshold: m.minThreshold,
+        status: m.status,
+      }));
+
+    return {
+      totalMaterials: materials.length,
+      stockValue,
+      lowCount,
+      outCount,
+      lowStockList,
+    };
+  }
+
+  /**
+   * Lượng tiêu hao nguyên liệu theo từng ngày (biến động giảm: CONSUME + điều chỉnh giảm).
+   */
+  static async getMaterialConsumptionSeries(query = {}) {
+    const { startDate, endDate } = query;
+    const match = {
+      type: { $in: ['CONSUME', 'ADJUSTMENT'] },
+      quantityChange: { $lt: 0 },
+    };
+    if (startDate || endDate) {
+      match.createdAt = {};
+      if (startDate) match.createdAt.$gte = new Date(startDate);
+      if (endDate) match.createdAt.$lte = new Date(endDate);
+    }
+
+    return await StockMovement.aggregate([
+      { $match: match },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          consumed: { $sum: { $abs: '$quantityChange' } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+  }
+
+  /**
+   * Xuất Excel báo cáo tiêu hao nguyên liệu
+   */
+  static async exportMaterialConsumption(query, res) {
+    const data = await this.getMaterialConsumption(query);
+    const workbook = new exceljs.Workbook();
+    const worksheet = workbook.addWorksheet('Material Consumption');
+
+    worksheet.columns = [
+      { header: 'Nguyên liệu', key: 'name', width: 25 },
+      { header: 'Đơn vị', key: 'unit', width: 12 },
+      { header: 'Đã nhập', key: 'imported', width: 15 },
+      { header: 'Đã tiêu hao', key: 'consumed', width: 15 },
+      { header: 'Tồn hiện tại', key: 'onHand', width: 15 },
+      { header: 'Giá vốn/ĐV', key: 'cost', width: 15 },
+      { header: 'Giá trị tồn', key: 'stockValue', width: 18 },
+      { header: 'Trạng thái', key: 'status', width: 15 },
+    ];
+
+    data.forEach((item) => worksheet.addRow(item));
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=material-consumption.xlsx');
+    await workbook.xlsx.write(res);
+    res.end();
   }
 
   static async exportRevenue(query, res) {

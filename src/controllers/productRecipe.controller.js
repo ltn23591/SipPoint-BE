@@ -1,9 +1,21 @@
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
 const ProductRecipeService = require('../services/productRecipe.service');
+const MaterialService = require('../services/material.service');
 const { sendSuccess } = require('../utils/response');
 
 class ProductRecipeController {
+  // Số phần còn làm được (max makeable) + trạng thái còn/hết hàng cho danh sách sản phẩm
+  static availability = catchAsync(async (req, res, next) => {
+    let ids = req.query.productIds;
+    if (typeof ids === 'string') ids = ids.split(',').map((s) => s.trim()).filter(Boolean);
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return next(new AppError('Cần truyền danh sách productIds', 400));
+    }
+    const data = await MaterialService.getProductsAvailability(ids);
+    return sendSuccess(res, data, 'Lấy khả năng phục vụ sản phẩm thành công', data.length);
+  });
+
   // Lấy công thức của một sản phẩm
   static getByProduct = catchAsync(async (req, res, next) => {
     const data = await ProductRecipeService.getByProduct(req.params.productId);

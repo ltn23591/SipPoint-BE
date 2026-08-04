@@ -38,6 +38,28 @@ class ReportController {
     });
 });;
 
+  static inventoryDashboard = catchAsync(async (req, res, next) => {
+  const data = await ReportService.getInventoryDashboard();
+    res.status(200).json({
+      success: true,
+      data,
+      message: 'Lấy tổng quan tồn kho thành công'
+    });
+});;
+
+  static materialConsumptionSeries = catchAsync(async (req, res, next) => {
+  const data = await ReportService.getMaterialConsumptionSeries(req.query);
+    res.status(200).json({
+      success: true,
+      data,
+      message: 'Lấy biểu đồ tiêu hao nguyên liệu thành công'
+    });
+});;
+
+  static exportMaterialConsumption = catchAsync(async (req, res, next) => {
+  await ReportService.exportMaterialConsumption(req.query, res);
+});;
+
   static exportRevenue = catchAsync(async (req, res, next) => {
   await ReportService.exportRevenue(req.body, res);
 });;

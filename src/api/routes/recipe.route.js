@@ -8,6 +8,8 @@ const recipeValidation = require('../../validations/productRecipe.validation');
 
 const router = express.Router();
 
+router.get('/availability', protect, ProductRecipeController.availability);
+
 router.route('/product/:productId')
   .get(protect, recipeValidation.getByProduct, validate, ProductRecipeController.getByProduct)
   .put(protect, authorize(ROLE.ADMIN), recipeValidation.upsertRecipe, validate, ProductRecipeController.upsert)
