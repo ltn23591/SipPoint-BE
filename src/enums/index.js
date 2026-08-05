@@ -32,6 +32,7 @@ const DISCOUNT_TYPE = {
 
 const VARIANT_TYPE = {
     SIZE: "size",
+    TOPPING: "topping",
 };
 
 const TABLE_STATUS = {

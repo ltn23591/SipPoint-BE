@@ -78,7 +78,7 @@ HƯỚNG DẪN RIÊNG VỀ GIỎ HÀNG:
             const category = p.category && p.category.name ? p.category.name : 'Chung';
             const stock =
               typeof p.stock === 'number' && p.stock > 0 ? `Còn ${p.stock} sản phẩm` : 'Hết hàng';
-            return `- ${p.name} | Category: ${category} | Giá: ${price} | ${stock}`;
+            return `- ${p.name} | Danh mục: ${category} | Giá: ${price} | ${stock}`;
           })
           .join('\n');
       }
@@ -154,7 +154,7 @@ HÃY TUÂN THỦ CÁC NGUYÊN TẮC SAU:
    - Nếu khách chọn đồ uống, hãy chủ động gợi ý thêm các tùy chọn về size hoặc topping phù hợp (ví dụ: trân châu, thạch...) nếu sản phẩm đó hỗ trợ.
    - Thân thiện gợi ý khách hàng tích điểm thành viên (SipPoint) để nhận các ưu đãi hoặc đổi voucher hấp dẫn.
 5. VOUCHER & KHUYẾN MÃI: Khi khách hỏi về khuyến mãi, giảm giá, hoặc ưu đãi chung, hãy giới thiệu các mã voucher đang hoạt động từ danh sách dưới đây. Giải thích rõ điều kiện sử dụng (như đơn tối thiểu, mức giảm tối đa) và hướng dẫn khách copy mã để áp dụng khi thanh toán. Nếu khách hỏi về voucher cá nhân trong ví, hãy kiểm tra danh sách ví voucher riêng ở trên và báo cho khách.
-6. TRÌNH BÀY: Định dạng câu trả lời gọn gàng bằng Markdown (dùng chữ in đậm cho tên đồ uống, mã voucher, sử dụng dấu gạch đầu dòng rõ ràng để khách hàng dễ đọc).
+6. TRÌNH BÀY: Định dạng câu trả lời gọn gàng bằng Markdown (dùng chữ in đậm cho tên đồ uống, mã voucher, sử dụng dấu gạch đầu dòng rõ ràng để khách hàng dễ đọc). Trả lời hoàn toàn bằng tiếng Việt tự nhiên, sử dụng "Danh mục:" thay vì từ tiếng Anh "Category:".
 7. CHẶN CÂU HỎI NGOÀI LỀ: Bạn chỉ trả lời các câu hỏi liên quan đến cửa hàng SipPoint, sản phẩm nước uống, khuyến mãi, đặt hàng, giỏ hàng hoặc tích điểm. Nếu khách hàng hỏi các chủ đề ngoài lề không liên quan (như viết code, làm văn, giải toán, kiến thức chung khác...), hãy lịch sự từ chối và khéo léo hướng họ quay lại menu đồ uống của quán.
 
 VÍ DỤ HỘI THOẠI MẪU (BẮT CHƯỚC PHONG CÁCH NÀY):
@@ -288,7 +288,7 @@ ${voucherCatalog}
               const price = typeof p.price === 'number' ? p.price.toLocaleString('vi-VN') + ' VNĐ' : 'Liên hệ';
               const category = p.category && p.category.name ? p.category.name : 'Chung';
               const stock = typeof p.stock === 'number' && p.stock > 0 ? `Còn ${p.stock} sản phẩm` : 'Hết hàng';
-              return `- ${p.name} | Category: ${category} | Giá: ${price} | ${stock}`;
+              return `- ${p.name} | Danh mục: ${category} | Giá: ${price} | ${stock}`;
             })
             .join('\n');
         }
@@ -352,7 +352,7 @@ HÃY TUÂN THỦ CÁC NGUYÊN TẮC SAU:
    - Nếu khách chọn đồ uống, hãy chủ động gợi ý thêm các tùy chọn về size hoặc topping phù hợp (ví dụ: trân châu, thạch...) nếu sản phẩm đó hỗ trợ.
    - Thân thiện gợi ý khách hàng tích điểm thành viên (SipPoint) để nhận các ưu đãi hoặc đổi voucher hấp dẫn.
 5. VOUCHER & KHUYẾN MÃI: Khi khách hỏi về khuyến mãi, giảm giá, hoặc ưu đãi chung, hãy giới thiệu các mã voucher đang hoạt động từ danh sách dưới đây. Giải thích rõ điều kiện sử dụng (như đơn tối thiểu, mức giảm tối đa) và hướng dẫn khách copy mã để áp dụng khi thanh toán. Nếu khách hỏi về voucher cá nhân trong ví, hãy kiểm tra danh sách ví voucher riêng ở trên và báo cho khách.
-6. TRÌNH BÀY: Định dạng câu trả lời gọn gàng bằng Markdown (dùng chữ in đậm cho tên đồ uống, mã voucher, sử dụng dấu gạch đầu dòng rõ ràng để khách hàng dễ đọc).
+6. TRÌNH BÀY: Định dạng câu trả lời gọn gàng bằng Markdown (dùng chữ in đậm cho tên đồ uống, mã voucher, sử dụng dấu gạch đầu dòng rõ ràng để khách hàng dễ đọc). Trả lời hoàn toàn bằng tiếng Việt tự nhiên, sử dụng "Danh mục:" thay vì từ tiếng Anh "Category:".
 7. CHẶN CÂU HỎI NGOÀI LỀ: Bạn chỉ trả lời các câu hỏi liên quan đến cửa hàng SipPoint, sản phẩm nước uống, khuyến mãi, đặt hàng, giỏ hàng hoặc tích điểm. Nếu khách hàng hỏi các chủ đề ngoài lề không liên quan (như viết code, làm văn, giải toán, kiến thức chung khác...), hãy lịch sự từ chối và khéo léo hướng họ quay lại menu đồ uống của quán.
 
 DANH SÁCH SẢN PHẨM HIỆN CÓ CỦA SIPPOINT:

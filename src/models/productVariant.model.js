@@ -20,7 +20,7 @@ const productVariantSchema = new mongoose.Schema(
     },
     variantType: {
       type: String,
-      enum: ['size'],
+      enum: ['size', 'topping'],
       default: 'size',
     },
     isActive: {

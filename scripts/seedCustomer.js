@@ -9,15 +9,15 @@ const Product = require('../src/models/product.model');
 const ProductVariant = require('../src/models/productVariant.model');
 const Store = require('../src/models/store.model');
 const StaffRole = require('../src/models/staffRole.model');
-const ProductPrice = require('../src/models/productPrice.model');
 const MembershipProgram = require('../src/models/membershipProgram.model');
 const MembershipTier = require('../src/models/membershipTier.model');
-const PromotionProgram = require('../src/models/promotionProgram.model');
 const Notification = require('../src/models/notification.model');
-const Feedback = require('../src/models/feedback.model');
 const ActivityLog = require('../src/models/activityLog.model');
 const Employee = require('../src/models/employee.model');
 const Voucher = require('../src/models/voucher.model');
+const Material = require('../src/models/material.model');
+const ProductRecipe = require('../src/models/productRecipe.model');
+const StockMovement = require('../src/models/stockMovement.model');
 
 const seedData = async () => {
   try {
@@ -37,15 +37,15 @@ const seedData = async () => {
     await ProductVariant.deleteMany({});
     await Store.deleteMany({});
     await StaffRole.deleteMany({});
-    await ProductPrice.deleteMany({});
     await MembershipProgram.deleteMany({});
     await MembershipTier.deleteMany({});
-    await PromotionProgram.deleteMany({});
     await Notification.deleteMany({});
-    await Feedback.deleteMany({});
     await ActivityLog.deleteMany({});
     await Employee.deleteMany({});
     await Voucher.deleteMany({});
+    await Material.deleteMany({});
+    await ProductRecipe.deleteMany({});
+    await StockMovement.deleteMany({});
     console.log('🗑 Đã xóa toàn bộ dữ liệu cũ.');
 
     // 3. Tạo dữ liệu Staff Roles
@@ -361,55 +361,158 @@ const seedData = async () => {
 
 
 
-    // 14. Tạo dữ liệu Product Prices
-    const productPricesData = [];
-    insertedProducts.forEach((prod) => {
-      productPricesData.push({
-        productId: prod._id,
-        price: prod.price,
-        sizePriceMap: {
-          'Size M': prod.price,
-          'Size L': prod.price + 6000
-        },
-        notes: `Bảng giá tiêu chuẩn cho ${prod.name}`
-      });
-    });
-    await ProductPrice.insertMany(productPricesData);
-    console.log('💰 Đã tạo dữ liệu Bảng giá Sản phẩm.');
-
-    // 15. Tạo dữ liệu Promotion Program
-    const promotionProgramsData = [
+    // 14. Tạo dữ liệu Materials (Nguyên liệu)
+    const materialsData = [
       {
-        name: 'Chào hè rực rỡ 2026',
-        description: 'Khuyến mãi giảm giá 10% cho toàn bộ hóa đơn từ 120.000đ',
-        discountType: 'PERCENT',
-        discountValue: 10,
-        minOrderValue: 120000,
-        maxDiscountAmount: 30000,
-        startDate: new Date('2026-06-01'),
-        endDate: new Date('2026-08-31'),
+        name: 'Hạt cà phê Robusta',
+        code: 'MAT-CAFE',
+        unit: 'g',
+        onHand: 10000,
+        reserved: 0,
+        minThreshold: 2000,
+        cost: 150,
+        status: 'in_stock',
         isActive: 'active',
-        isApproved: true,
-        approvedBy: adminEmployee._id,
+        isDeleted: false,
+        createdBy: adminEmployee._id
+      },
+      {
+        name: 'Sữa đặc Ngôi Sao Phương Nam',
+        code: 'MAT-SUADAC',
+        unit: 'g',
+        onHand: 5000,
+        reserved: 0,
+        minThreshold: 1000,
+        cost: 40,
+        status: 'in_stock',
+        isActive: 'active',
+        isDeleted: false,
+        createdBy: adminEmployee._id
+      },
+      {
+        name: 'Sữa tươi không đường TH True Milk',
+        code: 'MAT-SUATOI',
+        unit: 'ml',
+        onHand: 10000,
+        reserved: 0,
+        minThreshold: 2000,
+        cost: 35,
+        status: 'in_stock',
+        isActive: 'active',
+        isDeleted: false,
+        createdBy: adminEmployee._id
+      },
+      {
+        name: 'Siro đào Monin',
+        code: 'MAT-SRODAO',
+        unit: 'ml',
+        onHand: 3000,
+        reserved: 0,
+        minThreshold: 500,
+        cost: 80,
+        status: 'in_stock',
+        isActive: 'active',
+        isDeleted: false,
+        createdBy: adminEmployee._id
+      },
+      {
+        name: 'Đào miếng đóng hộp',
+        code: 'MAT-DAOMIE',
+        unit: 'g',
+        onHand: 2000,
+        reserved: 0,
+        minThreshold: 300,
+        cost: 120,
+        status: 'in_stock',
+        isActive: 'active',
+        isDeleted: false,
+        createdBy: adminEmployee._id
+      },
+      {
+        name: 'Trà đen Phúc Long',
+        code: 'MAT-TRADEN',
+        unit: 'g',
+        onHand: 5000,
+        reserved: 0,
+        minThreshold: 500,
+        cost: 100,
+        status: 'in_stock',
+        isActive: 'active',
+        isDeleted: false,
+        createdBy: adminEmployee._id
+      },
+      {
+        name: 'Nước đường pha sẵn',
+        code: 'MAT-DUONG',
+        unit: 'ml',
+        onHand: 8000,
+        reserved: 0,
+        minThreshold: 1000,
+        cost: 10,
+        status: 'in_stock',
+        isActive: 'active',
+        isDeleted: false,
         createdBy: adminEmployee._id
       }
     ];
-    await PromotionProgram.insertMany(promotionProgramsData);
-    console.log('📣 Đã tạo dữ liệu Chương trình Khuyến mãi.');
+    const insertedMaterials = await Material.insertMany(materialsData);
+    console.log('📦 Đã tạo dữ liệu Nguyên liệu (Materials).');
 
-    // 16. Tạo dữ liệu Feedback
-    const feedbacksData = [
-      {
-        customerId: insertedCustomers[0]._id,
-        rating: 5,
-        comment: 'Nước uống rất ngon. Nhân viên siêu dễ thương!',
-        reply: 'Cảm ơn bạn đã dành lời khen cho SipPoint!',
-        replyBy: adminEmployee._id,
-        status: 'approved'
-      }
-    ];
-    await Feedback.insertMany(feedbacksData);
-    console.log('💬 Đã tạo dữ liệu Đánh giá & Phản hồi.');
+    // 15. Tạo dữ liệu Stock Movements (Lịch sử biến động kho)
+    const stockMovementsData = insertedMaterials.map((mat) => ({
+      materialId: mat._id,
+      type: 'IMPORT',
+      quantityChange: mat.onHand,
+      balanceAfter: mat.onHand,
+      note: 'Nhập kho ban đầu khi khởi tạo dữ liệu mẫu',
+      createdBy: adminEmployee._id
+    }));
+    await StockMovement.insertMany(stockMovementsData);
+    console.log('🔄 Đã tạo dữ liệu Lịch sử Biến động kho (Stock Movements).');
+
+    // 16. Tạo dữ liệu Công thức Sản phẩm (Product Recipes)
+    const cafeMat = insertedMaterials.find(m => m.code === 'MAT-CAFE');
+    const suaDacMat = insertedMaterials.find(m => m.code === 'MAT-SUADAC');
+    const duongMat = insertedMaterials.find(m => m.code === 'MAT-DUONG');
+    const traDenMat = insertedMaterials.find(m => m.code === 'MAT-TRADEN');
+    const siroDaoMat = insertedMaterials.find(m => m.code === 'MAT-SRODAO');
+    const daoMieMat = insertedMaterials.find(m => m.code === 'MAT-DAOMIE');
+
+    const cafeSuaDaProd = insertedProducts.find(p => p.name === 'Cà phê sữa đá');
+    const traDaoCamSaProd = insertedProducts.find(p => p.name === 'Trà đào cam sả');
+
+    const recipesData = [];
+    if (cafeSuaDaProd) {
+      recipesData.push({
+        productId: cafeSuaDaProd._id,
+        items: [
+          { materialId: cafeMat._id, quantity: 20 },
+          { materialId: suaDacMat._id, quantity: 30 },
+          { materialId: duongMat._id, quantity: 10 }
+        ],
+        isActive: 'active',
+        createdBy: adminEmployee._id
+      });
+    }
+
+    if (traDaoCamSaProd) {
+      recipesData.push({
+        productId: traDaoCamSaProd._id,
+        items: [
+          { materialId: traDenMat._id, quantity: 15 },
+          { materialId: siroDaoMat._id, quantity: 20 },
+          { materialId: daoMieMat._id, quantity: 30 },
+          { materialId: duongMat._id, quantity: 15 }
+        ],
+        isActive: 'active',
+        createdBy: adminEmployee._id
+      });
+    }
+
+    if (recipesData.length > 0) {
+      await ProductRecipe.insertMany(recipesData);
+      console.log('📜 Đã tạo dữ liệu Công thức (Product Recipes).');
+    }
 
     // 17. Tạo dữ liệu Activity Log
     const activityLogsData = [
