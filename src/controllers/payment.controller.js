@@ -141,8 +141,3 @@ module.exports = {
   confirmPayment
 };
 
-class PaymentController {
-
-}
-
-module.exports = PaymentController;
