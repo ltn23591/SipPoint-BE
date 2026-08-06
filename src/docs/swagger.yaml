@@ -4106,10 +4106,9 @@ paths:
         Trả về số phần tối đa còn làm được (`makeable`) và `stockStatus` cho mỗi sản phẩm dựa trên
         tồn khả dụng của nguyên liệu trong công thức. Sản phẩm không công thức: `hasRecipe=false`, `makeable=null`.
         Dùng cho trang menu để hiển thị món hết hàng / còn làm được bao nhiêu.
+        Endpoint công khai (khách vãng lai gọi được, không cần đăng nhập).
       tags:
         - Recipe
-      security:
-        - bearerAuth: []
       parameters:
         - in: query
           name: productIds

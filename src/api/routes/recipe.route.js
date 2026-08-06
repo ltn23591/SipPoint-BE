@@ -8,7 +8,8 @@ const recipeValidation = require('../../validations/productRecipe.validation');
 
 const router = express.Router();
 
-router.get('/availability', protect, ProductRecipeController.availability);
+// Công khai: trang khách (kể cả khách vãng lai) cần biết món còn làm được bao nhiêu
+router.get('/availability', ProductRecipeController.availability);
 
 router.route('/product/:productId')
   .get(protect, recipeValidation.getByProduct, validate, ProductRecipeController.getByProduct)
