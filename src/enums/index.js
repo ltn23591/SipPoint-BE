@@ -57,7 +57,8 @@ const POINT_TRANSACTION_TYPE = {
     BIRTHDAY_GIFT: "BIRTHDAY_GIFT",
     ADJUSTMENT: "ADJUSTMENT",   // Admin điều chỉnh thủ công
     REFUND: "REFUND",           // Trừ điểm do hoàn trả đơn hàng
-    LUCKY_WHEEL: "LUCKY_WHEEL", // Cộng/trừ điểm từ vòng quay may mắn
+    LUCKY_WHEEL: "LUCKY_WHEEL", // Cộng/trừ điểm từ vòng quay may mắn (feature cũ - giữ cho dữ liệu lịch sử)
+    LUCKY_GAME: "LUCKY_GAME",   // Cộng điểm từ Trò chơi may mắn
 };
 
 // Quy đổi điểm tích lũy: 1 điểm cho mỗi POINTS_RATE VND trên tổng hóa đơn
@@ -71,29 +72,38 @@ const CUSTOMER_VOUCHER_SOURCE = {
     POINTS_REDEEM: "POINTS_REDEEM", // Khách đổi điểm lấy voucher
     CAMPAIGN: "CAMPAIGN",           // Campaign phát tự động
     ADMIN: "ADMIN",                 // Admin phát thủ công
-    LUCKY_WHEEL: "LUCKY_WHEEL",     // Trúng voucher từ vòng quay may mắn
+    LUCKY_WHEEL: "LUCKY_WHEEL",     // Trúng voucher từ vòng quay may mắn (feature cũ - giữ cho dữ liệu lịch sử)
+    LUCKY_GAME: "LUCKY_GAME",       // Trúng voucher từ Trò chơi may mắn
 };
 
-// Trạng thái vòng quay may mắn (Module 5)
-const LUCKY_WHEEL_STATUS = {
-    DRAFT: "DRAFT",       // Nháp - đang cấu hình
-    ACTIVE: "ACTIVE",     // Đang mở cho khách quay
-    FINISHED: "FINISHED", // Đã kết thúc
+// ==== Module Trò chơi may mắn (Lucky Game) ====
+
+// Trạng thái vòng đời của trò chơi (trục sự thật DUY NHẤT cho tính khả dụng - không dùng cờ isActive riêng)
+const GAME_STATUS = {
+    DRAFT: "DRAFT",         // Nháp - chỉ trạng thái này mới sửa/xóa
+    PUBLISHED: "PUBLISHED", // Đã xuất bản - khóa cấu hình, cho chơi trong cửa sổ ngày/giờ
+    PAUSED: "PAUSED",       // Tạm dừng - admin ngưng tạm rồi mở lại
+    EXPIRED: "EXPIRED",     // Đã hết hạn - cron tự chuyển khi endDate < now
+    CANCELLED: "CANCELLED", // Hủy / kết thúc sớm thủ công
 };
 
-// Phạm vi khách hàng áp dụng vòng quay
-const WHEEL_TARGET_TYPE = {
-    ALL: "ALL",         // Tất cả khách hàng
-    SEGMENT: "SEGMENT", // Theo nhóm khách hàng (Module 3)
-    TIER: "TIER",       // Theo bậc hạng thành viên
+// Pha vận hành (suy ra từ ngày, KHÔNG lưu DB - chỉ để hiển thị dashboard)
+const GAME_RUNTIME_PHASE = {
+    SCHEDULED: "SCHEDULED", // Đã xuất bản nhưng chưa tới startDate
+    RUNNING: "RUNNING",     // Đang trong cửa sổ hoạt động
 };
 
-// Loại phần thưởng của mỗi ô trên vòng quay
-const PRIZE_TYPE = {
-    VOUCHER: "VOUCHER",   // Trúng voucher (phát vào ví)
-    POINTS: "POINTS",     // Trúng điểm thưởng
-    PHYSICAL: "PHYSICAL", // Quà hiện vật (nhân viên trao tay)
-    NONE: "NONE",         // Không trúng (chúc may mắn lần sau)
+// Loại phần thưởng của mỗi ô
+const GAME_REWARD_TYPE = {
+    VOUCHER: "VOUCHER", // Mã khuyến mãi - trỏ tới 1 voucher đang active
+    POINTS: "POINTS",   // Điểm thưởng
+    MESSAGE: "MESSAGE", // Lời chúc / không trúng (ô mặc định)
+};
+
+// Hoạt động cấp lượt chơi (mở rộng dần)
+const GAME_ACTIVITY_TYPE = {
+    ORDER_COMPLETED: "ORDER_COMPLETED", // Hoàn tất 1 đơn hàng
+    DAILY_CHECKIN: "DAILY_CHECKIN",     // Đăng nhập / điểm danh trong ngày
 };
 
 const CAMPAIGN_STATUS = {
@@ -187,9 +197,10 @@ module.exports = {
     ORDER_TYPE,
     PAYMENT_METHOD,
     SHIFT_STATUS,
-    LUCKY_WHEEL_STATUS,
-    WHEEL_TARGET_TYPE,
-    PRIZE_TYPE,
+    GAME_STATUS,
+    GAME_RUNTIME_PHASE,
+    GAME_REWARD_TYPE,
+    GAME_ACTIVITY_TYPE,
     GENDER,
     SEGMENT_MODE,
     MATERIAL_STOCK_STATUS,

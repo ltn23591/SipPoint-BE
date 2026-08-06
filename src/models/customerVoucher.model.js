@@ -36,7 +36,7 @@ const customerVoucherSchema = new mongoose.Schema(
     // Nguồn phát voucher vào ví
     source: {
       type: String,
-      enum: ['POINTS_REDEEM', 'CAMPAIGN', 'ADMIN', 'LUCKY_WHEEL'],
+      enum: ['POINTS_REDEEM', 'CAMPAIGN', 'ADMIN', 'LUCKY_WHEEL', 'LUCKY_GAME'],
       default: 'ADMIN',
     },
     // Campaign đã phát voucher này (nếu source = CAMPAIGN)

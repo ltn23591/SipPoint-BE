@@ -11,7 +11,8 @@ const VoucherService = require('./voucher.service');
 const CustomerService = require('./customer.service');
 const CustomerSegmentService = require('./customerSegment.service');
 const MaterialService = require('./material.service');
-const { ORDER_STATUS, TABLE_STATUS, IS_ACTIVE, POINT_TRANSACTION_TYPE, POINTS_RATE, PAYMENT_METHOD } = require('../enums');
+const GameService = require('./game.service');
+const { ORDER_STATUS, TABLE_STATUS, IS_ACTIVE, POINT_TRANSACTION_TYPE, POINTS_RATE, PAYMENT_METHOD, GAME_ACTIVITY_TYPE } = require('../enums');
 const { emitToAll } = require('./socket.service');
 const mongoose = require('mongoose');
 
@@ -345,6 +346,17 @@ class OrderService {
         );
         // Đồng bộ ngay các nhóm AUTO bật cập nhật realtime
         await CustomerSegmentService.resyncRealtimeSegments();
+
+        // Cấp lượt Trò chơi may mắn theo hoạt động (không chặn luồng đơn nếu lỗi)
+        try {
+          await GameService.grantTurnsForActivity(
+            order.customerId,
+            GAME_ACTIVITY_TYPE.ORDER_COMPLETED,
+            { note: `Hoàn tất đơn ${order.code}` }
+          );
+        } catch (err) {
+          console.error('[Order] Lỗi cấp lượt trò chơi khi hoàn tất đơn:', err.message);
+        }
       }
     }
 

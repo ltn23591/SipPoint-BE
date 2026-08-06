@@ -4184,6 +4184,434 @@ paths:
           description: Đã xóa công thức
         "404":
           description: Sản phẩm chưa có công thức
+  /api/v1/games:
+    get:
+      summary: "[Admin] Danh sách Trò chơi may mắn"
+      tags:
+        - LuckyGame
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [DRAFT, PUBLISHED, PAUSED, EXPIRED, CANCELLED]
+          description: Lọc theo trạng thái
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Tìm theo tên trò chơi
+      responses:
+        "200":
+          description: Lấy danh sách thành công
+    post:
+      summary: "[Admin] Tạo Trò chơi may mắn (trạng thái nháp)"
+      tags:
+        - LuckyGame
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameInput"
+            example:
+              name: "Vòng quay Tết 2026"
+              description: "Trò chơi may mắn dịp Tết"
+              endDate: "2026-12-31T23:59:59.000Z"
+              startDate: "2026-02-01T00:00:00.000Z"
+              timeFrom: "08:00"
+              timeTo: "22:00"
+              defaultTurnCount: 3
+              appliedSegmentIds: ["<segmentId>"]
+              rewards:
+                - displayName: "Chúc may mắn"
+                  type: "MESSAGE"
+                  message: "Chúc bạn may mắn lần sau!"
+                  isDefault: true
+                - displayName: "Giảm 20%"
+                  type: "VOUCHER"
+                  voucherId: "<voucherId>"
+                  totalReward: 100
+                  quantity: 1
+                  allowManyTimes: false
+                - displayName: "+50 điểm"
+                  type: "POINTS"
+                  rewardValue: 50
+                  totalReward: 200
+              distributions:
+                - gameRewardIndex: 1
+                  segmentId: "<segmentId>"
+                  rate: 10
+                  maxQuantity: 50
+                  displayOrder: 0
+                  allowManyTimes: false
+              activityConfigs:
+                - activityType: "ORDER_COMPLETED"
+                  turnQuantity: 1
+                  dailyLimit: 3
+                  isActive: true
+      responses:
+        "201":
+          description: Tạo thành công (trạng thái DRAFT)
+        "400":
+          description: Lỗi dữ liệu
+  /api/v1/games/{id}:
+    get:
+      summary: "[Admin] Chi tiết Trò chơi may mắn (đầy đủ ô thưởng / phân bổ / cấu hình)"
+      tags:
+        - LuckyGame
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Lấy chi tiết thành công
+        "404":
+          description: Không tìm thấy trò chơi
+    put:
+      summary: "[Admin] Cập nhật Trò chơi (CHỈ khi ở trạng thái nháp)"
+      tags:
+        - LuckyGame
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameInput"
+      responses:
+        "200":
+          description: Cập nhật thành công
+        "400":
+          description: Không phải trạng thái nháp / lỗi dữ liệu
+    delete:
+      summary: "[Admin] Xóa Trò chơi (CHỈ khi ở trạng thái nháp)"
+      tags:
+        - LuckyGame
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Xóa thành công
+        "400":
+          description: Không phải trạng thái nháp
+  /api/v1/games/{id}/publish:
+    patch:
+      summary: "[Admin] Xuất bản Trò chơi (DRAFT → PUBLISHED, validate đầy đủ)"
+      tags:
+        - LuckyGame
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Xuất bản thành công
+        "400":
+          description: "Không hợp lệ (thiếu ô mặc định, voucher inactive, Σ phân bổ vượt kho, đã quá hạn...)"
+  /api/v1/games/{id}/pause:
+    patch:
+      summary: "[Admin] Tạm dừng Trò chơi (PUBLISHED → PAUSED)"
+      tags:
+        - LuckyGame
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Tạm dừng thành công
+        "400":
+          description: Không ở trạng thái xuất bản
+  /api/v1/games/{id}/resume:
+    patch:
+      summary: "[Admin] Mở lại Trò chơi (PAUSED → PUBLISHED)"
+      tags:
+        - LuckyGame
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Mở lại thành công
+        "400":
+          description: Không ở trạng thái tạm dừng / đã quá hạn
+  /api/v1/games/{id}/cancel:
+    patch:
+      summary: "[Admin] Hủy Trò chơi (PUBLISHED/PAUSED → CANCELLED)"
+      tags:
+        - LuckyGame
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Hủy thành công
+        "400":
+          description: Trạng thái không cho phép hủy
+  /api/v1/games/available:
+    get:
+      summary: "[Khách hàng] Danh sách trò chơi đang mở & áp dụng cho tôi (DTO ẩn field nhạy cảm)"
+      tags:
+        - LuckyGame
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: "Danh sách game (ẩn totalReward/isDefault/allowManyTimes/phân bổ)"
+        "403":
+          description: Chỉ khách hàng mới được xem
+  /api/v1/games/{id}/detail:
+    get:
+      summary: "[Khách hàng] Chi tiết trò chơi (DTO ẩn field nhạy cảm + số lượt còn lại)"
+      tags:
+        - LuckyGame
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Chi tiết game dạng mobile + remainingTurns"
+        "400":
+          description: Trò chơi chưa mở hoặc đã kết thúc
+        "403":
+          description: Không thuộc nhóm áp dụng / không phải khách hàng
+        "404":
+          description: Không tìm thấy trò chơi
+  /api/v1/games/me/rewards:
+    get:
+      summary: "[Khách hàng] Lịch sử trúng thưởng của tôi"
+      tags:
+        - LuckyGame
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: gameId
+          schema:
+            type: string
+          description: Lọc theo một trò chơi (tùy chọn)
+      responses:
+        "200":
+          description: Lấy lịch sử thành công
+        "403":
+          description: Chỉ khách hàng mới được xem
+  /api/v1/games/{id}/draw:
+    post:
+      summary: "[Khách hàng] Quay trò chơi (đồng bộ - trả kết quả ngay)"
+      tags:
+        - LuckyGame
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Kết quả quay: { prize, remainingTurns }. prize ẩn totalReward/isDefault/allowManyTimes."
+        "400":
+          description: Hết lượt / ngoài thời gian hoạt động / hết phần thưởng
+        "403":
+          description: Không thuộc nhóm áp dụng / không phải khách hàng
+        "404":
+          description: Không tìm thấy trò chơi
+        "409":
+          description: Hệ thống bận (xung đột đồng thời sau 3 lần thử)
+        "429":
+          description: Đang có lượt quay khác đang xử lý
+  /api/v1/games/{id}/turns:
+    get:
+      summary: "[Khách hàng] Xem số lượt chơi của tôi (tự seed lần đầu từ defaultTurnCount)"
+      tags:
+        - LuckyGame
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Trả về { totalTurns, usedTurns, remainingTurns }"
+        "400":
+          description: Trò chơi chưa mở hoặc đã kết thúc
+        "403":
+          description: Chỉ khách hàng mới được xem lượt
+        "404":
+          description: Không tìm thấy trò chơi
+  /api/v1/games/{id}/winners:
+    get:
+      summary: "[Admin] Danh sách trúng thưởng của trò chơi (gộp theo khách)"
+      tags:
+        - LuckyGame
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+        - in: query
+          name: search
+          schema:
+            type: string
+          description: Tìm theo tên / số điện thoại khách
+      responses:
+        "200":
+          description: "Mỗi dòng: { customerId, fullName, phone, spinCount, prizeCount, lastPrizeName, lastPrizeType, lastWonAt }"
+  /api/v1/games/{id}/winners/{customerId}:
+    get:
+      summary: "[Admin] Chi tiết phần thưởng 1 khách đã trúng trong trò chơi"
+      tags:
+        - LuckyGame
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: customerId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "Danh sách phần thưởng: [{ displayName, type, rewardValue, message, voucher, wonAt }]"
+  /api/v1/games/{id}/bonus-turn:
+    post:
+      summary: "[Admin] Cấp thêm lượt chơi cho một khách"
+      tags:
+        - LuckyGame
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customerId
+                - quantity
+              properties:
+                customerId:
+                  type: string
+                  description: ID khách hàng cần cấp lượt
+                quantity:
+                  type: integer
+                  minimum: 1
+                  description: Số lượt cộng thêm
+            example:
+              customerId: "<customerId>"
+              quantity: 5
+      responses:
+        "200":
+          description: "Cấp lượt thành công, trả về số lượt sau khi cộng"
+        "400":
+          description: Số lượt không hợp lệ / trò chơi đã hết hạn hoặc đã hủy
+        "404":
+          description: Không tìm thấy trò chơi hoặc khách hàng
 tags:
   - name: Product
     description: API Quản lý Sản Phẩm (Món ăn / Đồ uống)
@@ -4221,6 +4649,8 @@ tags:
     description: API Quản lý Nguyên liệu & Kho (tồn kho, nhập kho, điều chỉnh, cảnh báo, sổ cái biến động)
   - name: Recipe
     description: API Quản lý Công thức sản phẩm (định mức nguyên liệu - mỗi sản phẩm một công thức)
+  - name: LuckyGame
+    description: API Quản lý Trò chơi may mắn - cấu hình ô thưởng, phân bổ theo nhóm KH, vòng đời DRAFT/PUBLISHED/PAUSED/EXPIRED/CANCELLED (Cần quyền Admin)
 
 components:
   securitySchemes:
@@ -4229,6 +4659,138 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    GameRewardInput:
+      type: object
+      required:
+        - displayName
+        - type
+      properties:
+        displayName:
+          type: string
+          example: "Giảm 20%"
+        type:
+          type: string
+          enum: [VOUCHER, POINTS, MESSAGE]
+        voucherId:
+          type: string
+          description: Bắt buộc khi type=VOUCHER (voucher phải đang active)
+        rewardValue:
+          type: number
+          description: Bắt buộc khi type=POINTS (số điểm > 0)
+        message:
+          type: string
+          description: Lời chúc khi type=MESSAGE
+        description:
+          type: string
+        totalReward:
+          type: integer
+          description: Tổng kho ô (remainingReward khởi tạo = giá trị này)
+          example: 100
+        quantity:
+          type: integer
+          default: 1
+        isDefault:
+          type: boolean
+          description: Ô mặc định (đúng 1/ game, phải là MESSAGE, tự ép allowManyTimes=true)
+        allowManyTimes:
+          type: boolean
+          default: true
+    GameDistributionInput:
+      type: object
+      required:
+        - gameRewardIndex
+        - segmentId
+        - rate
+        - maxQuantity
+      properties:
+        gameRewardIndex:
+          type: integer
+          description: Vị trí ô trong mảng rewards (0-based)
+        segmentId:
+          type: string
+          description: Nhóm KH (phải nằm trong appliedSegmentIds)
+        rate:
+          type: number
+          description: Tỉ lệ trúng (%) 0-100
+        maxQuantity:
+          type: integer
+        dateFrom:
+          type: string
+          format: date-time
+        dateTo:
+          type: string
+          format: date-time
+        displayOrder:
+          type: integer
+          default: 0
+        allowManyTimes:
+          type: boolean
+          default: true
+    GameActivityConfigInput:
+      type: object
+      required:
+        - activityType
+      properties:
+        activityType:
+          type: string
+          enum: [ORDER_COMPLETED, DAILY_CHECKIN]
+        turnQuantity:
+          type: integer
+          default: 1
+        dailyLimit:
+          type: integer
+          description: Giới hạn lượt cấp / ngày (bỏ trống = không giới hạn)
+        isActive:
+          type: boolean
+          default: true
+    GameInput:
+      type: object
+      required:
+        - name
+        - endDate
+        - rewards
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        backgroundUrl:
+          type: string
+        gameUrl:
+          type: string
+        content:
+          type: string
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        timeFrom:
+          type: string
+          example: "08:00"
+        timeTo:
+          type: string
+          example: "22:00"
+        defaultTurnCount:
+          type: integer
+          default: 0
+        appliedSegmentIds:
+          type: array
+          items:
+            type: string
+        rewards:
+          type: array
+          items:
+            $ref: "#/components/schemas/GameRewardInput"
+        distributions:
+          type: array
+          items:
+            $ref: "#/components/schemas/GameDistributionInput"
+        activityConfigs:
+          type: array
+          items:
+            $ref: "#/components/schemas/GameActivityConfigInput"
     MaterialInput:
       type: object
       required:
