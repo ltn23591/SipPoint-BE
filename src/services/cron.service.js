@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const CustomerService = require('./customer.service');
 const CustomerSegmentService = require('./customerSegment.service');
 const CampaignService = require('./campaign.service');
+const GameService = require('./game.service');
 const MaterialService = require('./material.service');
 const NotificationService = require('./notification.service');
 const { emitToAll } = require('./socket.service');
@@ -38,6 +39,13 @@ const scheduleDailyJobs = () => {
         console.log(`✅ [Cron] Inventory scan done. Low/out-of-stock material(s): ${count}`);
       } catch (error) {
         console.error('❌ [Cron] Error during daily inventory scan job:', error.message);
+      }
+
+      try {
+        const result = await GameService.expireEndedGames();
+        console.log(`✅ [Cron] Lucky game expiration check done. Expired: ${result.expired} game(s)`);
+      } catch (error) {
+        console.error('❌ [Cron] Error during daily lucky game expiration job:', error.message);
       }
     },
     { timezone: 'Asia/Ho_Chi_Minh' }
