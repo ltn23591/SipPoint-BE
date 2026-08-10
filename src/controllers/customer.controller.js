@@ -32,6 +32,25 @@ class CustomerController {
     });
   });
 
+  static getPointHistory = catchAsync(async (req, res, next) => {
+    const result = await CustomerService.getPointHistoryByAdmin(req.params.id, req.query);
+    res.status(200).json({
+      success: true,
+      message: 'Lấy lịch sử điểm khách hàng thành công',
+      data: result.pointHistories,
+      pagination: result.pagination,
+    });
+  });
+
+  static getVouchers = catchAsync(async (req, res, next) => {
+    const data = await CustomerService.getVouchersByAdmin(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: 'Lấy danh sách voucher của khách hàng thành công',
+      data,
+    });
+  });
+
   static create = catchAsync(async (req, res, next) => {
     const data = await CustomerService.createCustomer(req.body);
     res.status(201).json({

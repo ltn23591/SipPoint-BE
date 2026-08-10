@@ -1,8 +1,9 @@
 const AppError = require('../utils/AppError');
 const Customer = require('../models/customer.model');
 const Order = require('../models/order.model');
-const { ORDER_STATUS, POINT_TRANSACTION_TYPE, TIER_CYCLE_MONTHS } = require('../enums');
+const { ORDER_STATUS, CUSTOMER_VOUCHER_SOURCE, POINT_TRANSACTION_TYPE, TIER_CYCLE_MONTHS } = require('../enums');
 const PointHistory = require('../models/pointHistory.model');
+const CustomerVoucher = require('../models/customerVoucher.model');
 const MembershipTier = require('../models/membershipTier.model');
 
 class CustomerService {
@@ -53,6 +54,26 @@ class CustomerService {
       .limit(20);
 
     return pointHistories;
+  }
+
+  // Admin xem lịch sử điểm đầy đủ (có phân trang) của một khách hàng
+  static async getPointHistoryByAdmin(customerId, query) {
+    const { page = 1, limit = 10 } = query;
+    const skip = (page - 1) * limit;
+    const filter = { customerId };
+
+    const [pointHistories, total] = await Promise.all([
+      PointHistory.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit)),
+      PointHistory.countDocuments(filter),
+    ]);
+
+    return {
+      pointHistories,
+      pagination: { total, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(total / limit) },
+    };
   }
 
   // Thêm mới khách hàng
@@ -117,6 +138,17 @@ class CustomerService {
     const vouchers = await CustomerVoucher.find({ customerId })
       .populate('voucherId')
       .sort({ isUsed: 1, expiryDate: 1 });
+
+    return vouchers;
+  }
+
+  // Admin xem toàn bộ ví voucher của một khách hàng (kèm cả đã dùng/hết hạn)
+  // - dùng cho timeline chiến dịch: lọc các bản ghi có campaignId ở tầng frontend/controller
+  static async getVouchersByAdmin(customerId) {
+    const vouchers = await CustomerVoucher.find({ customerId })
+      .populate('voucherId')
+      .populate('campaignId', 'name')
+      .sort({ createdAt: -1 });
 
     return vouchers;
   }
