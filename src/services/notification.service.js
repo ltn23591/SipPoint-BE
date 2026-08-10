@@ -1,4 +1,8 @@
 const Notification = require('../models/notification.model');
+const Customer = require('../models/customer.model');
+const CustomerSegment = require('../models/customerSegment.model');
+const sendEmail = require('../utils/email');
+const logger = require('../config/logger');
 
 class NotificationService {
   static async searchNotifications(payload) {
@@ -25,6 +29,9 @@ class NotificationService {
 
     const items = await Notification.find(filter)
       .populate('createdBy')
+      .populate('tierId')
+      .populate('segmentId')
+      .populate('voucherId')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -46,14 +53,58 @@ class NotificationService {
   }
 
   static async getNotificationById(id) {
-    return await Notification.findById(id).populate('createdBy');
+    return await Notification.findById(id)
+      .populate('createdBy')
+      .populate('tierId')
+      .populate('segmentId')
+      .populate('voucherId');
   }
 
   static async createNotification(data, employeeId) {
     if (employeeId) {
       data.createdBy = employeeId;
     }
-    return await Notification.create(data);
+    const notification = await Notification.create(data);
+
+    // Gửi Email thông báo cho các Khách hàng thuộc đối tượng / Nhóm được chọn
+    try {
+      if (data.recipientType !== 'staff') {
+        let customerQuery = { isActive: true };
+        if (data.recipientType === 'segment' && data.segmentId) {
+          const segment = await CustomerSegment.findById(data.segmentId);
+          if (segment && segment.memberIds && segment.memberIds.length) {
+            customerQuery._id = { $in: segment.memberIds };
+          } else {
+            customerQuery._id = null; // Không có thành viên
+          }
+        } else if (data.recipientId) {
+          customerQuery._id = data.recipientId;
+        }
+
+        const targetCustomers = await Customer.find(customerQuery);
+
+        for (const customer of targetCustomers) {
+          if (customer.email) {
+            sendEmail({
+              email: customer.email,
+              subject: `[SipPoint] ${data.title}`,
+              html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; line-height: 1.6;">
+                  <h2 style="color: #2b8a3e;">${data.title}</h2>
+                  <p>Xin chào <b>${customer.fullName}</b>,</p>
+                  <p>${data.content}</p>
+                  <p>Cảm ơn bạn đã đồng hành cùng SipPoint!</p>
+                </div>
+              `,
+            }).catch((err) => logger.warn(`[Campaign Email Error]: ${err.message}`));
+          }
+        }
+      }
+    } catch (err) {
+      logger.error(`[Notification Campaign Auto Issue Error]: ${err.message}`);
+    }
+
+    return notification;
   }
 
   static async updateNotification(id, data) {
@@ -80,3 +131,4 @@ class NotificationService {
 }
 
 module.exports = NotificationService;
+

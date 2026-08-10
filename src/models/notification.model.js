@@ -13,11 +13,26 @@ const notificationSchema = new mongoose.Schema(
     },
     recipientType: {
       type: String,
-      enum: ['all', 'customer', 'staff'],
+      enum: ['all', 'customer', 'staff', 'tier', 'segment'],
       default: 'all',
     },
     recipientId: {
       type: mongoose.Schema.Types.ObjectId,
+    },
+    tierId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'MembershipTier',
+      default: null,
+    },
+    segmentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'CustomerSegment',
+      default: null,
+    },
+    voucherId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Voucher',
+      default: null,
     },
     type: {
       type: String,

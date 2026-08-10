@@ -1,11 +1,9 @@
 const AppError = require('../utils/AppError');
 const Customer = require('../models/customer.model');
- const Order = require('../models/order.model');
- const { ORDER_STATUS, CUSTOMER_VOUCHER_SOURCE } = require('../enums');
+const Order = require('../models/order.model');
+const { ORDER_STATUS, POINT_TRANSACTION_TYPE, TIER_CYCLE_MONTHS } = require('../enums');
 const PointHistory = require('../models/pointHistory.model');
-const CustomerVoucher = require('../models/customerVoucher.model');
 const MembershipTier = require('../models/membershipTier.model');
-const { POINT_TRANSACTION_TYPE, TIER_CYCLE_MONTHS } = require('../enums');
 
 class CustomerService {
   // Lấy danh sách khách hàng (có phân trang và lọc)
