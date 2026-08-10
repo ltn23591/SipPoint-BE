@@ -34,4 +34,7 @@ router.route('/:id')
   .put(protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.update);
 router.post('/:id/points', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.adjustPoints);
 
+router.get('/:id/point-history', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.getPointHistory);
+router.get('/:id/vouchers', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.getVouchers);
+
 module.exports = router;
