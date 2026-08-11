@@ -58,6 +58,16 @@ const gameSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    // Cho phép khách dùng điểm tích lũy để đổi thêm lượt chơi
+    isExchangeTurnEnabled: {
+      type: Boolean,
+      default: false,
+    },
+    // Số điểm cần để đổi 1 lượt chơi (bắt buộc khi isExchangeTurnEnabled = true)
+    turnRewardAmount: {
+      type: Number,
+      min: 0,
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Employee',

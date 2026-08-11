@@ -162,8 +162,16 @@ class GameService {
 
   // ── Admin CRUD ──
 
+  // Đổi lượt bằng điểm bật thì bắt buộc phải có số điểm/lượt hợp lệ
+  static _validateExchangeTurnConfig(isExchangeTurnEnabled, turnRewardAmount) {
+    if (isExchangeTurnEnabled && !(Number(turnRewardAmount) > 0)) {
+      throw new AppError('Vui lòng nhập số điểm cần để đổi 1 lượt chơi', 400);
+    }
+  }
+
   static async createGame(data, createdById) {
     GameService._validateDates(data.startDate, data.endDate);
+    GameService._validateExchangeTurnConfig(data.isExchangeTurnEnabled, data.turnRewardAmount);
 
     if (data.appliedSegmentIds && data.appliedSegmentIds.length) {
       const found = await CustomerSegment.countDocuments({ _id: { $in: data.appliedSegmentIds } });
@@ -172,6 +180,7 @@ class GameService {
       }
     }
 
+    const isExchangeTurnEnabled = !!data.isExchangeTurnEnabled;
     const game = await Game.create({
       name: data.name,
       description: data.description,
@@ -184,6 +193,8 @@ class GameService {
       timeTo: data.timeTo,
       appliedSegmentIds: data.appliedSegmentIds || [],
       defaultTurnCount: data.defaultTurnCount !== undefined ? Number(data.defaultTurnCount) : 0,
+      isExchangeTurnEnabled,
+      turnRewardAmount: isExchangeTurnEnabled ? Number(data.turnRewardAmount) : undefined,
       createdBy: createdById || undefined,
       // status mặc định DRAFT
     });
@@ -323,6 +334,62 @@ class GameService {
     };
   }
 
+  // Danh sách các lượt trúng của riêng 1 ô thưởng (admin - xem từ bảng ô thưởng trong chi tiết trò chơi)
+  static async getRewardWinners(gameId, rewardId, query = {}) {
+    GameService._assertObjectId(gameId, 'ID trò chơi không hợp lệ');
+    GameService._assertObjectId(rewardId, 'ID ô thưởng không hợp lệ');
+
+    const reward = await GameReward.findOne({ _id: rewardId, gameId });
+    if (!reward) {
+      throw new AppError('Không tìm thấy ô thưởng', 404);
+    }
+
+    const { page = 1, limit = 10, search } = query;
+    const skip = (page - 1) * parseInt(limit);
+
+    const filter = { gameId, gameRewardId: rewardId };
+    if (search && String(search).trim()) {
+      const rx = { $regex: String(search).trim(), $options: 'i' };
+      const customerIds = await Customer.find({ $or: [{ fullName: rx }, { phone: rx }] }).distinct('_id');
+      filter.customerId = { $in: customerIds };
+    }
+
+    const total = await UserGameRewardHistory.countDocuments(filter);
+    const rows = await UserGameRewardHistory.find(filter)
+      .populate('customerId', 'fullName phone')
+      .populate('voucherId', 'code')
+      .sort({ wonAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const list = rows.map((r) => ({
+      id: r._id,
+      customerId: r.customerId && r.customerId._id ? r.customerId._id : r.customerId,
+      customerName: r.customerId && r.customerId.fullName,
+      customerPhone: r.customerId && r.customerId.phone,
+      type: r.type,
+      displayName: r.displayName,
+      rewardValue: r.rewardValue,
+      message: r.message,
+      quantity: r.quantity,
+      code: (r.voucherId && r.voucherId.code) || String(r._id),
+      wonAt: r.wonAt,
+    }));
+
+    return {
+      reward: {
+        id: reward._id,
+        displayName: reward.displayName,
+        type: reward.type,
+        totalReward: reward.totalReward,
+        remainingReward: reward.remainingReward,
+        issuedCount: reward.totalReward - reward.remainingReward,
+      },
+      list,
+      pagination: { total, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(total / limit) },
+    };
+  }
+
   static async getGameById(id) {
     GameService._assertObjectId(id, 'ID trò chơi không hợp lệ');
     const game = await GameService._detail(id);
@@ -338,29 +405,51 @@ class GameService {
     if (!game) {
       throw new AppError('Không tìm thấy trò chơi', 404);
     }
-    if (game.status !== GAME_STATUS.DRAFT) {
-      throw new AppError('Chỉ có thể chỉnh sửa trò chơi ở trạng thái nháp', 400);
+
+    const isDraft = game.status === GAME_STATUS.DRAFT;
+    const isRunning = game.status === GAME_STATUS.PUBLISHED || game.status === GAME_STATUS.PAUSED;
+    if (!isDraft && !isRunning) {
+      throw new AppError('Trò chơi đã kết thúc hoặc bị hủy, không thể chỉnh sửa', 400);
+    }
+
+    // Trò chơi đang chạy chỉ được sửa nội dung hiển thị, không đụng tới cấu hình
+    // ảnh hưởng vận hành/công bằng (ô thưởng, tỉ lệ phân bổ, nhóm áp dụng, số lượt...).
+    const runningEditableFields = ['description', 'backgroundUrl', 'gameUrl', 'content', 'startDate', 'endDate', 'timeFrom', 'timeTo'];
+    const draftOnlyFields = ['name', 'appliedSegmentIds', 'defaultTurnCount', 'isExchangeTurnEnabled', 'turnRewardAmount', 'rewards', 'distributions', 'activityConfigs'];
+
+    if (isRunning) {
+      const touchedLocked = draftOnlyFields.filter((key) => data[key] !== undefined);
+      if (touchedLocked.length) {
+        throw new AppError('Trò chơi đang chạy: không thể chỉnh sửa ô thưởng, tỉ lệ phân bổ, nhóm khách hàng hoặc số lượt chơi', 400);
+      }
     }
 
     const startDate = data.startDate !== undefined ? data.startDate : game.startDate;
     const endDate = data.endDate !== undefined ? data.endDate : game.endDate;
     GameService._validateDates(startDate, endDate);
 
-    if (data.appliedSegmentIds && data.appliedSegmentIds.length) {
+    if (isDraft && data.appliedSegmentIds && data.appliedSegmentIds.length) {
       const found = await CustomerSegment.countDocuments({ _id: { $in: data.appliedSegmentIds } });
       if (found !== new Set(data.appliedSegmentIds.map(String)).size) {
         throw new AppError('Một hoặc nhiều nhóm khách hàng áp dụng không tồn tại', 404);
       }
     }
 
-    const allowed = ['name', 'description', 'backgroundUrl', 'gameUrl', 'content', 'startDate', 'endDate', 'timeFrom', 'timeTo', 'appliedSegmentIds', 'defaultTurnCount'];
+    if (isDraft) {
+      const isExchangeTurnEnabled = data.isExchangeTurnEnabled !== undefined ? data.isExchangeTurnEnabled : game.isExchangeTurnEnabled;
+      const turnRewardAmount = data.turnRewardAmount !== undefined ? data.turnRewardAmount : game.turnRewardAmount;
+      GameService._validateExchangeTurnConfig(isExchangeTurnEnabled, turnRewardAmount);
+      if (!isExchangeTurnEnabled) data.turnRewardAmount = null;
+    }
+
+    const allowed = isDraft ? [...draftOnlyFields, ...runningEditableFields] : runningEditableFields;
     for (const key of allowed) {
       if (data[key] !== undefined) game[key] = data[key];
     }
     game.updatedBy = updatedById || game.updatedBy;
     await game.save();
 
-    // Full-replace các con nếu request có gửi rewards
+    // Full-replace các con nếu request có gửi rewards (chỉ có thể xảy ra khi DRAFT, đã chặn ở trên với running)
     if (data.rewards !== undefined) {
       await GameService._clearChildren(game._id);
       await GameService._persistChildren(game._id, data);
@@ -578,6 +667,57 @@ class GameService {
     };
   }
 
+  // Khách dùng điểm tích lũy đổi thêm 1 lượt chơi (nếu game bật isExchangeTurnEnabled).
+  // Trừ điểm trước (báo lỗi nếu không đủ điểm), chỉ cộng lượt khi trừ điểm thành công.
+  static async exchangeTurnForPoints(gameId, customerId) {
+    GameService._assertObjectId(gameId, 'ID trò chơi không hợp lệ');
+    const game = await Game.findById(gameId);
+    if (!game) {
+      throw new AppError('Không tìm thấy trò chơi', 404);
+    }
+    if (game.status !== GAME_STATUS.PUBLISHED) {
+      throw new AppError('Trò chơi chưa mở hoặc đã kết thúc', 400);
+    }
+    if (!GameService._isWithinWindow(game)) {
+      throw new AppError('Trò chơi không nằm trong thời gian hoạt động', 400);
+    }
+    if (!(await GameService._isCustomerEligible(game, customerId))) {
+      throw new AppError('Bạn không thuộc nhóm khách hàng được áp dụng trò chơi này', 403);
+    }
+    if (!game.isExchangeTurnEnabled || !(game.turnRewardAmount > 0)) {
+      throw new AppError('Trò chơi không cho phép dùng điểm đổi lượt chơi', 400);
+    }
+
+    const cost = game.turnRewardAmount;
+    // Ném lỗi nếu khách không đủ điểm (không trừ điểm, không cộng lượt)
+    await CustomerService.adjustPoints(
+      customerId,
+      -cost,
+      `Đổi lượt chơi: ${game.name}`,
+      `Trò chơi may mắn - dùng ${cost} điểm đổi 1 lượt chơi`,
+      POINT_TRANSACTION_TYPE.LUCKY_GAME_EXCHANGE_TURN
+    );
+
+    const turn = await UserTurn.findOneAndUpdate(
+      { gameId, customerId },
+      {
+        $inc: { totalTurns: 1, remainingTurns: 1 },
+        $setOnInsert: { gameId, customerId, usedTurns: 0 },
+      },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    );
+    await UserTurnHistory.create({ gameId, customerId, quantity: 1, note: `Đổi ${cost} điểm lấy 1 lượt chơi` });
+
+    return {
+      gameId,
+      customerId,
+      pointsSpent: cost,
+      totalTurns: turn.totalTurns,
+      usedTurns: turn.usedTurns,
+      remainingTurns: turn.remainingTurns,
+    };
+  }
+
   // Khoảng [đầu, cuối) của ngày hôm nay theo giờ VN (UTC+7), trả về mốc UTC
   static _vnDayRange(now = new Date()) {
     const shifted = new Date(now.getTime() + 7 * 60 * 60 * 1000);
@@ -744,8 +884,9 @@ class GameService {
     return now >= new Date(d.dateFrom) && now <= new Date(d.dateTo);
   }
 
-  // Commit chung cho cả 2 mode. Trừ kho ô (bỏ qua nếu ô mặc định = không giới hạn),
-  // trừ hạn mức dòng phân bổ (nếu có), trừ lượt, side effect, ghi history.
+  // Commit chung cho cả 2 mode. Trừ kho ô (kể cả ô mặc định - xem _resolveWish để biết
+  // cách xử lý khi ô mặc định cũng hết kho), trừ hạn mức dòng phân bổ (nếu có), trừ lượt,
+  // side effect, ghi history.
   // Ném ConcurrencyConflict (guard $inc null) để retry cả lượt.
   static async _commitDraw(game, reward, distribution, customerId, awardedVoucher) {
     const rollbacks = [];
@@ -755,19 +896,17 @@ class GameService {
       }
     };
 
-    // 1) Trừ kho ô (ô mặc định không tốn kho)
-    if (!reward.isDefault) {
-      const claimed = await GameReward.findOneAndUpdate(
-        { _id: reward._id, remainingReward: { $gt: 0 } },
-        { $inc: { remainingReward: -1 } },
-        { new: true }
-      );
-      if (!claimed) {
-        if (awardedVoucher) await Voucher.updateOne({ _id: awardedVoucher._id }, { $inc: { issuedCount: -1 } });
-        throw new ConcurrencyConflict();
-      }
-      rollbacks.push(() => GameReward.updateOne({ _id: reward._id }, { $inc: { remainingReward: 1 } }));
+    // 1) Trừ kho ô
+    const claimed = await GameReward.findOneAndUpdate(
+      { _id: reward._id, remainingReward: { $gt: 0 } },
+      { $inc: { remainingReward: -1 } },
+      { new: true }
+    );
+    if (!claimed) {
+      if (awardedVoucher) await Voucher.updateOne({ _id: awardedVoucher._id }, { $inc: { issuedCount: -1 } });
+      throw new ConcurrencyConflict();
     }
+    rollbacks.push(() => GameReward.updateOne({ _id: reward._id }, { $inc: { remainingReward: 1 } }));
     if (awardedVoucher) rollbacks.push(() => Voucher.updateOne({ _id: awardedVoucher._id }, { $inc: { issuedCount: -1 } }));
 
     // 2) Trừ hạn mức dòng phân bổ
@@ -822,9 +961,13 @@ class GameService {
     };
   }
 
-  // Trả ô mặc định (wish). Ném lỗi nếu game không có ô mặc định còn hiệu lực.
+  // Trả ô mặc định (wish/fallback khi các ô khác hết kho hoặc trượt xác suất).
+  // Ném lỗi (KHÔNG trừ lượt - lỗi xảy ra trước bước trừ lượt trong _commitDraw) nếu
+  // game không có ô mặc định, hoặc ô mặc định cũng đã hết kho.
   static async _resolveWish(game, defaultReward, customerId) {
-    if (!defaultReward) throw new AppError('Trò chơi đã hết phần thưởng', 400);
+    if (!defaultReward || defaultReward.remainingReward <= 0) {
+      throw new AppError('Trò chơi đã hết phần thưởng, vui lòng thử lại sau', 400);
+    }
     return GameService._commitDraw(game, defaultReward, null, customerId, null);
   }
 

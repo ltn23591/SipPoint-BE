@@ -18,6 +18,7 @@ class CustomerService {
       filter.$or = [
         { fullName: { $regex: search, $options: 'i' } },
         { phone: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
       ];
     }
 

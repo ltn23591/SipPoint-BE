@@ -971,10 +971,12 @@ paths:
           name: search
           schema:
             type: string
+          description: Tìm theo tên, số điện thoại hoặc email (không phân biệt hoa thường)
         - in: query
-          name: tier
+          name: tierId
           schema:
             type: string
+          description: Lọc theo ObjectId của hạng thành viên
       responses:
         "200":
           description: Danh sách khách hàng
