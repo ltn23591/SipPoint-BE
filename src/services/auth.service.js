@@ -56,6 +56,7 @@ class AuthService {
       phone,
       email,
       password: hashedPassword,
+      gender: data.gender || null,
       tierId: defaultTierId,
       isActive: true,
       isVerified: false,

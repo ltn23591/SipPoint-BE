@@ -113,13 +113,14 @@ class CustomerService {
 
   // Khách hàng tự cập nhật thông tin cá nhân
   static async updateMyProfile(id, data) {
-    const { fullName, phone, email, dateOfBirth, avatar } = data;
+    const { fullName, phone, email, dateOfBirth, avatar, gender } = data;
     const updateData = {};
     if (fullName !== undefined) updateData.fullName = fullName;
     if (phone !== undefined) updateData.phone = phone;
     if (email !== undefined) updateData.email = email;
     if (dateOfBirth !== undefined) updateData.dateOfBirth = dateOfBirth;
     if (avatar !== undefined) updateData.avatar = avatar;
+    if (gender !== undefined) updateData.gender = gender || null;
 
     const updatedCustomer = await Customer.findByIdAndUpdate(
       id,

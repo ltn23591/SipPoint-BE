@@ -1,4 +1,5 @@
 const { body } = require('express-validator');
+const { GENDER } = require('../enums');
 
 const customerRegister = [
   body('fullName')
@@ -14,7 +15,10 @@ const customerRegister = [
     .trim(),
   body('password')
     .notEmpty().withMessage('Mật khẩu là bắt buộc')
-    .isLength({ min: 6 }).withMessage('Mật khẩu phải từ 6 ký tự trở lên')
+    .isLength({ min: 6 }).withMessage('Mật khẩu phải từ 6 ký tự trở lên'),
+  body('gender')
+    .optional()
+    .isIn(Object.values(GENDER)).withMessage('Giới tính không hợp lệ'),
 ];
 
 const employeeRegister = [

@@ -6,6 +6,73 @@ const { CAMPAIGN_STATUS, CUSTOMER_VOUCHER_SOURCE } = require('../enums');
 const AppError = require('../utils/AppError');
 
 class CampaignService {
+  // Phát voucher vào ví cho danh sách khách hàng (dùng chung cho kích hoạt lần đầu và
+  // phát bổ sung khi có thành viên mới). Bỏ qua trùng lặp (unique index campaignId+customerId).
+  // Trả về số voucher thực phát được.
+  static async _issueVouchers(campaign, voucher, customerIds) {
+    if (!customerIds.length) return 0;
+
+    const expiryDate = new Date(Math.min(new Date(voucher.endDate).getTime(), new Date(campaign.endDate).getTime()));
+    const docs = customerIds.map((customerId) => ({
+      customerId,
+      voucherId: voucher._id,
+      title: voucher.title,
+      expiryDate,
+      source: CUSTOMER_VOUCHER_SOURCE.CAMPAIGN,
+      campaignId: campaign._id,
+    }));
+
+    let issuedCount = 0;
+    try {
+      const inserted = await CustomerVoucher.insertMany(docs, { ordered: false });
+      issuedCount = inserted.length;
+    } catch (error) {
+      issuedCount = (error.insertedDocs && error.insertedDocs.length) || 0;
+      if (issuedCount === 0 && (!error.writeErrors || error.writeErrors.some((e) => e.code !== 11000))) {
+        throw error;
+      }
+    }
+
+    if (issuedCount > 0) {
+      await Voucher.updateOne({ _id: voucher._id }, { $inc: { issuedCount } });
+    }
+    return issuedCount;
+  }
+
+  // Phát voucher bổ sung cho các chiến dịch ĐANG HOẠT ĐỘNG nhắm tới 1 segment, dành cho
+  // những khách hàng VỪA trở thành thành viên (gọi từ CustomerSegmentService sau khi đồng bộ).
+  // Check thêm endDate (không chỉ dựa vào status) vì status ACTIVE->FINISHED chỉ được
+  // cron cập nhật lúc 00:00 - tránh phát nhầm cho chiến dịch đã quá hạn nhưng cron chưa chạy tới.
+  static async topUpVouchersForNewMembers(segmentId, customerIds) {
+    if (!customerIds || customerIds.length === 0) return;
+
+    const campaigns = await Campaign.find({
+      segmentIds: segmentId,
+      status: CAMPAIGN_STATUS.ACTIVE,
+      endDate: { $gt: new Date() },
+    });
+    for (const campaign of campaigns) {
+      const voucher = await Voucher.findById(campaign.voucherId);
+      if (!voucher || voucher.isActive !== 'active') continue;
+
+      const remainingStock = voucher.usageLimit - voucher.issuedCount;
+      if (remainingStock <= 0) {
+        console.warn(`[Campaign] "${campaign.name}" đã hết kho voucher, không thể phát bổ sung cho ${customerIds.length} thành viên mới`);
+        continue;
+      }
+
+      const targetIds = customerIds.length > remainingStock ? customerIds.slice(0, remainingStock) : customerIds;
+      if (targetIds.length < customerIds.length) {
+        console.warn(`[Campaign] "${campaign.name}" chỉ còn ${remainingStock} voucher, không đủ phát cho ${customerIds.length} thành viên mới`);
+      }
+
+      const issuedCount = await CampaignService._issueVouchers(campaign, voucher, targetIds);
+      if (issuedCount > 0) {
+        await Campaign.updateOne({ _id: campaign._id }, { $inc: { issuedCount } });
+      }
+    }
+  }
+
   static async createCampaign(data, createdById) {
     const existing = await Campaign.findOne({ name: data.name });
     if (existing) {
@@ -156,30 +223,7 @@ class CampaignService {
       );
     }
 
-    const expiryDate = new Date(Math.min(new Date(voucher.endDate).getTime(), new Date(campaign.endDate).getTime()));
-    const docs = memberIds.map((customerId) => ({
-      customerId,
-      voucherId: voucher._id,
-      title: voucher.title,
-      expiryDate,
-      source: CUSTOMER_VOUCHER_SOURCE.CAMPAIGN,
-      campaignId: campaign._id,
-    }));
-
-    let issuedCount = 0;
-    try {
-      const inserted = await CustomerVoucher.insertMany(docs, { ordered: false });
-      issuedCount = inserted.length;
-    } catch (error) {
-      issuedCount = (error.insertedDocs && error.insertedDocs.length) || 0;
-      if (issuedCount === 0 && (!error.writeErrors || error.writeErrors.some((e) => e.code !== 11000))) {
-        throw error;
-      }
-    }
-
-    if (issuedCount > 0) {
-      await Voucher.updateOne({ _id: voucher._id }, { $inc: { issuedCount } });
-    }
+    const issuedCount = await CampaignService._issueVouchers(campaign, voucher, memberIds);
 
     campaign.status = CAMPAIGN_STATUS.ACTIVE;
     campaign.issuedCount = issuedCount;
