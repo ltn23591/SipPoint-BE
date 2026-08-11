@@ -4750,7 +4750,7 @@ components:
           default: 1
         isDefault:
           type: boolean
-          description: Ô mặc định (đúng 1/ game, phải là MESSAGE, tự ép allowManyTimes=true)
+          description: Ô mặc định (đúng 1/ game, loại tuỳ ý, tự ép allowManyTimes=true)
         allowManyTimes:
           type: boolean
           default: true

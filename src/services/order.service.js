@@ -129,12 +129,13 @@ class OrderService {
       discountAmount = voucherRes.discountAmount;
       finalAmount = voucherRes.finalAmount;
 
-      // Cập nhật lượt sử dụng atomic - thất bại nghĩa là voucher vừa hết lượt (race)
+      // Cập nhật lượt sử dụng atomic - thất bại nghĩa là voucher vừa hết lượt (race).
+      // Kho dùng chung giữa 2 kênh (nhập mã + phát vào ví) - xem VoucherService.stockAvailableFilter.
       const claimed = await Voucher.findOneAndUpdate(
         {
           code: voucherCode.toUpperCase(),
           isActive: 'active',
-          $expr: { $lt: ['$usedCount', '$usageLimit'] },
+          ...VoucherService.stockAvailableFilter(),
         },
         { $inc: { usedCount: 1 } },
         { new: true }

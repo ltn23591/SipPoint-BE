@@ -11,6 +11,7 @@ const CustomerVoucher = require('../models/customerVoucher.model');
 const CustomerSegment = require('../models/customerSegment.model');
 const Customer = require('../models/customer.model');
 const CustomerService = require('./customer.service');
+const VoucherService = require('./voucher.service');
 const AppError = require('../utils/AppError');
 const { acquireUserDrawLock, releaseUserDrawLock } = require('../utils/gameLock');
 const {
@@ -485,15 +486,14 @@ class GameService {
       throw new AppError('Trò chơi phải có ít nhất một ô thưởng', 400);
     }
 
-    // Đúng 1 ô mặc định, phải là MESSAGE + allowManyTimes
+    // Đúng 1 ô mặc định, phải cho phép trúng nhiều lần (là ô dự phòng khi các ô khác
+    // hết kho/trượt xác suất nên phải luôn trúng được). Loại phần thưởng không bắt buộc
+    // là lời chúc (MESSAGE) - admin có thể đặt mặc định là quà tặng/xu tuỳ ý.
     const defaults = rewards.filter((r) => r.isDefault);
     if (defaults.length !== 1) {
-      throw new AppError('Trò chơi phải có đúng một ô mặc định (chúc may mắn)', 400);
+      throw new AppError('Trò chơi phải có đúng một ô mặc định', 400);
     }
     const def = defaults[0];
-    if (def.type !== GAME_REWARD_TYPE.MESSAGE) {
-      throw new AppError('Ô mặc định phải là loại lời chúc (MESSAGE)', 400);
-    }
     if (!def.allowManyTimes) {
       throw new AppError('Ô mặc định phải cho phép trúng nhiều lần', 400);
     }
@@ -866,10 +866,11 @@ class GameService {
     return {};
   }
 
-  // Claim voucher (issuedCount). Trả voucher hoặc null nếu hết / không active.
+  // Claim voucher (issuedCount) - kho dùng chung với kênh nhập mã trực tiếp, xem
+  // VoucherService.stockAvailableFilter. Trả voucher hoặc null nếu hết / không active.
   static async _claimVoucher(voucherId) {
     return Voucher.findOneAndUpdate(
-      { _id: voucherId, isActive: IS_ACTIVE.TRUE, $expr: { $lt: ['$issuedCount', '$usageLimit'] } },
+      { _id: voucherId, isActive: IS_ACTIVE.TRUE, ...VoucherService.stockAvailableFilter() },
       { $inc: { issuedCount: 1 } },
       { new: true }
     );
@@ -963,12 +964,20 @@ class GameService {
 
   // Trả ô mặc định (wish/fallback khi các ô khác hết kho hoặc trượt xác suất).
   // Ném lỗi (KHÔNG trừ lượt - lỗi xảy ra trước bước trừ lượt trong _commitDraw) nếu
-  // game không có ô mặc định, hoặc ô mặc định cũng đã hết kho.
+  // game không có ô mặc định, ô mặc định đã hết kho, hoặc (khi mặc định là loại quà
+  // tặng) voucher tương ứng cũng đã hết kho.
   static async _resolveWish(game, defaultReward, customerId) {
     if (!defaultReward || defaultReward.remainingReward <= 0) {
       throw new AppError('Trò chơi đã hết phần thưởng, vui lòng thử lại sau', 400);
     }
-    return GameService._commitDraw(game, defaultReward, null, customerId, null);
+    let awardedVoucher = null;
+    if (defaultReward.type === GAME_REWARD_TYPE.VOUCHER) {
+      awardedVoucher = await GameService._claimVoucher(defaultReward.voucherId);
+      if (!awardedVoucher) {
+        throw new AppError('Trò chơi đã hết phần thưởng, vui lòng thử lại sau', 400);
+      }
+    }
+    return GameService._commitDraw(game, defaultReward, null, customerId, awardedVoucher);
   }
 
   // Default-wheel mode: weighted random theo remainingReward, single-win theo ô.

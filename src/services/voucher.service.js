@@ -8,6 +8,19 @@ const { DISCOUNT_TYPE, POINT_TRANSACTION_TYPE, CUSTOMER_VOUCHER_SOURCE } = requi
 const AppError = require('../utils/AppError');
 
 class VoucherService {
+  // Voucher có 2 kênh phát hành độc lập cùng chia sẻ 1 kho usageLimit:
+  // usedCount (nhập mã trực tiếp lúc đặt hàng) + issuedCount (phát vào ví qua đổi điểm/
+  // campaign/trò chơi may mắn). Dùng chung 2 hàm này ở MỌI nơi kiểm tra/trừ kho để tránh
+  // trường hợp mỗi kênh tự trừ riêng, khiến 1 voucher bị bán vượt gấp đôi kho cấu hình.
+  static remainingStock(voucher) {
+    return Math.max(0, (voucher.usageLimit ?? 0) - (voucher.usedCount ?? 0) - (voucher.issuedCount ?? 0));
+  }
+
+  // Điều kiện Mongo dùng trong findOneAndUpdate để trừ kho atomic (chống race).
+  static stockAvailableFilter() {
+    return { $expr: { $lt: [{ $add: ['$usedCount', '$issuedCount'] }, '$usageLimit'] } };
+  }
+
   static computeDiscount(voucher, orderValue) {
     let discountAmount = 0;
     if (voucher.discountType === DISCOUNT_TYPE.PERCENTAGE) {
@@ -37,8 +50,17 @@ class VoucherService {
     return voucher;
   }
 
+  // walletUsedCount: số voucher trong ví (issuedCount) đã thực sự được khách dùng cho
+  // đơn hàng - CHỈ để hiển thị "Đã dùng" đầy đủ ở Portal, KHÔNG dùng cho việc trừ kho
+  // (kho vẫn tính qua usedCount + issuedCount như remainingStock() ở trên).
   static async getAllVouchers() {
-    return await Voucher.find({}).sort({ createdAt: -1 });
+    const vouchers = await Voucher.find({}).sort({ createdAt: -1 }).lean();
+    const walletUsedRows = await CustomerVoucher.aggregate([
+      { $match: { voucherId: { $in: vouchers.map((v) => v._id) }, isUsed: true } },
+      { $group: { _id: '$voucherId', count: { $sum: 1 } } },
+    ]);
+    const walletUsedMap = new Map(walletUsedRows.map((r) => [String(r._id), r.count]));
+    return vouchers.map((v) => ({ ...v, walletUsedCount: walletUsedMap.get(String(v._id)) || 0 }));
   }
 
   static async getVoucherById(id) {
@@ -80,7 +102,7 @@ class VoucherService {
       throw new AppError('Mã giảm giá đã hết hạn sử dụng', 400);
     }
 
-    if (voucher.usedCount >= voucher.usageLimit) {
+    if (VoucherService.remainingStock(voucher) <= 0) {
       throw new AppError('Mã giảm giá đã hết lượt sử dụng', 400);
     }
 
@@ -170,7 +192,7 @@ class VoucherService {
       pointsCost: { $gt: 0 },
       startDate: { $lte: now },
       endDate: { $gte: now },
-      $expr: { $lt: ['$issuedCount', '$usageLimit'] },
+      ...VoucherService.stockAvailableFilter(),
     }).sort({ pointsCost: 1 });
 
     return vouchers;
@@ -196,7 +218,7 @@ class VoucherService {
         pointsCost: { $gt: 0 },
         startDate: { $lte: now },
         endDate: { $gte: now },
-        $expr: { $lt: ['$issuedCount', '$usageLimit'] },
+        ...VoucherService.stockAvailableFilter(),
       },
       { $inc: { issuedCount: 1 } },
       { new: true }
