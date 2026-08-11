@@ -15,6 +15,7 @@ router.get('/me/rewards', protect, GameController.getMyRewards);
 router.get('/:id/detail', protect, gameValidation.gameId, validate, GameController.getDetailForCustomer);
 router.get('/:id/turns', protect, gameValidation.gameId, validate, GameController.getMyTurns);
 router.post('/:id/draw', protect, gameValidation.gameId, validate, GameController.draw);
+router.post('/:id/exchange-turn', protect, gameValidation.gameId, validate, GameController.exchangeTurn);
 
 // ── Admin: CRUD Trò chơi may mắn ──
 // (draw thêm ở các bước sau.)
@@ -37,6 +38,8 @@ router.patch('/:id/cancel', protect, authorize(ROLE.ADMIN), gameValidation.gameI
 router.get('/:id/winners', protect, authorize(ROLE.ADMIN), gameValidation.gameId, validate, GameController.getWinners);
 // Admin: chi tiết phần thưởng của 1 khách trong trò chơi
 router.get('/:id/winners/:customerId', protect, authorize(ROLE.ADMIN), gameValidation.winnerRewards, validate, GameController.getWinnerRewards);
+// Admin: danh sách các lượt trúng của riêng 1 ô thưởng
+router.get('/:id/rewards/:rewardId/winners', protect, authorize(ROLE.ADMIN), gameValidation.rewardWinners, validate, GameController.getRewardWinners);
 
 // Admin: cấp thêm lượt cho một khách
 router.post('/:id/bonus-turn', protect, authorize(ROLE.ADMIN), gameValidation.grantBonusTurns, validate, GameController.grantBonusTurns);

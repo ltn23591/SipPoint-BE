@@ -59,6 +59,7 @@ const POINT_TRANSACTION_TYPE = {
     REFUND: "REFUND",           // Trừ điểm do hoàn trả đơn hàng
     LUCKY_WHEEL: "LUCKY_WHEEL", // Cộng/trừ điểm từ vòng quay may mắn (feature cũ - giữ cho dữ liệu lịch sử)
     LUCKY_GAME: "LUCKY_GAME",   // Cộng điểm từ Trò chơi may mắn
+    LUCKY_GAME_EXCHANGE_TURN: "LUCKY_GAME_EXCHANGE_TURN", // Trừ điểm để đổi lượt chơi Trò chơi may mắn
 };
 
 // Quy đổi điểm tích lũy: 1 điểm cho mỗi POINTS_RATE VND trên tổng hóa đơn

@@ -120,6 +120,18 @@ class GameController {
     });
   });
 
+  // Admin: danh sách các lượt trúng của riêng 1 ô thưởng
+  static getRewardWinners = catchAsync(async (req, res) => {
+    const result = await GameService.getRewardWinners(req.params.id, req.params.rewardId, req.query);
+    res.status(200).json({
+      success: true,
+      message: 'Lấy danh sách trúng thưởng theo ô thưởng thành công',
+      data: result.list,
+      reward: result.reward,
+      pagination: result.pagination,
+    });
+  });
+
   // Admin: cấp thêm lượt cho một khách
   static grantBonusTurns = catchAsync(async (req, res) => {
     const { customerId, quantity } = req.body;
@@ -149,6 +161,17 @@ class GameController {
       success: true,
       message: result.prize.type === 'MESSAGE' ? 'Chúc bạn may mắn lần sau!' : 'Chúc mừng bạn đã trúng thưởng!',
       data: result,
+    });
+  });
+
+  // Khách dùng điểm tích lũy đổi thêm 1 lượt chơi
+  static exchangeTurn = catchAsync(async (req, res) => {
+    requireCustomer(req);
+    const data = await GameService.exchangeTurnForPoints(req.params.id, req.user._id);
+    res.status(200).json({
+      success: true,
+      message: 'Đổi lượt chơi thành công',
+      data,
     });
   });
 

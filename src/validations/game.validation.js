@@ -18,6 +18,12 @@ const createGame = [
   body('appliedSegmentIds')
     .optional()
     .isArray().withMessage('Danh sách nhóm khách hàng áp dụng phải là mảng'),
+  body('isExchangeTurnEnabled')
+    .optional()
+    .isBoolean().withMessage('Cho phép đổi lượt bằng điểm phải là true/false'),
+  body('turnRewardAmount')
+    .optional()
+    .isInt({ min: 1 }).withMessage('Số điểm đổi 1 lượt phải là số nguyên dương'),
   body('rewards')
     .isArray({ min: 1 }).withMessage('Trò chơi phải có ít nhất một ô thưởng'),
 ];
@@ -41,6 +47,12 @@ const updateGame = [
   body('appliedSegmentIds')
     .optional()
     .isArray().withMessage('Danh sách nhóm khách hàng áp dụng phải là mảng'),
+  body('isExchangeTurnEnabled')
+    .optional()
+    .isBoolean().withMessage('Cho phép đổi lượt bằng điểm phải là true/false'),
+  body('turnRewardAmount')
+    .optional()
+    .isInt({ min: 1 }).withMessage('Số điểm đổi 1 lượt phải là số nguyên dương'),
   body('rewards')
     .optional()
     .isArray({ min: 1 }).withMessage('Danh sách ô thưởng phải là mảng có ít nhất một phần tử'),
@@ -55,6 +67,11 @@ const winnerRewards = [
   param('customerId').isMongoId().withMessage('ID khách hàng không hợp lệ'),
 ];
 
+const rewardWinners = [
+  param('id').isMongoId().withMessage('ID trò chơi không hợp lệ'),
+  param('rewardId').isMongoId().withMessage('ID ô thưởng không hợp lệ'),
+];
+
 const grantBonusTurns = [
   param('id').isMongoId().withMessage('ID trò chơi không hợp lệ'),
   body('customerId').isMongoId().withMessage('ID khách hàng không hợp lệ'),
@@ -67,5 +84,6 @@ module.exports = {
   updateGame,
   gameId,
   winnerRewards,
+  rewardWinners,
   grantBonusTurns,
 };
