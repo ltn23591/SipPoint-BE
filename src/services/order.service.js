@@ -265,7 +265,14 @@ class OrderService {
 
     // 7. Cập nhật trạng thái bàn sang OCCUPIED (Đang có khách) nếu là đơn tại bàn
     if (tableId) {
-      await Table.findByIdAndUpdate(tableId, { status: TABLE_STATUS.OCCUPIED });
+      const updatedTable = await Table.findByIdAndUpdate(
+        tableId,
+        { status: TABLE_STATUS.OCCUPIED },
+        { new: true }
+      );
+      if (updatedTable) {
+        emitToAll('table_updated', updatedTable);
+      }
     }
 
     // Populate dữ liệu để trả về đầy đủ thông tin
@@ -366,11 +373,18 @@ class OrderService {
     if ((newStatus === ORDER_STATUS.COMPLETED || newStatus === ORDER_STATUS.CANCELLED) && order.tableId) {
       const activeOrdersAtTable = await Order.findOne({
         tableId: order.tableId,
-        status: { $in: [ORDER_STATUS.PENDING, ORDER_STATUS.PREPARING] },
+        status: { $in: [ORDER_STATUS.PENDING, ORDER_STATUS.CONFIRMED, ORDER_STATUS.PREPARING, ORDER_STATUS.READY] },
         _id: { $ne: order._id }
       });
       if (!activeOrdersAtTable) {
-        await Table.findByIdAndUpdate(order.tableId, { status: TABLE_STATUS.AVAILABLE });
+        const updatedTable = await Table.findByIdAndUpdate(
+          order.tableId,
+          { status: TABLE_STATUS.AVAILABLE },
+          { new: true }
+        );
+        if (updatedTable) {
+          emitToAll('table_updated', updatedTable);
+        }
       }
     }
 
@@ -443,11 +457,18 @@ class OrderService {
     if (order.tableId) {
       const activeOrdersAtTable = await Order.findOne({
         tableId: order.tableId,
-        status: { $in: [ORDER_STATUS.PENDING, ORDER_STATUS.PREPARING] },
+        status: { $in: [ORDER_STATUS.PENDING, ORDER_STATUS.CONFIRMED, ORDER_STATUS.PREPARING, ORDER_STATUS.READY] },
         _id: { $ne: order._id }
       });
       if (!activeOrdersAtTable) {
-        await Table.findByIdAndUpdate(order.tableId, { status: TABLE_STATUS.AVAILABLE });
+        const updatedTable = await Table.findByIdAndUpdate(
+          order.tableId,
+          { status: TABLE_STATUS.AVAILABLE },
+          { new: true }
+        );
+        if (updatedTable) {
+          emitToAll('table_updated', updatedTable);
+        }
       }
     }
 
