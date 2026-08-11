@@ -1,6 +1,7 @@
 const CustomerSegment = require('../models/customerSegment.model');
 const Customer = require('../models/customer.model');
 const Campaign = require('../models/campaign.model');
+const CampaignService = require('./campaign.service');
 const { IS_ACTIVE, SEGMENT_MODE } = require('../enums');
 const AppError = require('../utils/AppError');
 
@@ -262,11 +263,26 @@ class CustomerSegmentService {
     };
   }
 
+  // Phát voucher bổ sung (best-effort) từ các chiến dịch ACTIVE nhắm tới segment này, cho
+  // những thành viên VỪA được thêm vào so với trước khi đồng bộ. Không để lỗi ở đây làm
+  // hỏng kết quả đồng bộ segment (vốn là thao tác chính).
+  static async _topUpCampaignVouchers(segmentId, currentMemberIds, previousMemberIdSet) {
+    const newMemberIds = currentMemberIds.filter((cid) => !previousMemberIdSet.has(String(cid)));
+    if (newMemberIds.length === 0) return;
+    try {
+      await CampaignService.topUpVouchersForNewMembers(segmentId, newMemberIds);
+    } catch (err) {
+      console.error(`[Segment] Lỗi phát voucher bổ sung khi đồng bộ nhóm ${segmentId}:`, err.message);
+    }
+  }
+
   static async syncSegment(id) {
     const segment = await CustomerSegment.findById(id);
     if (!segment) {
       throw new AppError('Không tìm thấy nhóm khách hàng', 404);
     }
+
+    const previousMemberIdSet = new Set(segment.memberIds.map(String));
 
     if (segment.mode === SEGMENT_MODE.MANUAL) {
       const memberIds = await Customer.find({ _id: { $in: segment.memberIds }, isActive: true }).distinct('_id');
@@ -274,6 +290,7 @@ class CustomerSegmentService {
       segment.memberCount = memberIds.length;
       segment.lastSyncedAt = new Date();
       await segment.save();
+      await CustomerSegmentService._topUpCampaignVouchers(segment._id, memberIds, previousMemberIdSet);
       return { memberCount: memberIds.length };
     }
 
@@ -286,6 +303,7 @@ class CustomerSegmentService {
     segment.memberCount = memberIds.length;
     segment.lastSyncedAt = new Date();
     await segment.save();
+    await CustomerSegmentService._topUpCampaignVouchers(segment._id, memberIds, previousMemberIdSet);
 
     return { memberCount: segment.memberCount, lastSyncedAt: segment.lastSyncedAt };
   }
