@@ -8,6 +8,7 @@ const Customer = require('../models/customer.model');
 const CustomerVoucher = require('../models/customerVoucher.model');
 const Order = require('../models/order.model');
 const { OrderItem } = require('../models/orderItem.model');
+const MaterialService = require('./material.service');
 
 // Sử dụng biến môi trường Gemini
 const apiKey = process.env.GEMINI_API_KEY;
@@ -31,6 +32,17 @@ if (openaiApiKey) {
 }
 
 class AIService {
+  // Text tồn kho cho catalog AI - SP có công thức dùng "makeable" tính theo nguyên liệu
+  // (field product.stock không được cập nhật cho nhóm này, xem MaterialService), SP không
+  // công thức mới dùng product.stock. Tránh AI báo sai "Hết hàng" cho món có công thức.
+  static _stockText(product, availabilityMap) {
+    const avail = availabilityMap.get(String(product._id));
+    if (avail?.hasRecipe) {
+      return avail.makeable > 0 ? `Còn ${avail.makeable} phần` : 'Hết hàng';
+    }
+    return typeof product.stock === 'number' && product.stock > 0 ? `Còn ${product.stock} sản phẩm` : 'Hết hàng';
+  }
+
   static async chatWithProducts(userMessage, sessionId, cart) {
     try {
       let cartInfoText = '';
@@ -68,6 +80,10 @@ HƯỚNG DẪN RIÊNG VỀ GIỎ HÀNG:
           .lean();
       }
 
+      // 1.6. Khả năng phục vụ theo nguyên liệu cho các SP có công thức
+      const availability = await MaterialService.getProductsAvailability(products.map((p) => p._id));
+      const availabilityMap = new Map(availability.map((a) => [String(a.productId), a]));
+
       // 2. Tạo catalog sản phẩm dạng text
       let productCatalog = 'Hiện tại cửa hàng đang cập nhật sản phẩm. Vui lòng quay lại sau.';
       if (products && products.length) {
@@ -76,8 +92,7 @@ HƯỚNG DẪN RIÊNG VỀ GIỎ HÀNG:
             const price =
               typeof p.price === 'number' ? p.price.toLocaleString('vi-VN') + ' VNĐ' : 'Liên hệ';
             const category = p.category && p.category.name ? p.category.name : 'Chung';
-            const stock =
-              typeof p.stock === 'number' && p.stock > 0 ? `Còn ${p.stock} sản phẩm` : 'Hết hàng';
+            const stock = AIService._stockText(p, availabilityMap);
             return `- ${p.name} | Danh mục: ${category} | Giá: ${price} | ${stock}`;
           })
           .join('\n');
@@ -281,13 +296,16 @@ ${voucherCatalog}
             .lean();
         }
 
+        const availability = await MaterialService.getProductsAvailability(products.map((p) => p._id));
+        const availabilityMap = new Map(availability.map((a) => [String(a.productId), a]));
+
         let productCatalog = 'Hiện tại cửa hàng đang cập nhật sản phẩm. Vui lòng quay lại sau.';
         if (products && products.length) {
           productCatalog = products
             .map((p) => {
               const price = typeof p.price === 'number' ? p.price.toLocaleString('vi-VN') + ' VNĐ' : 'Liên hệ';
               const category = p.category && p.category.name ? p.category.name : 'Chung';
-              const stock = typeof p.stock === 'number' && p.stock > 0 ? `Còn ${p.stock} sản phẩm` : 'Hết hàng';
+              const stock = AIService._stockText(p, availabilityMap);
               return `- ${p.name} | Danh mục: ${category} | Giá: ${price} | ${stock}`;
             })
             .join('\n');

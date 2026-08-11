@@ -2,6 +2,7 @@ const Campaign = require('../models/campaign.model');
 const CustomerSegment = require('../models/customerSegment.model');
 const Voucher = require('../models/voucher.model');
 const CustomerVoucher = require('../models/customerVoucher.model');
+const VoucherService = require('./voucher.service');
 const { CAMPAIGN_STATUS, CUSTOMER_VOUCHER_SOURCE } = require('../enums');
 const AppError = require('../utils/AppError');
 
@@ -55,7 +56,7 @@ class CampaignService {
       const voucher = await Voucher.findById(campaign.voucherId);
       if (!voucher || voucher.isActive !== 'active') continue;
 
-      const remainingStock = voucher.usageLimit - voucher.issuedCount;
+      const remainingStock = VoucherService.remainingStock(voucher);
       if (remainingStock <= 0) {
         console.warn(`[Campaign] "${campaign.name}" đã hết kho voucher, không thể phát bổ sung cho ${customerIds.length} thành viên mới`);
         continue;
@@ -215,7 +216,7 @@ class CampaignService {
       throw new AppError('Các nhóm khách hàng mục tiêu không có thành viên nào', 400);
     }
 
-    const remainingStock = voucher.usageLimit - voucher.issuedCount;
+    const remainingStock = VoucherService.remainingStock(voucher);
     if (remainingStock < memberIds.length) {
       throw new AppError(
         `Kho voucher không đủ: cần ${memberIds.length}, còn lại ${remainingStock}. Vui lòng tăng số lượng phát hành của voucher.`,

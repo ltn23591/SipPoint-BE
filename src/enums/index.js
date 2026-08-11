@@ -98,7 +98,7 @@ const GAME_RUNTIME_PHASE = {
 const GAME_REWARD_TYPE = {
     VOUCHER: "VOUCHER", // Mã khuyến mãi - trỏ tới 1 voucher đang active
     POINTS: "POINTS",   // Điểm thưởng
-    MESSAGE: "MESSAGE", // Lời chúc / không trúng (ô mặc định)
+    MESSAGE: "MESSAGE", // Lời chúc / không trúng (không bắt buộc là ô mặc định)
 };
 
 // Hoạt động cấp lượt chơi (mở rộng dần)

@@ -4,6 +4,7 @@ const Category = require('../models/category.model');
 const cloudinary = require('../config/cloudinary');
 const exceljs = require('exceljs');
 const AppError = require('../utils/AppError');
+const MaterialService = require('./material.service');
 
 class ProductService {
   /**
@@ -220,6 +221,14 @@ class ProductService {
       return { valid: true, validItems: [], invalidItems: [] };
     }
 
+    const productIds = [...new Set(items.map((item) => String(item.productId || item._id)).filter(Boolean))];
+    const products = await Product.find({ _id: { $in: productIds } }).lean();
+    const productMap = new Map(products.map((p) => [String(p._id), p]));
+    // SP có công thức: tồn kho tính theo nguyên liệu (makeable), KHÔNG dùng product.stock
+    // (field này không được cập nhật cho SP có công thức - xem MaterialService).
+    const availability = await MaterialService.getProductsAvailability(productIds);
+    const availabilityMap = new Map(availability.map((a) => [String(a.productId), a]));
+
     const validItems = [];
     const invalidItems = [];
 
@@ -227,7 +236,7 @@ class ProductService {
       const productId = item.productId || item._id;
       if (!productId) continue;
 
-      const product = await Product.findById(productId).lean();
+      const product = productMap.get(String(productId));
       if (!product || product.isDeleted || product.isActive === 'inactive' || product.isActive === 0) {
         invalidItems.push({
           ...item,
@@ -236,7 +245,14 @@ class ProductService {
           reason: 'discontinued',
           message: `Món "${product ? product.name : (item.name || 'Sản phẩm')}" hiện đã ngừng bán.`
         });
-      } else if (product.stock !== undefined && product.stock <= 0) {
+        continue;
+      }
+
+      const avail = availabilityMap.get(String(productId));
+      const currentStock = avail?.hasRecipe ? avail.makeable : product.stock;
+      const isOutOfStock = avail?.hasRecipe ? avail.makeable <= 0 : (product.stock !== undefined && product.stock <= 0);
+
+      if (isOutOfStock) {
         invalidItems.push({
           ...item,
           productId,
@@ -249,7 +265,7 @@ class ProductService {
           ...item,
           productName: product.name,
           currentPrice: product.price,
-          stock: product.stock
+          stock: currentStock
         });
       }
     }
