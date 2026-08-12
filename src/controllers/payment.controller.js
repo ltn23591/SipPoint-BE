@@ -5,6 +5,11 @@ const Order = require('../models/order.model');
 const { ORDER_STATUS } = require('../enums');
 const { emitToAll } = require('../services/socket.service');
 
+const ORDER_ITEMS_POPULATE = {
+  path: 'items',
+  populate: { path: 'productId', select: 'name image price' },
+};
+
 const createSepayPayment = catchAsync(async (req, res, next) => {
   const { amount, orderId, orderInfo, returnUrl } = req.body;
 
@@ -74,7 +79,7 @@ const sepayIPN = catchAsync(async (req, res) => {
         .populate('tableId', 'name zoneId')
         .populate('customerId', 'fullName phone')
         .populate('createdBy', 'name email')
-        .populate('items');
+        .populate(ORDER_ITEMS_POPULATE);
         
       emitToAll('order_status_updated', populatedOrder);
       console.log(`Successfully updated order ${order.code} status to CONFIRMED (paid).`);
@@ -127,7 +132,7 @@ const confirmPayment = catchAsync(async (req, res) => {
     .populate('tableId', 'name zoneId')
     .populate('customerId', 'fullName phone')
     .populate('createdBy', 'name email')
-    .populate('items');
+    .populate(ORDER_ITEMS_POPULATE);
 
   emitToAll('order_status_updated', populatedOrder);
   console.log(`Payment confirmed for order ${order.code} via Frontend callback.`);

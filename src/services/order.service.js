@@ -16,6 +16,11 @@ const { ORDER_STATUS, TABLE_STATUS, IS_ACTIVE, POINT_TRANSACTION_TYPE, POINTS_RA
 const { emitToAll } = require('./socket.service');
 const mongoose = require('mongoose');
 
+const ORDER_ITEMS_POPULATE = {
+  path: 'items',
+  populate: { path: 'productId', select: 'name image price' },
+};
+
 class OrderService {
 
   static async createOrder(data, createdById) {
@@ -281,7 +286,7 @@ class OrderService {
       .populate('tableId', 'name zoneId')
       .populate('customerId', 'fullName phone')
       .populate('createdBy', 'name email')
-      .populate('items');
+      .populate(ORDER_ITEMS_POPULATE);
 
     // 8. Gửi sự kiện Socket.io real-time thông báo đơn hàng mới
     emitToAll('order_created', populatedOrder);
@@ -401,7 +406,7 @@ class OrderService {
       .populate('customerId', 'fullName phone')
       .populate('createdBy', 'name email')
       .populate('updatedBy', 'name email')
-      .populate('items');
+      .populate(ORDER_ITEMS_POPULATE);
 
     // Gửi sự kiện Socket.io real-time
     emitToAll('order_status_updated', populatedOrder);
@@ -485,7 +490,7 @@ class OrderService {
       .populate('customerId', 'fullName phone')
       .populate('createdBy', 'name email')
       .populate('updatedBy', 'name email')
-      .populate('items');
+      .populate(ORDER_ITEMS_POPULATE);
 
     // Gửi sự kiện Socket.io real-time
     emitToAll('order_status_updated', populatedOrder);
@@ -578,7 +583,7 @@ class OrderService {
       .populate('customerId', 'fullName phone')
       .populate('createdBy', 'name email')
       .populate('updatedBy', 'name email')
-      .populate('items');
+      .populate(ORDER_ITEMS_POPULATE);
 
     // Gửi sự kiện Socket.io real-time
     emitToAll('order_status_updated', populatedOrder);
@@ -595,7 +600,7 @@ class OrderService {
       .populate('customerId', 'fullName phone email')
       .populate('createdBy', 'name email')
       .populate('updatedBy', 'name email')
-      .populate('items')
+      .populate(ORDER_ITEMS_POPULATE)
       .populate('voucherId')
       .lean();
 
@@ -640,7 +645,7 @@ class OrderService {
       .populate('tableId', 'name')
       .populate('customerId', 'fullName phone')
       .populate('createdBy', 'name email')
-      .populate('items')
+      .populate(ORDER_ITEMS_POPULATE)
       .populate('voucherId')
       .sort({ createdAt: -1 })
       .skip(skip)

@@ -3208,81 +3208,6 @@ paths:
         2. Nhấp chọn nút **Try it out** ở góc phải của API.
         3. Chọn file tải lên trong phần **Request Body**.
         4. Nhấp **Execute** để gửi yêu cầu.
-  /api/v1/shifts/search:
-    get:
-      summary: Lấy danh sách shift
-      tags:
-        - Shift
-      responses:
-        "200":
-          description: Danh sách shift
-  /api/v1/shifts/open:
-    post:
-      summary: Mở ca làm việc mới
-      tags:
-        - Shift
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - employeeId
-              properties:
-                employeeId:
-                  type: string
-                  description: ID nhân viên
-                startingCash:
-                  type: number
-                  description: Tiền mặt đầu ca
-      responses:
-        "201":
-          description: Mở ca thành công
-  /api/v1/shifts/{id}/detail:
-    get:
-      summary: Lấy chi tiết một ca làm việc
-      tags:
-        - Shift
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID của ca làm việc
-      responses:
-        "200":
-          description: Chi tiết ca làm việc
-        "404":
-          description: Không tìm thấy
-  /api/v1/shifts/{id}/close:
-    put:
-      summary: Đóng ca làm việc
-      tags:
-        - Shift
-      parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
-          description: ID của ca làm việc
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                actualEndingCash:
-                  type: number
-                  description: Tiền mặt thực tế khi đóng ca
-                note:
-                  type: string
-      responses:
-        "201":
-          description: Tạo thành công
   /api/v1/orders/{id}/refund:
     post:
       summary: Hoàn trả đơn hàng đã hoàn thành (trừ lại điểm tích lũy)
@@ -4694,8 +4619,6 @@ tags:
     description: API Quản lý Khu vực (Bàn ăn)
   - name: Table
     description: API Quản lý Bàn và sinh mã QR Code
-  - name: Shift
-    description: API quản lý shift
   - name: AI
     description: API Chat với AI Bot - Hỗ trợ tư vấn sản phẩm dựa trên Google Gemini
   - name: Voucher
@@ -5455,40 +5378,3 @@ components:
           type: string
         ipAddress:
           type: string
-    Shift:
-      type: object
-      properties:
-        _id:
-          type: string
-        employeeId:
-          type: string
-        startTime:
-          type: string
-          format: date-time
-        endTime:
-          type: string
-          format: date-time
-        startingCash:
-          type: number
-        actualEndingCash:
-          type: number
-        systemEndingCash:
-          type: number
-        totalRevenue:
-          type: number
-        totalOrders:
-          type: number
-        status:
-          type: string
-          enum:
-            - OPEN
-            - CLOSED
-        note: null
-        name:
-          type: string
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
