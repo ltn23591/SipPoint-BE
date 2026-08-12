@@ -61,6 +61,19 @@ class VoucherController {
     });
   });
 
+  static validateWallet = catchAsync(async (req, res, next) => {
+    const { customerVoucherId, orderValue } = req.body;
+    if (!customerVoucherId || orderValue === undefined) {
+      throw new AppError('Vui lòng cung cấp customerVoucherId và giá trị đơn hàng', 400);
+    }
+    const data = await VoucherService.validateWalletVoucher(customerVoucherId, req.user._id, Number(orderValue));
+    res.status(200).json({
+      success: true,
+      message: 'Voucher hợp lệ',
+      data,
+    });
+  });
+
   static getRedeemable = catchAsync(async (req, res, next) => {
     const data = await VoucherService.getRedeemableVouchers();
     res.status(200).json({

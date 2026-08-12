@@ -5,6 +5,7 @@ const { protect } = require('../../middleware/auth.middleware');
 const router = express.Router();
 
 router.post('/validate', VoucherController.validate);
+router.post('/validate-wallet', protect, VoucherController.validateWallet);
 
 router.get('/redeemable', protect, VoucherController.getRedeemable);
 router.post('/:id/redeem', protect, VoucherController.redeem);
