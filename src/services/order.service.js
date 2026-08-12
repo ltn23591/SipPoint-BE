@@ -297,7 +297,7 @@ class OrderService {
       throw new AppError('Trạng thái đơn hàng không hợp lệ', 400);
     }
 
-    const order = await Order.findById(orderId);
+    let order = await Order.findById(orderId);
     if (!order || order.isActive === IS_ACTIVE.FALSE) {
       throw new AppError('Không tìm thấy đơn hàng', 404);
     }
@@ -320,8 +320,15 @@ class OrderService {
       throw new AppError('Trạng thái đơn hàng không hợp lệ', 400);
     }
 
-    order.status = newStatus;
-    order.updatedBy = updatedById;
+    const claimed = await Order.findOneAndUpdate(
+      { _id: order._id, status: currentStatus },
+      { $set: { status: newStatus, updatedBy: updatedById } },
+      { new: true }
+    );
+    if (!claimed) {
+      throw new AppError('Đơn hàng vừa được cập nhật trạng thái ở một thao tác khác, vui lòng tải lại', 409);
+    }
+    order = claimed;
 
     // Tích điểm tự động khi đơn hoàn thành: 1 điểm / POINTS_RATE VND
     if (newStatus === ORDER_STATUS.COMPLETED) {
