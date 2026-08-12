@@ -1146,6 +1146,8 @@ class GameService {
       timeTo: game.timeTo,
       status: game.status,
       runtimePhase: game.runtimePhase,
+      isExchangeTurnEnabled: !!game.isExchangeTurnEnabled,
+      turnRewardAmount: game.isExchangeTurnEnabled ? game.turnRewardAmount : undefined,
       rewards: [...rewards].sort((a, b) => a.index - b.index).map(GameService._toMobileReward),
     };
   }
