@@ -265,7 +265,8 @@ class ProductService {
           ...item,
           productName: product.name,
           currentPrice: product.price,
-          stock: currentStock
+          stock: currentStock,
+          image: product.image
         });
       }
     }
