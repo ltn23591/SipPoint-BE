@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { ORDER_STATUS, IS_ACTIVE, PAYMENT_METHOD } = require('../enums');
+const { ORDER_STATUS, IS_ACTIVE, PAYMENT_METHOD, CUSTOMER_TYPE } = require('../enums');
 
 const orderSchema = new mongoose.Schema(
   {
@@ -23,6 +23,11 @@ const orderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Customer',
       required: false,
+    },
+    customerType: {
+      type: String,
+      enum: Object.values(CUSTOMER_TYPE),
+      default: CUSTOMER_TYPE.GUEST,
     },
     voucherId: {
       type: mongoose.Schema.Types.ObjectId,

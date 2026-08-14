@@ -12,7 +12,7 @@ const CustomerService = require('./customer.service');
 const CustomerSegmentService = require('./customerSegment.service');
 const MaterialService = require('./material.service');
 const GameService = require('./game.service');
-const { ORDER_STATUS, TABLE_STATUS, IS_ACTIVE, POINT_TRANSACTION_TYPE, POINTS_RATE, PAYMENT_METHOD, GAME_ACTIVITY_TYPE } = require('../enums');
+const { ORDER_STATUS, TABLE_STATUS, IS_ACTIVE, POINT_TRANSACTION_TYPE, POINTS_RATE, PAYMENT_METHOD, GAME_ACTIVITY_TYPE, CUSTOMER_TYPE } = require('../enums');
 const { emitToAll } = require('./socket.service');
 const mongoose = require('mongoose');
 
@@ -208,6 +208,7 @@ class OrderService {
         orderNumber: code,
         tableId: tableId || null,
         customerId: resolvedCustomerId || null,
+        customerType: resolvedCustomerId ? CUSTOMER_TYPE.MEMBER : CUSTOMER_TYPE.GUEST,
         voucherId: resolvedVoucherId,
         customerVoucherId: claimedWalletVoucherId,
         subtotal: subtotalSum,

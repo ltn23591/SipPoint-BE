@@ -139,6 +139,11 @@ const GENDER = {
     OTHER: "other",
 };
 
+const CUSTOMER_TYPE = {
+    MEMBER: "member",
+    GUEST: "guest",
+};
+
 // Chế độ nhóm khách hàng: tự động theo bộ lọc, hoặc chọn thủ công
 const SEGMENT_MODE = {
     AUTO: "AUTO",     // Lọc động theo tiêu chí, đồng bộ qua cron
@@ -203,6 +208,7 @@ module.exports = {
     GAME_REWARD_TYPE,
     GAME_ACTIVITY_TYPE,
     GENDER,
+    CUSTOMER_TYPE,
     SEGMENT_MODE,
     MATERIAL_STOCK_STATUS,
     PRODUCT_STOCK_STATUS,
