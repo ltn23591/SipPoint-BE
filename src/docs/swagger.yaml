@@ -3725,6 +3725,39 @@ paths:
           description: Hủy thành công - trả về số voucher đã thu hồi
         "400":
           description: Chiến dịch không ở trạng thái ACTIVE
+  /api/v1/campaigns/{id}/report:
+    get:
+      summary: Báo cáo hiệu quả chiến dịch (đã phát / đã dùng / doanh thu quy đổi)
+      tags:
+        - Campaign
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Số liệu hiệu quả của chiến dịch
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: "#/components/schemas/CampaignReport"
+        "404":
+          description: Không tìm thấy chiến dịch
+      description: |-
+        Số liệu lấy từ các voucher đã phát của chiến dịch (`customer_vouchers.campaignId`),
+        nối sang đơn hàng qua `orderId`. Doanh thu chỉ tính đơn ở trạng thái `COMPLETED` -
+        đơn bị hủy/hoàn trả đã trả voucher về trạng thái chưa dùng nên không được tính.
+        Mỗi khách chỉ nhận tối đa 1 voucher/chiến dịch nên `issued`/`used` đồng thời là
+        số khách được phát / đã dùng.
   /api/v1/materials:
     get:
       summary: Lấy danh sách nguyên liệu (lọc + tìm kiếm + phân trang)
@@ -4743,31 +4776,108 @@ components:
           description: Danh sách nguyên liệu và định mức (mỗi nguyên liệu chỉ khai báo một lần)
           items:
             $ref: "#/components/schemas/RecipeItemInput"
+    SegmentCondition:
+      type: object
+      required:
+        - field
+        - operator
+      properties:
+        field:
+          type: string
+          description: |-
+            Trường lọc:
+            * `gender` - Giới tính (enum), operator: eq | ne
+            * `age` - Tuổi (số), operator: eq | gt | lt | between
+            * `birthdayMonth` - Tháng sinh nhật (mảng 1-12), operator: in | notIn
+            * `points` - Số dư điểm (số), operator: eq | gt | lt | between
+            * `redeemCount` - Số lần đổi quà (số), operator: eq | gt | lt | between
+            * `orderCount` - Số lần order (số), operator: eq | gt | lt | between
+            * `totalSpent` - Tổng chi tiêu tích lũy, đơn vị đồng (số), operator: eq | gt | lt | between
+            * `lastVisitAt` - Số NGÀY kể từ lần ghé cuối (số), operator: eq | gt | lt | between
+            * `hasEmail` / `hasPhone` - Có email/SĐT (boolean), operator: eq
+            * `tier` - Hạng thành viên (mảng id), operator: in | notIn
+          enum:
+            - gender
+            - age
+            - birthdayMonth
+            - points
+            - redeemCount
+            - orderCount
+            - totalSpent
+            - lastVisitAt
+            - hasEmail
+            - hasPhone
+            - tier
+          example: lastVisitAt
+        operator:
+          type: string
+          enum: [eq, ne, gt, lt, between, in, notIn]
+          example: gt
+        value:
+          description: |-
+            Giá trị lọc - kiểu phụ thuộc `field`. Với `between` truyền mảng `[min, max]`.
+            Với `lastVisitAt`, giá trị là SỐ NGÀY: `gt 30` = đã hơn 30 ngày không quay lại (win-back),
+            `lt 7` = có ghé trong vòng 7 ngày. Khách chưa từng ghé (lastVisitAt rỗng) không
+            thuộc các nhóm này - dùng `orderCount eq 0` nếu muốn nhắm nhóm chưa từng mua.
+          example: 30
     SegmentCriteria:
       type: object
-      description: Bộ tiêu chí lọc nhóm khách hàng (kết hợp AND giữa các tiêu chí có giá trị, phải có ít nhất 1)
+      description: |-
+        Bộ tiêu chí lọc nhóm khách hàng. Các `groups` nối với nhau bằng HOẶC (OR),
+        các `conditions` trong cùng một group nối bằng VÀ (AND). Phải có ít nhất 1 điều kiện hợp lệ.
       properties:
-        tierIds:
+        groups:
           type: array
-          description: Thuộc một trong các hạng thành viên
           items:
-            type: string
-        birthdayMonth:
+            type: object
+            properties:
+              conditions:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SegmentCondition"
+    CampaignReport:
+      type: object
+      description: Số liệu hiệu quả của một chiến dịch
+      properties:
+        campaign:
+          type: object
+          description: Thông tin rút gọn của chiến dịch (kèm nhóm mục tiêu và voucher)
+        issued:
           type: integer
-          minimum: 1
-          maximum: 12
-          description: Tháng sinh nhật
-          example: 7
-        minPoints:
+          description: Số voucher đã phát vào ví (= số khách được phát)
+          example: 120
+        used:
+          type: integer
+          description: Số voucher đã sử dụng (tính cả đơn chưa hoàn thành)
+          example: 43
+        unused:
+          type: integer
+          description: Số voucher chưa sử dụng
+          example: 77
+        expired:
+          type: integer
+          description: Trong số chưa dùng, số voucher đã quá hạn
+          example: 12
+        usageRate:
           type: number
-          description: Số dư điểm tối thiểu
-        minDaysSinceLastVisit:
+          description: Tỉ lệ sử dụng (%) = used / issued
+          example: 35.83
+        orderCount:
           type: integer
-          description: Chưa ghé quán ít nhất X ngày
-          example: 30
-        maxDaysSinceLastVisit:
-          type: integer
-          description: Có ghé quán trong vòng X ngày gần đây
+          description: Số đơn đã hoàn thành có dùng voucher của chiến dịch
+          example: 41
+        revenue:
+          type: number
+          description: Doanh thu quy đổi - tổng tiền thực thu của các đơn đó (đ)
+          example: 8450000
+        discountGiven:
+          type: number
+          description: Tổng tiền đã giảm cho khách trên các đơn đó (đ)
+          example: 1230000
+        avgOrderValue:
+          type: number
+          description: Giá trị đơn trung bình (đ)
+          example: 206097
     User:
       type: object
       required:

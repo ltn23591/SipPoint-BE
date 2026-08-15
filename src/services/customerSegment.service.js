@@ -13,6 +13,12 @@ const dateYearsAgo = (years) => {
   return d;
 };
 
+const dateDaysAgo = (days) => {
+  const d = new Date();
+  d.setDate(d.getDate() - Number(days));
+  return d;
+};
+
 const numFilter = (field, operator, value) => {
   switch (operator) {
     case 'eq':
@@ -49,6 +55,30 @@ const ageFilter = (operator, value) => {
   }
 };
 
+// Lọc theo SỐ NGÀY kể từ lần ghé gần nhất (lastVisitAt). Cùng quy ước làm tròn xuống như ageFilter:
+// - gt 30  => đã hơn 30 ngày không quay lại (nhóm win-back)
+// - lt 7   => có ghé trong vòng 7 ngày gần đây (nhóm đang hoạt động)
+// Khách chưa từng ghé (lastVisitAt = null) KHÔNG thuộc các nhóm này - dùng tiêu chí
+// "Số lần order = 0" nếu muốn nhắm tới nhóm chưa từng mua.
+const lastVisitFilter = (operator, value) => {
+  switch (operator) {
+    case 'eq': {
+      const n = Number(value);
+      return { lastVisitAt: { $ne: null, $gt: dateDaysAgo(n + 1), $lte: dateDaysAgo(n) } };
+    }
+    case 'gt':
+      return { lastVisitAt: { $ne: null, $lte: dateDaysAgo(Number(value) + 1) } };
+    case 'lt':
+      return { lastVisitAt: { $ne: null, $gt: dateDaysAgo(Number(value)) } };
+    case 'between': {
+      const [min, max] = Array.isArray(value) ? value : [value?.min, value?.max];
+      return { lastVisitAt: { $ne: null, $gt: dateDaysAgo(Number(max) + 1), $lte: dateDaysAgo(Number(min)) } };
+    }
+    default:
+      return null;
+  }
+};
+
 class CustomerSegmentService {
   static buildCondition(cond) {
     if (!cond || !cond.field) return null;
@@ -77,6 +107,12 @@ class CustomerSegmentService {
         return numFilter('redeemCount', operator, value);
       case 'orderCount':
         return numFilter('orderCount', operator, value);
+      // Tổng chi tiêu tích lũy (đ) - mở khóa nhóm khách VIP
+      case 'totalSpent':
+        return numFilter('totalSpent', operator, value);
+      // Số ngày kể từ lần ghé gần nhất - mở khóa nhóm win-back
+      case 'lastVisitAt':
+        return lastVisitFilter(operator, value);
 
       case 'hasEmail': {
         const want = value === true || value === 'true' || value === 'yes';
