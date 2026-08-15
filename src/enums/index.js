@@ -16,7 +16,6 @@ const USER_STATUS = {
 
 const OTP_TYPE = {
     REGISTER: "register",
-    TWO_FACTOR: "two_factor",
     RESET_PASSWORD: "reset_password",
 };
 

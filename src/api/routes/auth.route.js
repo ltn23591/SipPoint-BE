@@ -9,10 +9,6 @@ const {
   login,
   logout,
   getMe,
-  enable2FA,
-  verifyEnable2FA,
-  login2FA,
-  disable2FA,
   forgotPassword,
   resetPassword,
   verifyOtpCode,
@@ -72,12 +68,6 @@ router.put(
   validate,
   changePassword,
 );
-
-// Routes 2FA cho Nhân viên
-router.post('/2fa/enable', protect, strictLimiter, enable2FA);
-router.post('/2fa/verify-enable', protect, otpLimiter, verifyEnable2FA);
-router.post('/2fa/login', authLimiter, login2FA);
-router.post('/2fa/disable', protect, strictLimiter, disable2FA);
 
 // Routes khôi phục mật khẩu cho Nhân viên
 router.post(

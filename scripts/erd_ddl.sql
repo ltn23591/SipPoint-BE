@@ -54,7 +54,6 @@ CREATE TABLE employees (
   password VARCHAR(255) NOT NULL,
   roleId VARCHAR(24) NOT NULL, -- normalized FK to staffroles
   status VARCHAR(255),
-  isTwoFactorEnabled BOOLEAN,
   loginAttempts INT NOT NULL,
   lockUntil DATETIME,
   resetPasswordOTP VARCHAR(255),

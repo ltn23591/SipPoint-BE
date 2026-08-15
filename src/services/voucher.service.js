@@ -3,7 +3,6 @@ const CustomerVoucher = require('../models/customerVoucher.model');
 const Campaign = require('../models/campaign.model');
 const Customer = require('../models/customer.model');
 const CustomerService = require('./customer.service');
-const CustomerSegmentService = require('./customerSegment.service');
 const { DISCOUNT_TYPE, POINT_TRANSACTION_TYPE, CUSTOMER_VOUCHER_SOURCE } = require('../enums');
 const AppError = require('../utils/AppError');
 
@@ -245,8 +244,8 @@ class VoucherService {
         source: CUSTOMER_VOUCHER_SOURCE.POINTS_REDEEM,
       });
 
+      // Hook trong customer.model tự đồng bộ các nhóm AUTO bật cập nhật realtime
       await Customer.updateOne({ _id: customerId }, { $inc: { redeemCount: 1 } });
-      await CustomerSegmentService.resyncRealtimeSegments();
 
       return { customerVoucher, remainingPoints: pointRes.customer ? pointRes.customer.currentPoints : 0 };
     } catch (error) {

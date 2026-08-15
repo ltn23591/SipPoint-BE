@@ -29,10 +29,6 @@ const employeeSchema = new mongoose.Schema(
       enum: ['pending', 'active', 'banned'],
       default: 'active', // Default active for staff
     },
-    isTwoFactorEnabled: {
-      type: Boolean,
-      default: false,
-    },
     loginAttempts: {
       type: Number,
       required: true,
