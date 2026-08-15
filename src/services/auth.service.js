@@ -158,88 +158,10 @@ class AuthService {
     const isMatch = await bcrypt.compare(password, employee.password);
     if (!isMatch) throw new AppError('Sai thông tin đăng nhập', 401);
 
-    if (employee.isTwoFactorEnabled) {
-      const otp = crypto.randomInt(100000, 999999).toString();
-      await OTP.deleteMany({ userId: employee._id, type: OTP_TYPE.TWO_FACTOR, userModel: 'Employee' });
-      await OTP.create({ userId: employee._id, code: otp, type: OTP_TYPE.TWO_FACTOR, userModel: 'Employee' });
-
-      sendEmail({
-        email: employee.email,
-        subject: 'Mã xác thực OTP Đăng Nhập',
-        template: 'otp',
-        data: { name: employee.name, otp }
-      }).catch(err => logger.error('Lỗi gửi OTP qua email', err));
-
-      logger.info(`[DEV - BYPASS EMAIL] MÃ OTP ĐĂNG NHẬP (2FA) CỦA NHÂN VIÊN ${employee.email} LÀ: ${otp}`);
-
-      return {
-        requires2FA: true,
-        email: employee.email,
-        message: 'Vui lòng nhập mã OTP đã được gửi vào email của bạn',
-      };
-    }
-
     const ActivityLogService = require('./activityLog.service');
     ActivityLogService.logActivity(employee._id, 'LOGIN', 'Admin Portal', `Nhân viên ${employee.name} (${employee.email}) đăng nhập thành công`);
 
     return { message: 'Đăng nhập thành công', user: employee, userType: 'employee' };
-  }
-
-  static async enable2FA(employeeId) {
-    const employee = await Employee.findById(employeeId);
-    if (!employee) throw new AppError('Không tìm thấy nhân viên', 404);
-    if (employee.isTwoFactorEnabled) throw new AppError('Tài khoản đã được bật 2FA từ trước', 400);
-
-    const otp = crypto.randomInt(100000, 999999).toString();
-    await OTP.deleteMany({ userId: employee._id, type: OTP_TYPE.TWO_FACTOR, userModel: 'Employee' });
-    await OTP.create({ userId: employee._id, code: otp, type: OTP_TYPE.TWO_FACTOR, userModel: 'Employee' });
-
-    sendEmail({
-      email: employee.email,
-      subject: 'Mã OTP bật tính năng 2FA',
-      template: 'otp',
-      data: { name: employee.name, otp }
-    }).catch(err => logger.error('Lỗi gửi OTP enable 2FA', err));
-
-    logger.info(`[DEV - BYPASS EMAIL] MÃ OTP BẬT 2FA CỦA NHÂN VIÊN ${employee.email} LÀ: ${otp}`);
-
-    return { message: 'Mã OTP đã được gửi vào email của bạn. Vui lòng kiểm tra hộp thư.' };
-  }
-
-  static async verifyEnable2FA(employeeId, otp) {
-    const employee = await Employee.findById(employeeId);
-    if (!employee) throw new AppError('Không tìm thấy nhân viên', 404);
-
-    const otpRecord = await OTP.findOne({ userId: employee._id, code: otp, type: OTP_TYPE.TWO_FACTOR, userModel: 'Employee' });
-    if (!otpRecord) throw new AppError('Mã OTP không chính xác hoặc đã hết hạn', 400);
-
-    await otpRecord.deleteOne();
-    employee.isTwoFactorEnabled = true;
-    await employee.save({ validateBeforeSave: false });
-
-    return { message: 'Kích hoạt bảo mật 2 lớp thành công' };
-  }
-
-  static async login2FA(email, otp) {
-    const employee = await Employee.findOne({ email, isDeleted: false }).select('+password').populate('roleId');
-    if (!employee || !employee.isTwoFactorEnabled) throw new AppError('Tài khoản không tồn tại hoặc chưa bật 2FA', 400);
-
-    const otpRecord = await OTP.findOne({ userId: employee._id, code: otp, type: OTP_TYPE.TWO_FACTOR, userModel: 'Employee' });
-    if (!otpRecord) throw new AppError('Mã OTP không chính xác hoặc đã hết hạn', 400);
-
-    await otpRecord.deleteOne();
-    return { message: 'Đăng nhập thành công', user: employee, userType: 'employee' };
-  }
-
-  static async disable2FA(employeeId) {
-    const employee = await Employee.findById(employeeId);
-    if (!employee) throw new AppError('Không tìm thấy nhân viên', 404);
-    
-    employee.isTwoFactorEnabled = false;
-    await employee.save({ validateBeforeSave: false });
-    await OTP.deleteMany({ userId: employee._id, type: OTP_TYPE.TWO_FACTOR, userModel: 'Employee' });
-
-    return { message: 'Đã tắt tính năng bảo mật 2 lớp' };
   }
 
   static async getMe(id) {

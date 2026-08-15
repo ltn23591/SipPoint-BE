@@ -9,7 +9,6 @@ const CustomerVoucher = require('../models/customerVoucher.model');
 const Customer = require('../models/customer.model');
 const VoucherService = require('./voucher.service');
 const CustomerService = require('./customer.service');
-const CustomerSegmentService = require('./customerSegment.service');
 const MaterialService = require('./material.service');
 const GameService = require('./game.service');
 const { ORDER_STATUS, TABLE_STATUS, IS_ACTIVE, POINT_TRANSACTION_TYPE, POINTS_RATE, PAYMENT_METHOD, GAME_ACTIVITY_TYPE, CUSTOMER_TYPE } = require('../enums');
@@ -360,13 +359,12 @@ class OrderService {
             order.pointsAwarded = points;
           }
         }
-        // Cập nhật realtime số liệu KH: ghi nhận thêm 1 đơn hoàn tất (cho tiêu chí lọc nhóm)
+        // Cập nhật realtime số liệu KH: ghi nhận thêm 1 đơn hoàn tất (cho tiêu chí lọc nhóm).
+        // Hook trong customer.model tự đồng bộ các nhóm AUTO bật cập nhật realtime.
         await Customer.updateOne(
           { _id: order.customerId },
           { $set: { lastVisitAt: new Date() }, $inc: { orderCount: 1 } }
         );
-        // Đồng bộ ngay các nhóm AUTO bật cập nhật realtime
-        await CustomerSegmentService.resyncRealtimeSegments();
 
         // Cấp lượt Trò chơi may mắn theo hoạt động (không chặn luồng đơn nếu lỗi)
         try {
@@ -547,7 +545,6 @@ class OrderService {
         { _id: order.customerId, orderCount: { $gt: 0 } },
         { $inc: { orderCount: -1 } }
       );
-      await CustomerSegmentService.resyncRealtimeSegments();
     }
 
     // Hoàn lại voucher đã dùng cho đơn

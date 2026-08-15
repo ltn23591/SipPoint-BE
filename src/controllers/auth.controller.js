@@ -24,34 +24,7 @@ class AuthController {
   static login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
   const result = await AuthService.employeeLogin(email, password);
-  
-  if (result.requires2FA) {
-    return res.status(200).json({ success: true, ...result });
-  }
-  
   return sendTokenResponse(result.user, 200, res, result.message, result.userType);
-});
-
-  static enable2FA = catchAsync(async (req, res, next) => {
-  const result = await AuthService.enable2FA(req.user.id);
-  return res.status(200).json({ success: true, ...result });
-});
-
-  static verifyEnable2FA = catchAsync(async (req, res, next) => {
-  const { otp } = req.body;
-  const result = await AuthService.verifyEnable2FA(req.user.id, otp);
-  return res.status(200).json({ success: true, ...result });
-});
-
-  static login2FA = catchAsync(async (req, res, next) => {
-  const { email, otp } = req.body;
-  const result = await AuthService.login2FA(email, otp);
-  return sendTokenResponse(result.user, 200, res, result.message, result.userType);
-});
-
-  static disable2FA = catchAsync(async (req, res, next) => {
-  const result = await AuthService.disable2FA(req.user.id);
-  return res.status(200).json({ success: true, ...result });
 });
 
   static logout = catchAsync(async (req, res, next) => {
