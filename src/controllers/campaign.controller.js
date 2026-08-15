@@ -31,6 +31,15 @@ class CampaignController {
     });
   });
 
+  static report = catchAsync(async (req, res, next) => {
+    const data = await CampaignService.getCampaignReport(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: 'Lấy báo cáo hiệu quả chiến dịch thành công',
+      data,
+    });
+  });
+
   static update = catchAsync(async (req, res, next) => {
     const data = await CampaignService.updateCampaign(req.params.id, req.body);
     res.status(200).json({

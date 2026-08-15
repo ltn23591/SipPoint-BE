@@ -15,6 +15,7 @@ router.route('/:id')
   .put(protect, authorize(ROLE.ADMIN), CampaignController.update)
   .delete(protect, authorize(ROLE.ADMIN), CampaignController.remove);
 
+router.get('/:id/report', protect, authorize(ROLE.ADMIN), CampaignController.report);
 router.post('/:id/activate', protect, authorize(ROLE.ADMIN), CampaignController.activate);
 router.post('/:id/deactivate', protect, authorize(ROLE.ADMIN), CampaignController.deactivate);
 

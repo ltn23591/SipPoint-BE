@@ -3,7 +3,7 @@ const CustomerSegment = require('../models/customerSegment.model');
 const Voucher = require('../models/voucher.model');
 const CustomerVoucher = require('../models/customerVoucher.model');
 const VoucherService = require('./voucher.service');
-const { CAMPAIGN_STATUS, CUSTOMER_VOUCHER_SOURCE } = require('../enums');
+const { CAMPAIGN_STATUS, CUSTOMER_VOUCHER_SOURCE, ORDER_STATUS } = require('../enums');
 const AppError = require('../utils/AppError');
 
 class CampaignService {
@@ -252,6 +252,90 @@ class CampaignService {
     await campaign.save();
 
     return { campaign, revokedCount: revoked.modifiedCount };
+  }
+
+  // Báo cáo hiệu quả chiến dịch: đã phát / đã dùng / doanh thu quy đổi.
+  // Nguồn sự thật là các bản ghi CustomerVoucher của chiến dịch (chính xác hơn campaign.issuedCount),
+  // nối sang đơn hàng qua orderId để quy đổi doanh thu.
+  // Lưu ý: unique index (campaignId, customerId) => mỗi khách tối đa 1 voucher/chiến dịch,
+  // nên issued/used đồng thời là SỐ KHÁCH được phát / đã dùng.
+  static async getCampaignReport(id) {
+    const campaign = await Campaign.findById(id)
+      .populate('segmentIds', 'name memberCount')
+      .populate('voucherId', 'code title discountType discountValue');
+    if (!campaign) {
+      throw new AppError('Không tìm thấy chiến dịch', 404);
+    }
+
+    const now = new Date();
+    const [stats] = await CustomerVoucher.aggregate([
+      { $match: { campaignId: campaign._id } },
+      { $lookup: { from: 'orders', localField: 'orderId', foreignField: '_id', as: 'order' } },
+      { $addFields: { order: { $arrayElemAt: ['$order', 0] } } },
+      // Chỉ quy đổi doanh thu từ đơn ĐÃ HOÀN THÀNH. Đơn hủy/hoàn trả đã nhả voucher về
+      // trạng thái chưa dùng nên không lọt vào đây.
+      {
+        $addFields: {
+          paidOrder: {
+            $cond: [{ $eq: ['$order.status', ORDER_STATUS.COMPLETED] }, '$order', null],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          issued: { $sum: 1 },
+          used: { $sum: { $cond: [{ $eq: ['$isUsed', true] }, 1, 0] } },
+          expired: {
+            $sum: {
+              $cond: [
+                { $and: [{ $ne: ['$isUsed', true] }, { $lt: ['$expiryDate', now] }] },
+                1,
+                0,
+              ],
+            },
+          },
+          orderCount: { $sum: { $cond: [{ $ne: ['$paidOrder', null] }, 1, 0] } },
+          revenue: { $sum: { $ifNull: ['$paidOrder.total', 0] } },
+          discountGiven: { $sum: { $ifNull: ['$paidOrder.discount', 0] } },
+        },
+      },
+    ]);
+
+    const issued = stats ? stats.issued : 0;
+    const used = stats ? stats.used : 0;
+    const orderCount = stats ? stats.orderCount : 0;
+    const revenue = stats ? stats.revenue : 0;
+
+    return {
+      campaign: {
+        _id: campaign._id,
+        name: campaign.name,
+        status: campaign.status,
+        startDate: campaign.startDate,
+        endDate: campaign.endDate,
+        activatedAt: campaign.activatedAt,
+        segments: campaign.segmentIds,
+        voucher: campaign.voucherId,
+      },
+      // Số voucher đã phát vào ví
+      issued,
+      // Đã dùng (tính cả đơn chưa hoàn thành)
+      used,
+      // Chưa dùng, và phần trong đó đã quá hạn
+      unused: issued - used,
+      expired: stats ? stats.expired : 0,
+      // Tỉ lệ sử dụng (%)
+      usageRate: issued > 0 ? Math.round((used / issued) * 10000) / 100 : 0,
+      // Số đơn đã hoàn thành có dùng voucher của chiến dịch
+      orderCount,
+      // Doanh thu quy đổi = tổng tiền thực thu của các đơn đó
+      revenue,
+      // Tổng tiền đã giảm cho khách trên các đơn đó
+      discountGiven: stats ? stats.discountGiven : 0,
+      // Giá trị đơn trung bình
+      avgOrderValue: orderCount > 0 ? Math.round(revenue / orderCount) : 0,
+    };
   }
 
   static async finishExpiredCampaigns() {

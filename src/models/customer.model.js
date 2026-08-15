@@ -114,6 +114,8 @@ const SEGMENT_FIELDS = new Set([
   'currentPoints',
   'orderCount',
   'redeemCount',
+  'totalSpent',
+  'lastVisitAt',
   'isActive',
 ]);
 
