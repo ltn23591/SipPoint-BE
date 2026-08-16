@@ -1,4 +1,4 @@
-﻿-- =====================================================
+-- =====================================================
 -- 1. Core & Users (Tai khoản & Phan quyen & Khach hang)
 -- =====================================================
 
@@ -129,23 +129,6 @@ CREATE TABLE tables (
     createdAt DATETIME2 DEFAULT CURRENT_TIMESTAMP,
     updatedAt DATETIME2 DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (zoneId) REFERENCES zones(_id)
-);
-
-CREATE TABLE shifts (
-    _id VARCHAR(24) PRIMARY KEY,
-    employeeId VARCHAR(24) NOT NULL,
-    startTime DATETIME2 NOT NULL,
-    endTime DATETIME2,
-    initialCash DECIMAL(15,2) DEFAULT 0,
-    finalCash DECIMAL(15,2) DEFAULT 0,
-    totalRevenue DECIMAL(15,2) DEFAULT 0,
-    cashRevenue DECIMAL(15,2) DEFAULT 0,
-    transferRevenue DECIMAL(15,2) DEFAULT 0,
-    status VARCHAR(50) DEFAULT 'open',
-    notes TEXT,
-    createdAt DATETIME2 DEFAULT CURRENT_TIMESTAMP,
-    updatedAt DATETIME2 DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (employeeId) REFERENCES employees(_id)
 );
 
 -- =====================================================

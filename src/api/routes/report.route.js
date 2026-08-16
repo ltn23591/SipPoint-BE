@@ -17,6 +17,5 @@ router.post('/export/material-consumption', protect, authorize(ROLE.ADMIN), Repo
 router.post('/export/revenue', protect, authorize(ROLE.ADMIN), ReportController.exportRevenue);
 router.post('/export/orders', protect, authorize(ROLE.ADMIN), ReportController.exportOrders);
 router.post('/export/customers', protect, authorize(ROLE.ADMIN), ReportController.exportCustomers);
-router.post('/export/shifts', protect, authorize(ROLE.ADMIN), ReportController.exportShifts);
 
 module.exports = router;

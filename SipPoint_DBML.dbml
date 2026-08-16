@@ -1,4 +1,4 @@
-﻿// SipPoint Database Schema for dbdiagram.io
+// SipPoint Database Schema for dbdiagram.io
 
 Table staff_roles {
   _id varchar [pk]
@@ -91,15 +91,6 @@ Table tables {
   status varchar
   qrCode text
   isActive varchar
-}
-
-Table shifts {
-  _id varchar [pk]
-  name varchar [not null]
-  startTime varchar
-  endTime varchar
-  status varchar
-  notes text
 }
 
 Table categories {

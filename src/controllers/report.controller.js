@@ -72,10 +72,6 @@ class ReportController {
   await ReportService.exportCustomers(req.body, res);
 });;
 
-  static exportShifts = catchAsync(async (req, res, next) => {
-  await ReportService.exportShifts(req.body, res);
-});;
-
 }
 
 module.exports = ReportController;

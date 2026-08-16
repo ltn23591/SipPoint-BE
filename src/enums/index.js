@@ -126,11 +126,6 @@ const PAYMENT_METHOD = {
     CARD: "CARD",
 };
 
-const SHIFT_STATUS = {
-    OPEN: "OPEN",
-    CLOSED: "CLOSED",
-};
-
 // Giới tính khách hàng (Module 3 - tiêu chí lọc nhóm)
 const GENDER = {
     MALE: "male",
@@ -201,7 +196,6 @@ module.exports = {
     CAMPAIGN_STATUS,
     ORDER_TYPE,
     PAYMENT_METHOD,
-    SHIFT_STATUS,
     GAME_STATUS,
     GAME_RUNTIME_PHASE,
     GAME_REWARD_TYPE,
