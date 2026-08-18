@@ -14,6 +14,9 @@ router.route('/')
 // Admin: đối soát lại số liệu orderCount/redeemCount toàn bộ khách (chạy 1 lần sau khi thêm field)
 router.post('/recompute-counters', protect, authorize(ROLE.ADMIN), CustomerController.recomputeCounters);
 
+// Admin: Lấy tất cả lịch sử giao dịch điểm của toàn hệ thống
+router.get('/point-history/all', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), CustomerController.getAllPointHistories);
+
 // Khách hàng lấy lịch sử điểm
 router.get('/me/point-history', protect, CustomerController.getMyPointHistory);
 

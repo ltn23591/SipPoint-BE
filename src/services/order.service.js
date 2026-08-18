@@ -510,8 +510,8 @@ class OrderService {
       throw new AppError('Không tìm thấy đơn hàng', 404);
     }
 
-    if (order.status !== ORDER_STATUS.COMPLETED) {
-      throw new AppError('Chỉ có thể hoàn trả đơn hàng đã hoàn thành', 400);
+    if (order.status === ORDER_STATUS.COMPLETED) {
+      throw new AppError('Đơn hàng đã hoàn thành, không thể hoàn trả', 400);
     }
 
     order.status = ORDER_STATUS.REFUNDED;
@@ -610,13 +610,24 @@ class OrderService {
   }
 
   /**
-   * Lấy danh sách tất cả đơn hàng kèm phân trang & lọc
+   * Lấy danh sách tất cả đơn hàng kèm phân trang & lọc giao dịch tiền
    */
-  static async getAllOrders(query) {
-    const { status, tableId, customerId, page = 1, limit = 10, startDate, endDate } = query;
+  static async getAllOrders(query = {}) {
+    const {
+      status,
+      tableId,
+      customerId,
+      paymentMethod,
+      isPaid,
+      search,
+      page = 1,
+      limit = 10,
+      startDate,
+      endDate,
+    } = query;
     const filter = { isActive: IS_ACTIVE.TRUE };
 
-    if (status !== undefined && status !== '') {
+    if (status !== undefined && status !== '' && status !== 'ALL') {
       filter.status = status;
     }
     if (tableId) {
@@ -624,6 +635,12 @@ class OrderService {
     }
     if (customerId) {
       filter.customerId = customerId;
+    }
+    if (paymentMethod && paymentMethod !== 'ALL') {
+      filter.paymentMethod = paymentMethod;
+    }
+    if (isPaid !== undefined && isPaid !== '' && isPaid !== 'ALL') {
+      filter.isPaid = isPaid === 'true' || isPaid === true;
     }
 
     // Lọc theo khoảng thời gian tạo đơn
@@ -633,15 +650,35 @@ class OrderService {
         filter.createdAt.$gte = new Date(startDate);
       }
       if (endDate) {
-        filter.createdAt.$lte = new Date(endDate);
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = end;
       }
+    }
+
+    if (search && search.trim()) {
+      const keyword = search.trim();
+      const matchedCustomers = await Customer.find({
+        $or: [
+          { fullName: { $regex: keyword, $options: 'i' } },
+          { phone: { $regex: keyword, $options: 'i' } },
+        ],
+      }).select('_id');
+
+      const customerIds = matchedCustomers.map((c) => c._id);
+
+      filter.$or = [
+        { code: { $regex: keyword, $options: 'i' } },
+        { orderNumber: { $regex: keyword, $options: 'i' } },
+        { customerId: { $in: customerIds } },
+      ];
     }
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const orders = await Order.find(filter)
       .populate('tableId', 'name')
-      .populate('customerId', 'fullName phone')
+      .populate('customerId', 'fullName phone email avatar')
       .populate('createdBy', 'name email')
       .populate(ORDER_ITEMS_POPULATE)
       .populate('voucherId')
@@ -652,7 +689,72 @@ class OrderService {
 
     const total = await Order.countDocuments(filter);
 
-    return { orders, pagination: { total, page: parseInt(page), limit: parseInt(limit), totalPages: Math.ceil(total / parseInt(limit)) } };
+    return {
+      orders,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / parseInt(limit)),
+      },
+    };
+  }
+
+  /**
+   * Tổng quan thống kê tài chính & giao dịch thanh toán
+   */
+  static async getPaymentSummary(query = {}) {
+    const { startDate, endDate } = query;
+    const filter = { isActive: IS_ACTIVE.TRUE };
+
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) filter.createdAt.$gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = end;
+      }
+    }
+
+    const paidMatchFilter = {
+      ...filter,
+      $or: [{ status: ORDER_STATUS.COMPLETED }, { isPaid: true }],
+    };
+
+    const [summaryResult, totalOrdersCount, paidOrdersCount] = await Promise.all([
+      Order.aggregate([
+        { $match: paidMatchFilter },
+        {
+          $group: {
+            _id: null,
+            totalRevenue: { $sum: '$total' },
+            cashRevenue: {
+              $sum: {
+                $cond: [{ $eq: ['$paymentMethod', PAYMENT_METHOD.CASH] }, '$total', 0],
+              },
+            },
+            transferRevenue: {
+              $sum: {
+                $cond: [{ $eq: ['$paymentMethod', PAYMENT_METHOD.TRANSFER] }, '$total', 0],
+              },
+            },
+          },
+        },
+      ]),
+      Order.countDocuments(filter),
+      Order.countDocuments(paidMatchFilter),
+    ]);
+
+    const stats = summaryResult[0] || { totalRevenue: 0, cashRevenue: 0, transferRevenue: 0 };
+
+    return {
+      totalRevenue: stats.totalRevenue || 0,
+      cashRevenue: stats.cashRevenue || 0,
+      transferRevenue: stats.transferRevenue || 0,
+      totalOrdersCount,
+      paidOrdersCount,
+    };
   }
 
   /**

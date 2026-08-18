@@ -24,11 +24,22 @@ class CustomerController {
   });
 
   static getMyPointHistory = catchAsync(async (req, res, next) => {
-    const data = await CustomerService.getMyPointHistory(req.user.id);
+    const result = await CustomerService.getMyPointHistory(req.user.id, req.query);
     res.status(200).json({
       success: true,
       message: 'Lấy lịch sử điểm thành công',
-      data,
+      data: result.pointHistories,
+      pagination: result.pagination,
+    });
+  });
+
+  static getAllPointHistories = catchAsync(async (req, res, next) => {
+    const result = await CustomerService.getAllPointHistories(req.query);
+    res.status(200).json({
+      success: true,
+      message: 'Lấy danh sách tất cả lịch sử giao dịch điểm thành công',
+      data: result.pointHistories,
+      pagination: result.pagination,
     });
   });
 

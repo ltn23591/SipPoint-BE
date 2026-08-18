@@ -14,6 +14,15 @@ class OrderController {
     });
   });
 
+  static getPaymentSummary = catchAsync(async (req, res, next) => {
+    const data = await OrderService.getPaymentSummary(req.query);
+    res.status(200).json({
+      success: true,
+      message: 'Lấy thông tin tổng quan thanh toán thành công',
+      data,
+    });
+  });
+
   static getById = catchAsync(async (req, res, next) => {
     const data = await OrderService.getOrderById(req.params.id);
     res.status(200).json({

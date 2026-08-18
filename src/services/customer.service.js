@@ -48,13 +48,93 @@ class CustomerService {
     return { customer, pointHistories, vouchers };
   }
 
-  // Khách hàng tự lấy lịch sử điểm của mình
-  static async getMyPointHistory(customerId) {
-    const pointHistories = await PointHistory.find({ customerId })
-      .sort({ createdAt: -1 })
-      .limit(20);
+  // Khách hàng tự lấy lịch sử điểm của mình (có hỗ trợ phân trang & lọc type)
+  static async getMyPointHistory(customerId, query = {}) {
+    const { page = 1, limit = 20, type } = query;
+    const skip = (page - 1) * limit;
+    const filter = { customerId };
 
-    return pointHistories;
+    if (type === 'EARN') {
+      filter.pointsChange = { $gt: 0 };
+    } else if (type === 'SPEND' || type === 'REDEEM') {
+      filter.pointsChange = { $lt: 0 };
+    }
+
+    const [pointHistories, total] = await Promise.all([
+      PointHistory.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit)),
+      PointHistory.countDocuments(filter),
+    ]);
+
+    return {
+      pointHistories,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  // Admin xem toàn bộ lịch sử giao dịch điểm của tất cả khách hàng (phân trang, lọc theo type, search, ngày)
+  static async getAllPointHistories(query = {}) {
+    const { page = 1, limit = 10, transactionType, search, startDate, endDate } = query;
+    const skip = (page - 1) * limit;
+    const filter = {};
+
+    if (transactionType && transactionType !== 'ALL') {
+      filter.transactionType = transactionType;
+    }
+
+    if (startDate || endDate) {
+      filter.createdAt = {};
+      if (startDate) filter.createdAt.$gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        filter.createdAt.$lte = end;
+      }
+    }
+
+    if (search) {
+      const matchedCustomers = await Customer.find({
+        $or: [
+          { fullName: { $regex: search, $options: 'i' } },
+          { phone: { $regex: search, $options: 'i' } },
+        ],
+      }).select('_id');
+
+      const customerIds = matchedCustomers.map((c) => c._id);
+
+      filter.$or = [
+        { customerId: { $in: customerIds } },
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const [pointHistories, total] = await Promise.all([
+      PointHistory.find(filter)
+        .populate('customerId', 'fullName phone email avatar currentPoints tierId')
+        .populate('orderId', 'code orderNumber total finalAmount subtotal discount status paymentMethod')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(parseInt(limit)),
+      PointHistory.countDocuments(filter),
+    ]);
+
+    return {
+      pointHistories,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / limit),
+      },
+    };
   }
 
   // Admin xem lịch sử điểm đầy đủ (có phân trang) của một khách hàng
