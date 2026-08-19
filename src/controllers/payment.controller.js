@@ -46,7 +46,7 @@ const sepayIPN = catchAsync(async (req, res) => {
     isPaidSuccessful = true;
     orderCodeOrId = order_invoice_number;
   }
-  // Trường hợp 2: Webhook giao dịch chuyển khoản trực tiếp (quét VietQR)
+  // Trường hợp 2: Webhook giao dịch chuyển khoản trực tiếp (qua SePay IPN)
   else if (content) {
     // Trích xuất mã đơn hàng (ví dụ: OD-485934-6138) từ nội dung chuyển khoản
     const match = content.match(/OD-\d{6}-\d{4}/i);

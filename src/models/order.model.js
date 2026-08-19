@@ -137,10 +137,6 @@ orderSchema.virtual('items', {
   foreignField: 'orderId',
 });
 
-// Virtual for VietQR payment link
-orderSchema.virtual('paymentQrUrl').get(function () {
-  return `https://img.vietqr.io/image/VCB-1030501667-compact.png?amount=${this.total}&addInfo=${this.code}`;
-});
 
 orderSchema.index({ status: 1 });
 orderSchema.index({ tableId: 1 });

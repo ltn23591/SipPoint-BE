@@ -19,7 +19,7 @@ Hệ sinh thái **SipPoint** bao gồm 3 dự án độc lập nhưng kết nố
 ```
                       ┌─────────────────────────────────────────┐
                       │    SipPoint-Landing-Page (Customer)    │
-                      │    - Đặt món VietQR / Tiền mặt          │
+                      │    - Đặt món Chuyển khoản / Tiền mặt    │
                       │    - Tích điểm, Ví Voucher, Game       │
                       │    - Trợ lý AI tư vấn & Theo dõi đơn   │
                       └────────────────────┬────────────────────┘
@@ -30,7 +30,7 @@ Hệ sinh thái **SipPoint** bao gồm 3 dự án độc lập nhưng kết nố
 │                                SipPoint-BE (Backend API)                               │
 │  - Express.js RESTful API & WebSocket Realtime Server (Socket.io)                       │
 │  - Database: MongoDB (Mongoose Schemas) & Redis (Rate Limiting)                        │
-│  - Payment Gateway: SePay Webhook Auto-Reconciliation (VietQR)                         │
+│  - Payment Gateway: SePay Webhook Auto-Reconciliation                                  │
 │  - AI Core: Google Gemini 2.5 Flash RAG Chatbot Engine (+ OpenAI Fallback)             │
 │  - Background Services: Node-Cron Scheduler (Cron Jobs 00:00 AM VN)                     │
 └──────────────────────────────────────────┬─────────────────────────────────────────────┘
@@ -56,7 +56,7 @@ Hệ sinh thái **SipPoint** bao gồm 3 dự án độc lập nhưng kết nố
 - **Real-time WebSockets**: Cập nhật ngay lập tức trạng thái đơn hàng tới màn hình Bếp / Pha chế (KDS) và Portal Quản trị qua Socket.io.
 
 ### 2. 💳 Thanh toán & Tự động Đối soát (SePay Webhook Integration)
-- **Thanh toán Tiền mặt & VietQR**: Tự động sinh mã QR động chuẩn VietQR có chứa mã đơn hàng và số tiền chính xác.
+- **Thanh toán Tiền mặt & Chuyển khoản (SePay)**: Hỗ trợ thanh toán tiền mặt và chuyển khoản ngân hàng qua cổng SePay Gateway.
 - **Tự động Đối soát Webhook**: Tích hợp cổng **SePay Webhook** lắng nghe biến động tài khoản ngân hàng real-time, tự động khớp mã đơn và số tiền, cập nhật trạng thái đơn thành `PAID` và phát thông báo WebSocket không cần thao tác thủ công.
 
 ### 3. 🎯 CRM, Tích điểm & Gamification (Loyalty & Marketing)
