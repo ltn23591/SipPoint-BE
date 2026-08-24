@@ -73,10 +73,24 @@ class TableService {
     const table = await Table.findById(id);
     if (!table) throw new AppError('Không tìm thấy bàn', 404);
 
-    const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/+$/, '');
+    const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:5174').replace(/\/+$/, '');
     const qrText = `${frontendUrl}/menu?tableId=${table._id}&zoneId=${table.zoneId}`;
     table.qrCode = await generateQRCode(qrText);
     return await table.save();
+  }
+
+  static async regenerateAllQRCodes(customFrontendUrl) {
+    const tables = await Table.find({});
+    const frontendUrl = (customFrontendUrl || process.env.FRONTEND_URL || 'http://localhost:5174').replace(/\/+$/, '');
+
+    let updatedCount = 0;
+    for (const table of tables) {
+      const qrText = `${frontendUrl}/menu?tableId=${table._id}&zoneId=${table.zoneId}`;
+      table.qrCode = await generateQRCode(qrText);
+      await table.save();
+      updatedCount++;
+    }
+    return { count: updatedCount, frontendUrl };
   }
 }
 

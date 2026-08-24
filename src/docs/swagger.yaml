@@ -2690,22 +2690,6 @@ paths:
       responses:
         "200":
           description: Thành công
-  /api/v1/feedback:
-    get:
-      summary: AI đề xuất nước uống được mua nhiều nhất (API thay thế cho api đánh giá)
-      tags:
-        - Feedback
-      responses:
-        "200":
-          description: Thành công
-  /api/v1/feedback/recommend-top-product:
-    get:
-      summary: AI đề xuất nước uống được mua nhiều nhất
-      tags:
-        - Feedback
-      responses:
-        "200":
-          description: Thành công
   /api/v1/activity-log/search:
     post:
       summary: Tìm kiếm nhật ký hoạt động (Admin)
@@ -5353,35 +5337,6 @@ components:
         isRead:
           type: boolean
           default: false
-    Feedback:
-      type: object
-      required:
-        - rating
-        - comment
-      properties:
-        _id:
-          type: string
-        customerId:
-          type: string
-        orderId:
-          type: string
-        rating:
-          type: number
-          minimum: 1
-          maximum: 5
-        comment:
-          type: string
-        reply:
-          type: string
-        replyBy:
-          type: string
-        status:
-          type: string
-          enum:
-            - pending
-            - approved
-            - rejected
-          default: pending
     ActivityLog:
       type: object
       required:
