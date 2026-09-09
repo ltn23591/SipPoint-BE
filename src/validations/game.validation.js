@@ -1,7 +1,11 @@
 const { body, param } = require('express-validator');
+const { GAME_DISPLAY_TYPE } = require('../enums');
 
 // Validate cấp field cơ bản khi tạo trò chơi. Nghiệp vụ ô/phân bổ được kiểm ở service.
 const createGame = [
+  body('displayType')
+    .optional()
+    .isIn(Object.values(GAME_DISPLAY_TYPE)).withMessage('Giao diện trò chơi không hợp lệ'),
   body('name')
     .notEmpty().withMessage('Tên trò chơi là bắt buộc')
     .isLength({ min: 2, max: 200 }).withMessage('Tên trò chơi từ 2-200 ký tự')
@@ -31,6 +35,9 @@ const createGame = [
 // Update: các field đều optional (chỉ khi DRAFT service mới cho sửa)
 const updateGame = [
   param('id').isMongoId().withMessage('ID trò chơi không hợp lệ'),
+  body('displayType')
+    .optional()
+    .isIn(Object.values(GAME_DISPLAY_TYPE)).withMessage('Giao diện trò chơi không hợp lệ'),
   body('name')
     .optional()
     .isLength({ min: 2, max: 200 }).withMessage('Tên trò chơi từ 2-200 ký tự')
