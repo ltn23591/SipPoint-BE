@@ -87,6 +87,14 @@ const GAME_STATUS = {
     CANCELLED: "CANCELLED", // Hủy / kết thúc sớm thủ công
 };
 
+// Giao diện trò chơi - quyết định cách hiển thị & bộ ảnh cấu hình phía client.
+// Luật chơi (bốc ngẫu nhiên 1 phần thưởng theo tỉ lệ phân bổ) giống nhau ở mọi giao diện.
+const GAME_DISPLAY_TYPE = {
+    LUCKY_WHEEL: "LUCKY_WHEEL", // Vòng quay may mắn - quay bánh xe; gameUrl = ảnh vòng quay
+    LUCKY_TREE: "LUCKY_TREE",   // Hái lộc đầu xuân - hái 1 bao lì xì/cành lộc trên cây;
+                                // gameUrl = ảnh cây lộc, itemImageUrl = ảnh bao lì xì (mặt úp)
+};
+
 // Pha vận hành (suy ra từ ngày, KHÔNG lưu DB - chỉ để hiển thị dashboard)
 const GAME_RUNTIME_PHASE = {
     SCHEDULED: "SCHEDULED", // Đã xuất bản nhưng chưa tới startDate
@@ -198,6 +206,7 @@ module.exports = {
     PAYMENT_METHOD,
     GAME_STATUS,
     GAME_RUNTIME_PHASE,
+    GAME_DISPLAY_TYPE,
     GAME_REWARD_TYPE,
     GAME_ACTIVITY_TYPE,
     GENDER,

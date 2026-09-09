@@ -16,6 +16,7 @@ const AppError = require('../utils/AppError');
 const { acquireUserDrawLock, releaseUserDrawLock } = require('../utils/gameLock');
 const {
   GAME_STATUS,
+  GAME_DISPLAY_TYPE,
   GAME_REWARD_TYPE,
   GAME_ACTIVITY_TYPE,
   IS_ACTIVE,
@@ -185,8 +186,10 @@ class GameService {
     const game = await Game.create({
       name: data.name,
       description: data.description,
+      displayType: data.displayType || GAME_DISPLAY_TYPE.LUCKY_WHEEL,
       backgroundUrl: data.backgroundUrl,
       gameUrl: data.gameUrl,
+      itemImageUrl: data.itemImageUrl,
       content: data.content,
       startDate: data.startDate,
       endDate: data.endDate,
@@ -415,13 +418,13 @@ class GameService {
 
     // Trò chơi đang chạy chỉ được sửa nội dung hiển thị, không đụng tới cấu hình
     // ảnh hưởng vận hành/công bằng (ô thưởng, tỉ lệ phân bổ, nhóm áp dụng, số lượt...).
-    const runningEditableFields = ['description', 'backgroundUrl', 'gameUrl', 'content', 'startDate', 'endDate', 'timeFrom', 'timeTo'];
-    const draftOnlyFields = ['name', 'appliedSegmentIds', 'defaultTurnCount', 'isExchangeTurnEnabled', 'turnRewardAmount', 'rewards', 'distributions', 'activityConfigs'];
+    const runningEditableFields = ['description', 'backgroundUrl', 'gameUrl', 'itemImageUrl', 'content', 'startDate', 'endDate', 'timeFrom', 'timeTo'];
+    const draftOnlyFields = ['name', 'displayType', 'appliedSegmentIds', 'defaultTurnCount', 'isExchangeTurnEnabled', 'turnRewardAmount', 'rewards', 'distributions', 'activityConfigs'];
 
     if (isRunning) {
       const touchedLocked = draftOnlyFields.filter((key) => data[key] !== undefined);
       if (touchedLocked.length) {
-        throw new AppError('Trò chơi đang chạy: không thể chỉnh sửa ô thưởng, tỉ lệ phân bổ, nhóm khách hàng hoặc số lượt chơi', 400);
+        throw new AppError('Trò chơi đang chạy: không thể chỉnh sửa giao diện, ô thưởng, tỉ lệ phân bổ, nhóm khách hàng hoặc số lượt chơi', 400);
       }
     }
 
@@ -1137,8 +1140,10 @@ class GameService {
       id: game._id,
       name: game.name,
       description: game.description,
+      displayType: game.displayType || GAME_DISPLAY_TYPE.LUCKY_WHEEL,
       backgroundUrl: game.backgroundUrl,
       gameUrl: game.gameUrl,
+      itemImageUrl: game.itemImageUrl,
       content: game.content,
       startDate: game.startDate,
       endDate: game.endDate,

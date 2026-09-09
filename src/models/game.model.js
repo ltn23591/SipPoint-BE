@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { GAME_STATUS, GAME_RUNTIME_PHASE } = require('../enums');
+const { GAME_STATUS, GAME_RUNTIME_PHASE, GAME_DISPLAY_TYPE } = require('../enums');
 
 // Trò chơi may mắn (Lucky Game) - aggregate root.
 // Cấu hình ô thưởng / phân bổ / hoạt động cấp lượt nằm ở các collection riêng
@@ -15,12 +15,26 @@ const gameSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    // Ảnh nền + ảnh bánh xe
+    // Giao diện trò chơi (vòng quay may mắn / hái lộc đầu xuân): quyết định cách client
+    // render và bộ ảnh cần cấu hình. Luật bốc thưởng không đổi giữa các giao diện.
+    displayType: {
+      type: String,
+      enum: Object.values(GAME_DISPLAY_TYPE),
+      default: GAME_DISPLAY_TYPE.LUCKY_WHEEL,
+    },
+    // Ảnh nền / thumbnail của trò chơi
     backgroundUrl: {
       type: String,
       trim: true,
     },
+    // Ảnh sân chơi chính: LUCKY_WHEEL = ảnh vòng quay, LUCKY_TREE = ảnh cây lộc
     gameUrl: {
+      type: String,
+      trim: true,
+    },
+    // LUCKY_TREE: ảnh một vật phẩm chưa mở (bao lì xì / cành lộc). Mọi vật phẩm dùng
+    // chung một ảnh để khách không đoán được phần thưởng trước khi hái.
+    itemImageUrl: {
       type: String,
       trim: true,
     },

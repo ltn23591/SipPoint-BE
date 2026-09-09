@@ -4142,42 +4142,101 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/GameInput"
-            example:
-              name: "Vòng quay Tết 2026"
-              description: "Trò chơi may mắn dịp Tết"
-              endDate: "2026-12-31T23:59:59.000Z"
-              startDate: "2026-02-01T00:00:00.000Z"
-              timeFrom: "08:00"
-              timeTo: "22:00"
-              defaultTurnCount: 3
-              appliedSegmentIds: ["<segmentId>"]
-              rewards:
-                - displayName: "Chúc may mắn"
-                  type: "MESSAGE"
-                  message: "Chúc bạn may mắn lần sau!"
-                  isDefault: true
-                - displayName: "Giảm 20%"
-                  type: "VOUCHER"
-                  voucherId: "<voucherId>"
-                  totalReward: 100
-                  quantity: 1
-                  allowManyTimes: false
-                - displayName: "+50 điểm"
-                  type: "POINTS"
-                  rewardValue: 50
-                  totalReward: 200
-              distributions:
-                - gameRewardIndex: 1
-                  segmentId: "<segmentId>"
-                  rate: 10
-                  maxQuantity: 50
-                  displayOrder: 0
-                  allowManyTimes: false
-              activityConfigs:
-                - activityType: "ORDER_COMPLETED"
-                  turnQuantity: 1
-                  dailyLimit: 3
-                  isActive: true
+            examples:
+              luckyWheel:
+                summary: "Giao diện Vòng quay may mắn (LUCKY_WHEEL)"
+                description: >-
+                  gameUrl là ảnh vòng quay. Bỏ trống displayType cũng ra kết quả này
+                  vì mặc định là LUCKY_WHEEL.
+                value:
+                  name: "Vòng quay Tết 2026"
+                  description: "Trò chơi may mắn dịp Tết"
+                  displayType: "LUCKY_WHEEL"
+                  backgroundUrl: "https://res.cloudinary.com/demo/image/upload/game-bg.png"
+                  gameUrl: "https://res.cloudinary.com/demo/image/upload/wheel.png"
+                  content: "Mỗi khách được 3 lượt quay, hết lượt có thể dùng điểm đổi thêm."
+                  startDate: "2026-02-01T00:00:00.000Z"
+                  endDate: "2026-12-31T23:59:59.000Z"
+                  timeFrom: "08:00"
+                  timeTo: "22:00"
+                  defaultTurnCount: 3
+                  isExchangeTurnEnabled: true
+                  turnRewardAmount: 100
+                  appliedSegmentIds: ["<segmentId>"]
+                  rewards:
+                    - displayName: "Chúc may mắn"
+                      type: "MESSAGE"
+                      message: "Chúc bạn may mắn lần sau!"
+                      isDefault: true
+                      allowManyTimes: true
+                    - displayName: "Giảm 20%"
+                      type: "VOUCHER"
+                      voucherId: "<voucherId>"
+                      totalReward: 100
+                      quantity: 1
+                      allowManyTimes: false
+                    - displayName: "+50 điểm"
+                      type: "POINTS"
+                      rewardValue: 50
+                      totalReward: 200
+                      allowManyTimes: true
+                  distributions:
+                    - gameRewardIndex: 1
+                      segmentId: "<segmentId>"
+                      rate: 10
+                      maxQuantity: 50
+                      displayOrder: 0
+                      allowManyTimes: false
+                  activityConfigs:
+                    - activityType: "ORDER_COMPLETED"
+                      turnQuantity: 1
+                      dailyLimit: 3
+                      isActive: true
+              luckyTree:
+                summary: "Giao diện Hái lộc đầu xuân (LUCKY_TREE)"
+                description: >-
+                  gameUrl là ảnh cây lộc, itemImageUrl là ảnh bao lì xì chưa mở (mọi bao dùng
+                  chung một ảnh nên khách không đoán được phần thưởng). Luật bốc thưởng giống
+                  hệt vòng quay - khách hái 1 bao, BE bốc theo tỉ lệ phân bổ.
+                value:
+                  name: "Hái lộc đầu xuân 2026"
+                  description: "Hái một bao lì xì trên cây để nhận lộc đầu năm"
+                  displayType: "LUCKY_TREE"
+                  backgroundUrl: "https://res.cloudinary.com/demo/image/upload/tet-bg.png"
+                  gameUrl: "https://res.cloudinary.com/demo/image/upload/cay-loc.png"
+                  itemImageUrl: "https://res.cloudinary.com/demo/image/upload/bao-li-xi.png"
+                  content: "Mỗi khách được 1 lượt hái lộc mỗi ngày khi điểm danh."
+                  startDate: "2026-02-14T00:00:00.000Z"
+                  endDate: "2026-03-15T23:59:59.000Z"
+                  timeFrom: "07:00"
+                  timeTo: "22:00"
+                  defaultTurnCount: 1
+                  isExchangeTurnEnabled: true
+                  turnRewardAmount: 200
+                  appliedSegmentIds: []
+                  rewards:
+                    - displayName: "Lời chúc đầu xuân"
+                      type: "MESSAGE"
+                      message: "Chúc bạn năm mới an khang thịnh vượng!"
+                      isDefault: true
+                      allowManyTimes: true
+                    - displayName: "Lộc vàng - giảm 30%"
+                      type: "VOUCHER"
+                      voucherId: "<voucherId>"
+                      totalReward: 50
+                      quantity: 1
+                      allowManyTimes: false
+                    - displayName: "Lộc xu - 88 điểm"
+                      type: "POINTS"
+                      rewardValue: 88
+                      totalReward: 300
+                      allowManyTimes: true
+                  distributions: []
+                  activityConfigs:
+                    - activityType: "DAILY_CHECKIN"
+                      turnQuantity: 1
+                      dailyLimit: 1
+                      isActive: true
       responses:
         "201":
           description: Tạo thành công (trạng thái DRAFT)
@@ -4219,6 +4278,23 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/GameInput"
+            examples:
+              switchDisplayType:
+                summary: "Đổi giao diện sang Hái lộc đầu xuân (chỉ khi DRAFT)"
+                value:
+                  displayType: "LUCKY_TREE"
+                  gameUrl: "https://res.cloudinary.com/demo/image/upload/cay-loc.png"
+                  itemImageUrl: "https://res.cloudinary.com/demo/image/upload/bao-li-xi.png"
+              runningEditable:
+                summary: "Game đang chạy: chỉ sửa được nội dung hiển thị"
+                description: >-
+                  Khi PUBLISHED/PAUSED chỉ nhận description, backgroundUrl, gameUrl,
+                  itemImageUrl, content, startDate, endDate, timeFrom, timeTo. Gửi kèm
+                  displayType / rewards / distributions / appliedSegmentIds sẽ bị từ chối (400).
+                value:
+                  description: "Cập nhật mô tả cho chương trình đang chạy"
+                  itemImageUrl: "https://res.cloudinary.com/demo/image/upload/bao-li-xi-v2.png"
+                  timeTo: "23:00"
       responses:
         "200":
           description: Cập nhật thành công
@@ -4333,7 +4409,10 @@ paths:
             default: 10
       responses:
         "200":
-          description: "Danh sách game (ẩn totalReward/isDefault/allowManyTimes/phân bổ)"
+          description: >-
+            Danh sách game (ẩn totalReward/isDefault/allowManyTimes/phân bổ). Mỗi game trả
+            kèm displayType (LUCKY_WHEEL / LUCKY_TREE) + itemImageUrl để client render đúng
+            giao diện.
         "403":
           description: Chỉ khách hàng mới được xem
   /api/v1/games/{id}/detail:
@@ -4666,10 +4745,21 @@ components:
           type: string
         description:
           type: string
+        displayType:
+          type: string
+          description: >-
+            Giao diện trò chơi. LUCKY_WHEEL = vòng quay may mắn (gameUrl là ảnh vòng quay),
+            LUCKY_TREE = hái lộc đầu xuân (gameUrl là ảnh cây lộc, itemImageUrl là ảnh bao lì xì).
+            Chỉ sửa được khi trò chơi ở trạng thái DRAFT.
+          enum: [LUCKY_WHEEL, LUCKY_TREE]
+          default: LUCKY_WHEEL
         backgroundUrl:
           type: string
         gameUrl:
           type: string
+        itemImageUrl:
+          type: string
+          description: Ảnh bao lì xì / cành lộc chưa mở - dùng cho giao diện LUCKY_TREE
         content:
           type: string
         startDate:
@@ -4687,6 +4777,14 @@ components:
         defaultTurnCount:
           type: integer
           default: 0
+        isExchangeTurnEnabled:
+          type: boolean
+          default: false
+          description: Cho phép khách dùng điểm tích lũy đổi thêm lượt chơi
+        turnRewardAmount:
+          type: integer
+          description: Số điểm cần để đổi 1 lượt chơi (bắt buộc khi isExchangeTurnEnabled=true)
+          example: 100
         appliedSegmentIds:
           type: array
           items:
