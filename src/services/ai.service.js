@@ -9,6 +9,7 @@ const CustomerVoucher = require('../models/customerVoucher.model');
 const Order = require('../models/order.model');
 const { OrderItem } = require('../models/orderItem.model');
 const MaterialService = require('./material.service');
+const { ORDER_STATUS } = require('../enums');
 
 // Sử dụng biến môi trường Gemini
 const apiKey = process.env.GEMINI_API_KEY;
@@ -426,7 +427,7 @@ ${voucherCatalog}
       const products = await Product.find({ isActive: 'active', isDeleted: false }).populate('category', 'name').lean();
 
       // 2. Thống kê số lượng bán ra của từng sản phẩm từ các đơn hàng hoàn thành
-      const completedOrders = await Order.find({ status: 'completed' }).select('_id');
+      const completedOrders = await Order.find({ status: ORDER_STATUS.COMPLETED }).select('_id');
       const orderIds = completedOrders.map(o => o._id);
 
       const salesStats = await OrderItem.aggregate([

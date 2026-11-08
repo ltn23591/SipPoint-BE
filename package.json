@@ -1,7 +1,7 @@
 {
   "name": "node-express-base",
   "version": "1.0.0",
-  "description": "A basic Node.js Express boilerplate in TypeScript",
+  "description": "SipPoint F&B Management Backend API Service (Node.js, Express.js, MongoDB, Redis, Socket.io)",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",

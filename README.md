@@ -8,7 +8,7 @@
 [![Google Gemini](https://img.shields.io/badge/Google%20Gemini-2.5%20Flash-4285F4?style=for-the-badge&logo=google-gemini&logoColor=white)](https://ai.google.dev/)
 [![Swagger](https://img.shields.io/badge/Swagger-API%20Docs-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)](http://localhost:5000/api-docs)
 
-**SipPoint-BE** là trung tâm dữ liệu và dịch vụ Backend API cốt lõi được xây dựng bằng **Node.js, Express.js (ES Modules) và MongoDB**, phục vụ toàn bộ hạ tầng xử lý nghiệp vụ cho chuỗi cửa hàng cà phê & trà sữa thông minh **SipPoint Coffee & Tea**.
+**SipPoint-BE** là trung tâm dữ liệu và dịch vụ Backend API cốt lõi được xây dựng bằng **Node.js, Express.js (CommonJS) và MongoDB**, phục vụ toàn bộ hạ tầng xử lý nghiệp vụ cho chuỗi cửa hàng cà phê & trà sữa thông minh **SipPoint Coffee & Tea**.
 
 ---
 
@@ -55,10 +55,10 @@ flowchart TD
 
 ## 🚀 2. Phân hệ Nghiệp vụ Cốt lõi (Core Modules)
 
-### ☕ 2.1. Quản lý Thực đơn, Biến thể & Giá (Catalog & Pricing Engine)
+### ☕ 2.1. Quản lý Thực đơn, Biến thể & Công thức (Catalog & Recipe Engine)
 - **Danh mục & Sản phẩm**: Đa dạng danh mục (Cà phê, Trà sữa, Đá xay, Bánh ngọt...).
-- **Biến thể linh hoạt**: Hỗ trợ nhóm biến thể Size (M, L) và Toppings đi kèm (Trân châu, Khúc bạch, Milkfoam...).
-- **Quản lý giá (ProductPrice)**: Quản lý giá gốc, giá điều chỉnh theo biến thể và bảng giá thời điểm.
+- **Biến thể linh hoạt (`ProductVariant`)**: Hỗ trợ nhóm biến thể Size (M, L) và Toppings đi kèm (Trân châu, Khúc bạch, Milkfoam...) kèm giá điều chỉnh (`priceAdjustment`).
+- **Định mức công thức (`ProductRecipe`)**: Liên kết trực tiếp từng sản phẩm với định mức nguyên liệu để tính toán khả năng phục vụ (`availability`) theo thời gian thực.
 
 ### 🛒 2.2. Xử lý Đơn hàng & POS Real-time
 - **Đa dạng hình thức đơn**: Ăn tại chỗ (`DINE_IN`), Mang về (`TAKEAWAY`), Giao hàng (`DELIVERY`) và Thu ngân (`COUNTER`).
@@ -95,9 +95,10 @@ flowchart TD
 - **Cơ chế Hold/Commit Tồn kho**: Tạm giữ (Hold) kho khi đơn vừa tạo và chính thức trừ kho (Consume) khi đơn hoàn thành.
 - **Cảnh báo hết hàng**: Tự động tính toán số lượng tồn và cảnh báo khi nguyên liệu xuống dưới ngưỡng an toàn (`LOW` / `OUT_OF_STOCK`).
 
-### 📑 2.9. Báo cáo & Ca làm việc (Shifts & Analytics)
-- **Quản lý Ca làm (Shift)**: Khởi tạo ca, ghi nhận tiền két đầu ca, chốt két cuối ca, tính chênh lệch tiền mặt và tiền chuyển khoản.
-- **Xuất báo cáo Excel / PDF**: Xuất báo cáo doanh thu, lịch sử ca làm, báo cáo tồn kho ra file `.xlsx` hoặc `.pdf`.
+### 📑 2.9. Báo cáo, Nhật ký Hoạt động & Cấu hình Cửa hàng (Analytics & Store Config)
+- **Nhật ký hoạt động (`ActivityLog`)**: Ghi nhận chi tiết lịch sử thao tác quản trị của nhân viên kèm địa chỉ IP và mốc thời gian.
+- **Cấu hình Cửa hàng (`Store`)**: Quản lý tập trung thông tin cửa hàng, mã số thuế, VAT, giờ mở cửa, thông tin Wi-Fi hóa đơn và bật/tắt phương thức thanh toán.
+- **Xuất báo cáo Excel (`ExcelJS`)**: Xuất báo cáo doanh thu, danh sách đơn hàng, khách hàng và tiêu hao nguyên liệu ra file `.xlsx`.
 
 ---
 
@@ -113,16 +114,19 @@ flowchart TD
 | **Catalog** | `POST` | `/api/v1/products` | Thêm mới sản phẩm | Admin / Manager |
 | **Catalog** | `PUT` | `/api/v1/products/:id` | Cập nhật sản phẩm | Admin / Manager |
 | **Orders & POS** | `GET` | `/api/v1/orders` | Danh sách đơn hàng (Phân trang, lọc status/date) | Staff / Manager |
-| **Orders & POS** | `POST` | `/api/v1/orders` | Tạo đơn hàng mới | All Users |
+| **Orders & POS** | `POST` | `/api/v1/orders` | Tạo đơn hàng mới | Staff / Customer |
 | **Orders & POS** | `PATCH` | `/api/v1/orders/:id/status` | Cập nhật trạng thái đơn (PENDING ➔ COMPLETED) | Staff / Manager |
-| **Payment (SePay)** | `POST` | `/api/v1/payments/sepay/create` | Khởi tạo giao dịch thanh toán SePay | Authenticated |
-| **Payment (SePay)** | `POST` | `/api/v1/payments/sepay/ipn` | Webhook IPN nhận kết quả chuyển khoản | Public (SePay Server) |
+| **Orders & POS** | `POST` | `/api/v1/orders/:id/refund` | Hoàn trả đơn đã hoàn tất (hoàn điểm, kho & voucher) | Admin / Cashier |
+| **Payment (SePay)** | `POST` | `/api/v1/payment/sepay/create` | Khởi tạo giao dịch thanh toán SePay | Public / Customer |
+| **Payment (SePay)** | `POST` | `/api/v1/payment/sepay/ipn` | Webhook IPN nhận kết quả chuyển khoản | SePay Server |
+| **Payment (SePay)** | `POST` | `/api/v1/payment/sepay/confirm-payment` | Đối soát trạng thái thanh toán qua SePay Open API | Public / Customer |
 | **Loyalty & Customer**| `GET` | `/api/v1/customers/me` | Lấy thông tin tài khoản & điểm thưởng cá nhân | Customer |
 | **Loyalty & Customer**| `GET` | `/api/v1/customers/me/vouchers` | Danh sách voucher trong ví cá nhân | Customer |
-| **Lucky Game** | `POST` | `/api/v1/lucky-game/play` | Thực hiện lượt quay trò chơi may mắn | Customer |
+| **Lucky Game** | `POST` | `/api/v1/games/:id/play` | Thực hiện lượt quay trò chơi may mắn | Customer |
 | **AI Chatbot** | `POST` | `/api/v1/ai/chat` | Trò chuyện với Trợ lý AI (RAG Engine) | Public / Customer |
-| **Inventory** | `GET` | `/api/v1/materials` | Quản lý danh sách kho nguyên liệu | Manager / Staff |
-| **Shifts** | `POST` | `/api/v1/shifts/close` | Chốt két ca làm việc cuối ngày | Cashier / Manager |
+| **Inventory** | `GET` | `/api/v1/materials` | Quản lý danh sách kho nguyên liệu | Admin / Staff |
+| **Reports** | `GET` | `/api/v1/report/revenue` | Báo cáo doanh thu theo khoảng thời gian | Admin |
+| **Store Config** | `GET/PUT` | `/api/v1/store/config` | Xem và cập nhật cấu hình cửa hàng & thanh toán | Public / Admin |
 
 ---
 
@@ -130,19 +134,26 @@ flowchart TD
 
 | Tên Model (Mongoose) | Tên Collection | Chức năng & Vai trò chính |
 |---|---|---|
-| `User` | `users` | Tài khoản hệ thống (Admin, Manager, Cashier, Barista, Staff) |
+| `Employee` | `employees` | Tài khoản nhân sự hệ thống (Admin, Cashier, Barista, Staff) |
+| `StaffRole` | `staffroles` | Vai trò & danh sách quyền hạn RBAC của nhân viên |
 | `Customer` | `customers` | Tài khoản khách hàng, điểm tích lũy SipPoints, hạng hội viên |
 | `Product` | `products` | Thông tin món uống, giá bán, danh mục, hình ảnh |
+| `ProductVariant` | `productvariants` | Biến thể kích cỡ (Size) & Topping kèm giá cộng thêm |
+| `ProductRecipe` | `productrecipes` | Công thức định mức nguyên liệu của từng sản phẩm |
 | `Category` | `categories` | Danh mục sản phẩm (Cà phê, Trà, Đá xay...) |
-| `Order` | `orders` | Đơn hàng, tổng tiền, phương thức thanh toán, trạng thái |
+| `Order` | `orders` | Đơn hàng, tổng tiền, phương thức thanh toán, trạng thái, giữ kho |
 | `OrderItem` | `orderitems` | Chi tiết từng món trong đơn, biến thể Size/Topping đã chọn |
-| `Table` | `tables` | Sơ đồ bàn ăn, vị trí khu vực, trạng thái sử dụng |
+| `Table` | `tables` | Sơ đồ bàn ăn, mã QR, vị trí khu vực, trạng thái sử dụng |
 | `Zone` | `zones` | Khu vực cửa hàng (Tầng 1, Tầng 2, Sân thượng) |
 | `Voucher` | `vouchers` | Mã giảm giá, điều kiện áp dụng, hạn sử dụng |
 | `CustomerVoucher` | `customervouchers` | Ví voucher cá nhân của từng khách hàng |
-| `LuckyGame` | `luckygames` | Cấu hình chương trình Trò chơi may mắn & danh sách ô quà |
+| `CustomerSegment` | `customersegments` | Phân khúc khách hàng tự động (`AUTO`) hoặc thủ công (`MANUAL`) |
+| `Campaign` | `campaigns` | Chiến dịch phát voucher hàng loạt theo nhóm khách hàng |
+| `Game` / `GameReward` | `games` / `gamerewards` | Cấu hình chương trình Trò chơi may mắn & danh sách ô thưởng |
 | `Material` | `materials` | Kho nguyên liệu pha chế, số lượng tồn, ngưỡng cảnh báo |
-| `Shift` | `shifts` | Ca làm việc nhân viên, số tiền ban đầu, số tiền chốt két |
+| `StockMovement` | `stockmovements` | Sổ cái biến động tồn kho (`IMPORT`, `HOLD`, `CONSUME`, `RESTOCK`) |
+| `Store` | `stores` | Cấu hình thông tin cửa hàng, thuế VAT, giờ mở cửa, phương thức TT |
+| `ActivityLog` | `activitylogs` | Nhật ký thao tác hệ thống của nhân viên và quản trị viên |
 
 ---
 
@@ -172,7 +183,8 @@ Tạo tệp `.env` tại thư mục gốc từ mẫu `.env.example`:
 | `OPENAI_API_KEY` | String | Khóa OpenAI API (Fallback RAG) | `sk-proj-...` |
 | `SEPAY_ENV` | String | Môi trường SePay (`sandbox` / `live`) | `sandbox` |
 | `SEPAY_MERCHANT_ID` | String | Mã định danh Merchant trên SePay | `MERCHANT_123` |
-| `SEPAY_SECRET_KEY` | String | Khóa bí mật cấu hình SePay IPN Webhook | `SECRET_ABC123` |
+| `SEPAY_SECRET_KEY` | String | Khóa bí mật cấu hình SePay Payment Gateway | `SECRET_ABC123` |
+| `SEPAY_WEBHOOK_API_KEY` | String | Khóa API Key xác thực SePay Bank Webhook | `WEBHOOK_KEY_123` |
 | `REDIS_URL` | String | URL kết nối Redis Cache & Rate Limiting | `redis://localhost:6379` |
 | `SERVER_URL` | String | Domain public của Server Backend | `http://localhost:5000` |
 | `FRONTEND_URL` | String | Domain public của Customer Web App | `http://localhost:5173` |

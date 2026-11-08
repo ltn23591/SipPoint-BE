@@ -893,7 +893,7 @@ class GameService {
     const rollbacks = [];
     const rollbackAll = async () => {
       for (const fn of rollbacks.reverse()) {
-        try { await fn(); } catch (e) { /* best-effort */ }
+        try { await fn(); } catch { /* best-effort */ }
       }
     };
 

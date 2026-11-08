@@ -8,21 +8,21 @@ const connectDB = async () => {
     try {
       await conn.connection.db.collection('orders').dropIndex('orderCode_1');
       console.log(`\x1b[32m✔ [MongoDB] Legacy orderCode_1 index dropped successfully\x1b[0m`);
-    } catch (e) {
+    } catch {
       console.log(`\x1b[36mℹ [MongoDB] Legacy orderCode_1 index not found or already dropped (no action needed)\x1b[0m`);
     }
 
     try {
       await conn.connection.db.collection('customers').dropIndex('customerId_1');
       console.log(`\x1b[32m✔ [MongoDB] Legacy customerId_1 index dropped successfully\x1b[0m`);
-    } catch (e) {
+    } catch {
       console.log(`\x1b[36mℹ [MongoDB] Legacy customerId_1 index not found or already dropped (no action needed)\x1b[0m`);
     }
 
     try {
       await conn.connection.db.collection('customers').dropIndex('phone_1');
       console.log(`\x1b[32m✔ [MongoDB] Legacy phone_1 index dropped successfully\x1b[0m`);
-    } catch (e) {
+    } catch {
       console.log(`\x1b[36mℹ [MongoDB] Legacy phone_1 index not found or already dropped (no action needed)\x1b[0m`);
     }
   } catch (error) {

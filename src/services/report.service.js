@@ -3,7 +3,25 @@ const { OrderItem } = require('../models/orderItem.model');
 const Customer = require('../models/customer.model');
 const StockMovement = require('../models/stockMovement.model');
 const Material = require('../models/material.model');
+const { ORDER_STATUS, IS_ACTIVE } = require('../enums');
 const exceljs = require('exceljs');
+
+const buildDateRange = (startDate, endDate) => {
+  const range = {};
+  if (startDate) {
+    const start = new Date(startDate);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(String(startDate).trim())) {
+      start.setHours(0, 0, 0, 0);
+    }
+    range.$gte = start;
+  }
+  if (endDate) {
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    range.$lte = end;
+  }
+  return range;
+};
 
 class ReportService {
   static async getDashboardData() {
@@ -14,18 +32,31 @@ class ReportService {
     endOfDay.setHours(23, 59, 59, 999);
 
     const dateFilter = {
-      createdAt: { $gte: startOfDay, $lte: endOfDay }
+      createdAt: { $gte: startOfDay, $lte: endOfDay },
     };
 
     const totalRevenueResult = await Order.aggregate([
-      { $match: { isPaid: true, status: 'COMPLETED', ...dateFilter } },
-      { $group: { _id: null, total: { $sum: '$total' } } }
+      {
+        $match: {
+          isActive: { $ne: IS_ACTIVE.FALSE },
+          isPaid: true,
+          status: ORDER_STATUS.COMPLETED,
+          ...dateFilter,
+        },
+      },
+      { $group: { _id: null, total: { $sum: '$total' } } },
     ]);
     const totalRevenue = totalRevenueResult[0]?.total || 0;
 
-    const totalOrders = await Order.countDocuments(dateFilter);
+    const totalOrders = await Order.countDocuments({
+      isActive: { $ne: IS_ACTIVE.FALSE },
+      ...dateFilter,
+    });
     const totalCustomers = await Customer.countDocuments(dateFilter);
-    const recentOrders = await Order.find(dateFilter)
+    const recentOrders = await Order.find({
+      isActive: { $ne: IS_ACTIVE.FALSE },
+      ...dateFilter,
+    })
       .populate('customerId tableId')
       .populate('items')
       .sort({ createdAt: -1 })
@@ -35,17 +66,19 @@ class ReportService {
       totalRevenue,
       totalOrders,
       totalCustomers,
-      recentOrders
+      recentOrders,
     };
   }
 
-  static async getRevenueReport(query) {
+  static async getRevenueReport(query = {}) {
     const { startDate, endDate } = query;
-    const filter = { isPaid: true, status: 'COMPLETED' };
+    const filter = {
+      isActive: { $ne: IS_ACTIVE.FALSE },
+      isPaid: true,
+      status: ORDER_STATUS.COMPLETED,
+    };
     if (startDate || endDate) {
-      filter.createdAt = {};
-      if (startDate) filter.createdAt.$gte = new Date(startDate);
-      if (endDate) filter.createdAt.$lte = new Date(endDate);
+      filter.createdAt = buildDateRange(startDate, endDate);
     }
 
     const revenueData = await Order.aggregate([
@@ -54,29 +87,30 @@ class ReportService {
         $group: {
           _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
           revenue: { $sum: '$total' },
-          count: { $sum: 1 }
-        }
+          count: { $sum: 1 },
+        },
       },
-      { $sort: { _id: 1 } }
+      { $sort: { _id: 1 } },
     ]);
 
     return revenueData;
   }
 
-  static async getTopProducts(query) {
+  static async getTopProducts(query = {}) {
     const { startDate, endDate, limit = 5 } = query;
 
     // Lọc theo khoảng thời gian trên bảng orders
-    const orderFilter = { status: 'COMPLETED' };
+    const orderFilter = {
+      isActive: { $ne: IS_ACTIVE.FALSE },
+      status: ORDER_STATUS.COMPLETED,
+    };
     if (startDate || endDate) {
-      orderFilter.createdAt = {};
-      if (startDate) orderFilter.createdAt.$gte = new Date(startDate);
-      if (endDate) orderFilter.createdAt.$lte = new Date(endDate);
+      orderFilter.createdAt = buildDateRange(startDate, endDate);
     }
 
     // Lấy danh sách orderId từ orders đã COMPLETED
     const completedOrders = await Order.find(orderFilter).select('_id');
-    const orderIds = completedOrders.map(o => o._id);
+    const orderIds = completedOrders.map((o) => o._id);
 
     // Aggregate từ collection orderitems
     const topProducts = await OrderItem.aggregate([
@@ -86,11 +120,11 @@ class ReportService {
           _id: '$productId',
           name: { $first: '$name' },
           qty: { $sum: '$qty' },
-          revenue: { $sum: '$subtotal' }
-        }
+          revenue: { $sum: '$subtotal' },
+        },
       },
       { $sort: { qty: -1 } },
-      { $limit: parseInt(limit, 10) }
+      { $limit: parseInt(limit, 10) },
     ]);
 
     return topProducts;
@@ -105,9 +139,7 @@ class ReportService {
 
     const match = {};
     if (startDate || endDate) {
-      match.createdAt = {};
-      if (startDate) match.createdAt.$gte = new Date(startDate);
-      if (endDate) match.createdAt.$lte = new Date(endDate);
+      match.createdAt = buildDateRange(startDate, endDate);
     }
 
     const rows = await StockMovement.aggregate([
@@ -192,9 +224,7 @@ class ReportService {
       quantityChange: { $lt: 0 },
     };
     if (startDate || endDate) {
-      match.createdAt = {};
-      if (startDate) match.createdAt.$gte = new Date(startDate);
-      if (endDate) match.createdAt.$lte = new Date(endDate);
+      match.createdAt = buildDateRange(startDate, endDate);
     }
 
     return await StockMovement.aggregate([
@@ -256,12 +286,10 @@ class ReportService {
     res.end();
   }
 
-  static async exportOrders(query, res) {
-    const filter = {};
+  static async exportOrders(query = {}, res) {
+    const filter = { isActive: { $ne: IS_ACTIVE.FALSE } };
     if (query.startDate || query.endDate) {
-      filter.createdAt = {};
-      if (query.startDate) filter.createdAt.$gte = new Date(query.startDate);
-      if (query.endDate) filter.createdAt.$lte = new Date(query.endDate);
+      filter.createdAt = buildDateRange(query.startDate, query.endDate);
     }
 
     const orders = await Order.find(filter).populate('customerId').sort({ createdAt: -1 });

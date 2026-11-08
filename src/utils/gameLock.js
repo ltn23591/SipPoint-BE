@@ -39,7 +39,7 @@ async function releaseUserDrawLock(lock) {
       lock.key,
       lock.token
     );
-  } catch (err) {
+  } catch {
     // Bỏ qua - khóa sẽ tự hết hạn theo TTL
   }
 }

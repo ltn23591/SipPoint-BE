@@ -505,18 +505,28 @@ class OrderService {
       throw new AppError('Lý do hoàn trả đơn hàng là bắt buộc', 400);
     }
 
-    const order = await Order.findById(orderId);
+    let order = await Order.findById(orderId);
     if (!order || order.isActive === IS_ACTIVE.FALSE) {
       throw new AppError('Không tìm thấy đơn hàng', 404);
     }
 
-    if (order.status === ORDER_STATUS.COMPLETED) {
-      throw new AppError('Đơn hàng đã hoàn thành, không thể hoàn trả', 400);
+    if (order.status === ORDER_STATUS.REFUNDED) {
+      throw new AppError('Đơn hàng đã được hoàn trả trước đó', 400);
+    }
+    if (order.status !== ORDER_STATUS.COMPLETED) {
+      throw new AppError('Chỉ có thể hoàn trả đơn hàng đã hoàn thành', 400);
     }
 
-    order.status = ORDER_STATUS.REFUNDED;
-    order.note = order.note ? `${order.note} | Lý do hoàn trả: ${reason}` : `Lý do hoàn trả: ${reason}`;
-    order.updatedBy = updatedById;
+    const updatedNote = order.note ? `${order.note} | Lý do hoàn trả: ${reason}` : `Lý do hoàn trả: ${reason}`;
+    const claimed = await Order.findOneAndUpdate(
+      { _id: order._id, status: ORDER_STATUS.COMPLETED },
+      { $set: { status: ORDER_STATUS.REFUNDED, note: updatedNote, updatedBy: updatedById } },
+      { new: true }
+    );
+    if (!claimed) {
+      throw new AppError('Đơn hàng vừa được cập nhật ở một thao tác khác, vui lòng tải lại', 409);
+    }
+    order = claimed;
 
     // Trừ lại điểm đã cộng khi đơn hoàn thành (clamp theo số dư nếu khách đã tiêu bớt điểm)
     if (order.pointsAwarded > 0 && order.customerId) {
@@ -719,6 +729,7 @@ class OrderService {
 
     const paidMatchFilter = {
       ...filter,
+      status: { $nin: [ORDER_STATUS.CANCELLED, ORDER_STATUS.REFUNDED] },
       $or: [{ status: ORDER_STATUS.COMPLETED }, { isPaid: true }],
     };
 
