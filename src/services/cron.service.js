@@ -5,6 +5,7 @@ const CampaignService = require('./campaign.service');
 const GameService = require('./game.service');
 const MaterialService = require('./material.service');
 const NotificationService = require('./notification.service');
+const OrderService = require('./order.service');
 const { emitToAll } = require('./socket.service');
 
 // Job nghiệp vụ 00:00 hằng ngày (giờ VN): duy trì / hạ hạng thành viên hết chu kỳ
@@ -118,11 +119,37 @@ const scheduleSelfPing = () => {
   });
 };
 
+// Quét mỗi phút để tự động hủy các đơn chuyển khoản (SePay) treo quá 15 phút chưa thanh toán
+const scheduleExpiredOrderCleanup = () => {
+  const timeoutMinutes = parseInt(process.env.UNPAID_ORDER_TIMEOUT_MINUTES || '15', 10);
+
+  cron.schedule(
+    '* * * * *',
+    async () => {
+      try {
+        const result = await OrderService.cancelExpiredUnpaidOrders(timeoutMinutes);
+        if (result.cancelledCount > 0) {
+          console.log(
+            `✅ [Cron] Auto-cancelled ${result.cancelledCount} expired unpaid transfer order(s) (> ${timeoutMinutes}m)`
+          );
+        }
+      } catch (error) {
+        console.error('❌ [Cron] Error during expired unpaid order cleanup:', error.message);
+      }
+    },
+    { timezone: 'Asia/Ho_Chi_Minh' }
+  );
+
+  console.log(`⏱️ [Cron] Expired unpaid transfer order cleanup scheduled every minute (timeout: ${timeoutMinutes}m)`);
+};
+
 const initCron = () => {
   scheduleDailyJobs();
+  scheduleExpiredOrderCleanup();
   scheduleSelfPing();
 };
 
 module.exports = {
   initCron,
+  scheduleExpiredOrderCleanup,
 };

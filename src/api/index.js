@@ -27,6 +27,7 @@ const materialRoutes = require('./routes/material.route');
 const recipeRoutes = require('./routes/recipe.route');
 
 const bannerRoutes = require('./routes/banner.route');
+const feedbackRoutes = require('./routes/feedback.route');
 
 const router = express.Router();
 
@@ -66,5 +67,6 @@ router.use('/payment', paymentRoutes);
 router.use('/materials', materialRoutes);
 router.use('/recipes', recipeRoutes);
 router.use('/banners', bannerRoutes);
+router.use('/feedback', feedbackRoutes);
 
 module.exports = router;

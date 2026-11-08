@@ -77,6 +77,17 @@ class OrderController {
     });
   });
 
+  static cancelPublicOrder = catchAsync(async (req, res, next) => {
+    const { reason } = req.body || {};
+    const customerId = req.user ? req.user._id : null;
+    const data = await OrderService.cancelCustomerOrder(req.params.id, reason, customerId);
+    res.status(200).json({
+      success: true,
+      message: 'Đã hủy đơn hàng thành công',
+      data,
+    });
+  });
+
   static getOrderStatus = catchAsync(async (req, res, next) => {
     const Order = require('../models/order.model');
     let order = null;

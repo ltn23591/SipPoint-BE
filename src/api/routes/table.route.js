@@ -11,6 +11,10 @@ router.route('/')
   .get(TableController.getAll)
   .post(protect, authorize(ROLE.ADMIN), TableController.create);
 
+// Khách tại bàn gọi nhân viên / yêu cầu hỗ trợ qua QR
+router.post('/assist', TableController.requestAssistance);
+router.post('/:id/assist', TableController.requestAssistance);
+
 // Lấy chi tiết (Public) / Cập nhật (Staff) / Xóa (Admin)
 router.route('/:id')
   .get(TableController.getById)

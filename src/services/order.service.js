@@ -781,6 +781,65 @@ class OrderService {
   static async completeOrder(orderId, updatedById) {
     return this.updateOrderStatus(orderId, ORDER_STATUS.COMPLETED, updatedById);
   }
+
+  /**
+   * Khách hàng tự hủy đơn khi quán chưa xác nhận (trạng thái PENDING)
+   */
+  static async cancelCustomerOrder(orderId, reason, customerId = null) {
+    const order = await Order.findById(orderId);
+    if (!order || order.isActive === IS_ACTIVE.FALSE) {
+      throw new AppError('Không tìm thấy đơn hàng', 404);
+    }
+
+    if (order.status !== ORDER_STATUS.PENDING) {
+      throw new AppError('Chỉ có thể hủy đơn hàng khi quán chưa xác nhận (trạng thái Chờ xác nhận)', 400);
+    }
+
+    if (order.isPaid) {
+      throw new AppError('Đơn hàng đã thanh toán không thể tự hủy, vui lòng liên hệ nhân viên tại quầy', 400);
+    }
+
+    if (order.customerId && customerId && String(order.customerId) !== String(customerId)) {
+      throw new AppError('Bạn không có quyền hủy đơn hàng này', 403);
+    }
+
+    const cancelReason =
+      reason && typeof reason === 'string' && reason.trim()
+        ? `Khách tự hủy: ${reason.trim()}`
+        : 'Khách hàng tự hủy đơn khi chờ xác nhận';
+
+    return this.cancelOrder(order._id, cancelReason, null);
+  }
+
+  /**
+   * Tự động hủy các đơn chuyển khoản (TRANSFER) chưa thanh toán quá thời gian quy định (mặc định 15 phút)
+   */
+  static async cancelExpiredUnpaidOrders(timeoutMinutes = 15) {
+    const cutoff = new Date(Date.now() - timeoutMinutes * 60 * 1000);
+    const expiredOrders = await Order.find({
+      isActive: IS_ACTIVE.TRUE,
+      status: ORDER_STATUS.PENDING,
+      paymentMethod: PAYMENT_METHOD.TRANSFER,
+      isPaid: false,
+      createdAt: { $lte: cutoff },
+    }).select('_id code');
+
+    let cancelledCount = 0;
+    for (const exp of expiredOrders) {
+      try {
+        await this.cancelOrder(
+          exp._id,
+          `Tự động hủy do quá hạn thanh toán chuyển khoản (${timeoutMinutes} phút)`,
+          null
+        );
+        cancelledCount += 1;
+      } catch (err) {
+        console.error(`[OrderCleanup] Không thể tự động hủy đơn ${exp.code}:`, err.message);
+      }
+    }
+
+    return { cancelledCount };
+  }
 }
 
 module.exports = OrderService;

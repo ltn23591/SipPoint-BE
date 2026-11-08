@@ -14,6 +14,7 @@ router.get('/payment-summary', protect, authorize(ROLE.ADMIN, ROLE.CASHIER), Ord
 
 router.get('/public/:id/status', OrderController.getOrderStatus);
 router.get('/public/:id', OrderController.getById);
+router.post('/public/:id/cancel', OrderController.cancelPublicOrder);
 router.post('/public', OrderController.create);
 
 router.get('/:id', protect, authorize(ROLE.ADMIN, ROLE.CASHIER, ROLE.BARISTA, ROLE.WAITER), OrderController.getById);

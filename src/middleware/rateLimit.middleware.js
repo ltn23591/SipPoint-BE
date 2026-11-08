@@ -14,13 +14,17 @@ if (RedisStore.default) {
 
 // Khởi tạo Redis client
 const redisUrl = (process.env.REDIS_URL || '').trim();
-const redisClient = new Redis(redisUrl, {
+const isTestOrNoRedis = process.env.NODE_ENV === 'test' || !redisUrl;
+const redisClient = new Redis(redisUrl || undefined, {
   family: 0,
-  connectTimeout: 10000
+  connectTimeout: 10000,
+  lazyConnect: isTestOrNoRedis,
 });
 
 redisClient.on('error', (err) => {
-  logger.error(`[Redis] Lỗi kết nối Redis (Rate Limit):`, err);
+  if (!isTestOrNoRedis) {
+    logger.error(`[Redis] Lỗi kết nối Redis (Rate Limit):`, err);
+  }
 });
 
 redisClient.on('connect', () => {
@@ -28,15 +32,18 @@ redisClient.on('connect', () => {
 });
 
 /**
- * Hàm tạo Rate Limiter dùng Redis
+ * Hàm tạo Rate Limiter dùng Redis (hoặc MemoryStore khi không cấu hình REDIS_URL / môi trường test)
  */
 const createRateLimiter = (options) => {
   const config = {
-    // Sử dụng Redis Store
-    store: new RedisStore({
-      sendCommand: (...args) => redisClient.call(...args),
-      prefix: options.prefix || 'rate_limit:'
-    }),
+    ...(isTestOrNoRedis
+      ? {}
+      : {
+          store: new RedisStore({
+            sendCommand: (...args) => redisClient.call(...args),
+            prefix: options.prefix || 'rate_limit:',
+          }),
+        }),
     windowMs: options.windowMs,
     max: options.maxRequests,
     message: {
